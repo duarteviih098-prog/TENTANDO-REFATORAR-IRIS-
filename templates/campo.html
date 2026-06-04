@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="hero">
+  <h1>Campo / WhatsApp</h1>
+  <p>O.S. disponíveis para a equipe de campo. O primeiro técnico que iniciar assume automaticamente o atendimento.</p>
+</section>
+
+<ul class="nav nav-pills mb-3" id="campoTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="envio-tab" data-bs-toggle="pill" data-bs-target="#tab-envio" type="button" role="tab" aria-controls="tab-envio" aria-selected="true">O.S. para campo</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tecnicos-tab" data-bs-toggle="pill" data-bs-target="#tab-tecnicos" type="button" role="tab" aria-controls="tab-tecnicos" aria-selected="false">Técnicos</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="templates-tab" data-bs-toggle="pill" data-bs-target="#tab-templates" type="button" role="tab" aria-controls="tab-templates" aria-selected="false">Templates</button>
+  </li>
+</ul>
+
+<style>
+.campo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px}
+.campo-card{border:1px solid #d7e4f5;border-radius:18px;background:#fff;padding:16px;box-shadow:0 8px 24px rgba(15,42,78,.06)}
+.campo-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px}
+.campo-os{font-size:18px;font-weight:800;color:#17233b}.campo-date{font-size:12px;color:#6b7c99}
+.badge-campo{border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;background:#eef5ff;color:#2d6dcc}.badge-campo.finalizada{background:#edfdf5;color:#118347}.badge-campo.andamento{background:#fff7d6;color:#a56300}.badge-campo.pausada{background:#fff1f2;color:#be123c}
+.campo-main{font-weight:800;color:#1b2a44;margin-top:8px}.campo-unit{color:#5e708d;font-size:13px;margin-top:2px}.campo-desc{background:#f8fbff;border:1px solid #e1ebfa;border-radius:14px;padding:10px;margin-top:12px;color:#31415f;font-size:13px;line-height:1.35;min-height:48px}
+.campo-tech{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:12px;border-top:1px solid #edf2f8;padding-top:12px}.campo-tech strong{display:block}.campo-tech .phone,.campo-tech .email{font-size:13px;color:#61728f}.campo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.campo-actions .btn-gg{flex:1;justify-content:center}.no-phone{color:#be123c;font-size:12px;font-weight:700}.tech-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}.tech-item{border:1px solid #e1ebfa;background:#f9fbff;border-radius:14px;padding:10px}.filter-pills{display:flex;gap:8px;flex-wrap:wrap}.filter-pills a{padding:7px 12px;border-radius:999px;border:1px solid #d7e4f5;text-decoration:none;font-weight:700;color:#48607f;background:#fff}.filter-pills a.active{background:#2f80ed;color:#fff;border-color:#2f80ed}
+.toast-campo{position:fixed;right:16px;bottom:18px;z-index:9999;background:#17233b;color:#fff;border-radius:14px;padding:10px 14px;box-shadow:0 12px 30px rgba(15,42,78,.22);font-weight:700;opacity:0;transform:translateY(8px);transition:.2s ease}.toast-campo.show{opacity:1;transform:translateY(0)}
+@media (max-width:576px){.campo-grid{grid-template-columns:1fr}.campo-actions .btn-gg{flex:1 1 100%}.campo-tech{align-items:flex-start}.filter-pills{overflow:auto;flex-wrap:nowrap;padding-bottom:3px}.filter-pills a{white-space:nowrap}}
+</style>
+
+<div class="tab-content">
+  <div class="tab-pane fade show active" id="tab-envio" role="tabpanel" aria-labelledby="envio-tab">
+    <div class="content-card">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+          <h3 class="mb-1">Enviar O.S. para campo</h3>
+          <p class="mini mb-0">A descrição vai junto na mensagem. A O.S. aparece no app de todos os técnicos; quem iniciar primeiro assume.</p>
+        </div>
+        <div class="filter-pills">
+          <a href="{{ url_for('campo_page') }}" class="{{ 'active' if not status_filter else '' }}">Todas</a>
+          <a href="{{ url_for('campo_page', status='a_enviar') }}" class="{{ 'active' if status_filter == 'a_enviar' else '' }}">A enviar</a>
+          <a href="{{ url_for('campo_page', status='andamento') }}" class="{{ 'active' if status_filter == 'andamento' else '' }}">Em andamento</a>
+          <a href="{{ url_for('campo_page', status='pausada') }}" class="{{ 'active' if status_filter == 'pausada' else '' }}">Pausadas</a>
+          <a href="{{ url_for('campo_page', status='finalizada') }}" class="{{ 'active' if status_filter == 'finalizada' else '' }}">Finalizadas</a>
+        </div>
+      </div>
+
+      <div class="campo-grid">
+        {% for r in rows %}
+        {% set st = (r.status_label or '')|lower %}
+        <div class="campo-card" data-id="{{ r.id }}" data-numero-os="{{ r.numero_visivel or r.numero_os or r.id }}" data-status="{{ r.status_label }}" data-finalizada="{{ r.finalizada or 'Não' }}">
+          <div class="campo-top">
+            <div>
+              <div class="campo-os">O.S. #{{ r.numero_visivel or r.numero_os or r.id }}</div>
+              <div class="campo-date">{{ r.data }}</div>
+            </div>
+            <span class="badge-campo status-exec-badge {% if 'finalizada' in st %}finalizada{% elif 'andamento' in st %}andamento{% elif 'pausada' in st %}pausada{% endif %}">{{ r.status_label }}</span>
+          </div>
+
+          <div class="campo-main">{{ r.sistema or 'Sistema não informado' }}</div>
+          <div class="campo-unit">{{ r.equipamento or 'Unidade não informada' }}</div>
+
+          <div class="campo-desc">
+            <strong>Descrição:</strong><br>
+            {{ r.descricao_resumo or 'Sem descrição cadastrada.' }}
+          </div>
+
+          <div class="campo-tech">
+            <div>
+              <strong>👤 {{ r.responsavel or 'Disponível para equipe' }}</strong>
+              {% if r.telefone_tecnico %}
+                <div class="phone">📞 {{ r.telefone_tecnico_fmt }}</div>
+              {% else %}
+                <div class="no-phone">⚠️ Sem WhatsApp cadastrado</div>
+              {% endif %}
+            </div>
+            {% if user_has('manage_users') %}
+            <button class="btn-gg btn-sm btn-ghost" data-bs-toggle="modal" data-bs-target="#tecnicoModal" onclick='novoTecnico({{ (r.responsavel or '')|tojson }})'><i class="bi bi-phone"></i> Cadastrar</button>
+            {% endif %}
+          </div>
+
+          <div class="campo-actions">
+            <a class="btn-gg btn-ghost" href="{{ r.link_campo }}" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Abrir</a>
+            <a class="btn-gg btn-green" href="{{ url_for('campo_whatsapp_equipe', rid=r.id) }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Avisar equipe</a>
+          </div>
+        </div>
+        {% else %}
+          <div class="empty">Nenhuma O.S. nesta unidade.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-pane fade" id="tab-tecnicos" role="tabpanel" aria-labelledby="tecnicos-tab">
+    <div class="content-card">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+          <h3 class="mb-1">Técnicos de campo</h3>
+          <p class="mini mb-0">Cadastre o WhatsApp uma vez. Depois a O.S. aparece no app do técnico e ele assume ao iniciar.</p>
+        </div>
+        {% if user_has('manage_users') %}
+        <button class="btn-gg btn-blue" data-bs-toggle="modal" data-bs-target="#tecnicoModal" onclick="novoTecnico()"><i class="bi bi-person-plus-fill"></i> Novo técnico</button>
+        {% endif %}
+      </div>
+      <div class="tech-list">
+        {% for t in tecnicos %}
+        <div class="tech-item">
+          <div class="d-flex justify-content-between gap-2">
+            <div>
+              <strong>{{ t.nome }}</strong>
+              <div class="phone">📞 {{ t.telefone|phone_br if t.telefone else 'Sem telefone cadastrado' }}</div>
+              {% if t.email %}<div class="email">✉️ {{ t.email }}</div>{% endif %}
+              {% if t.app_link %}
+              <div class="mini">
+                <a href="{{ t.app_link }}" target="_blank" rel="noopener">Abrir app</a>
+                · <button type="button" class="btn btn-link btn-sm p-0" onclick='copiarTexto({{ t.app_link|tojson }})'>Copiar app</button>
+              </div>
+              {% endif %}
+            </div>
+            {% if user_has('manage_users') %}
+            <div class="d-flex flex-column gap-1">
+              <button class="btn-gg btn-sm btn-ghost" data-bs-toggle="modal" data-bs-target="#tecnicoModal" onclick='editarTecnico({{ t|tojson }})'><i class="bi bi-pencil-square"></i> Editar</button>
+              <form method="post" action="{{ url_for('campo_tecnico_delete', rid=t.id) }}" onsubmit="return confirm('Excluir este técnico da lista de campo?');">
+                <button class="btn-gg btn-sm btn-red" type="submit"><i class="bi bi-trash"></i> Excluir</button>
+              </form>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+          <div class="empty">Nenhum técnico cadastrado nesta unidade.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-pane fade" id="tab-templates" role="tabpanel" aria-labelledby="templates-tab">
+    <div class="content-card">
+      <h3 class="mb-1">Templates do WhatsApp</h3>
+      <p class="mini">Edite a mensagem que vai para o técnico. Variáveis: {os_id}, {sistema}, {unidade}, {criticidade}, {descricao}, {link}, {tecnico}.</p>
+      {% for tpl in templates_wpp %}
+      <form method="post" action="{{ url_for('campo_template_save') }}" enctype="multipart/form-data" class="border rounded-4 p-3 mb-3 bg-light">
+        <input type="hidden" name="idx" value="{{ loop.index0 }}">
+        <div class="row g-2">
+          <div class="col-md-4"><label class="form-label fw-bold">Nome</label><input class="form-control" name="nome" value="{{ tpl.nome }}"></div>
+          <div class="col-md-3"><label class="form-label fw-bold">Tipo</label><input class="form-control" name="tipo" value="{{ tpl.tipo or 'nova_os' }}"></div>
+          <div class="col-md-2"><label class="form-label fw-bold">Ativo</label><select class="form-select" name="ativo"><option value="1" {% if tpl.ativo %}selected{% endif %}>Sim</option><option value="0" {% if not tpl.ativo %}selected{% endif %}>Não</option></select></div>
+          <div class="col-md-3"><label class="form-label fw-bold">Imagem do template</label><input class="form-control" type="file" name="imagem" accept="image/*"></div>
+          <div class="col-12"><label class="form-label fw-bold">Texto</label><textarea class="form-control" name="texto" rows="8">{{ tpl.texto }}</textarea></div>
+          <input type="hidden" name="imagem_url" value="{{ tpl.imagem or '' }}">
+          {% if tpl.imagem %}<div class="col-12 mini">Imagem atual: <a href="{{ tpl.imagem }}" target="_blank" rel="noopener">{{ tpl.imagem }}</a></div>{% endif %}
+          <div class="col-12 text-end"><button class="btn-gg btn-blue" type="submit"><i class="bi bi-save"></i> Salvar template</button></div>
+        </div>
+      </form>
+      {% endfor %}
+      <form method="post" action="{{ url_for('campo_template_save') }}" enctype="multipart/form-data" class="border rounded-4 p-3 bg-white">
+        <h5>Novo template</h5>
+        <div class="row g-2">
+          <div class="col-md-4"><input class="form-control" name="nome" placeholder="Nome do template"></div>
+          <div class="col-md-3"><input class="form-control" name="tipo" value="nova_os"></div>
+          <div class="col-md-2"><select class="form-select" name="ativo"><option value="1">Ativo</option><option value="0">Inativo</option></select></div>
+          <div class="col-md-3"><input class="form-control" type="file" name="imagem" accept="image/*"></div>
+          <div class="col-12"><textarea class="form-control" name="texto" rows="8" placeholder="Mensagem com {os_id}, {sistema}, {unidade}, {criticidade}, {descricao}, {link}"></textarea></div>
+          <div class="col-12 text-end"><button class="btn-gg btn-green" type="submit">Adicionar template</button></div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% if user_has('manage_users') %}
+<div class="modal fade" id="tecnicoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('campo_tecnico_save') }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Técnico de campo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id" id="tec_id">
+          <label class="form-label fw-bold">Nome do técnico</label>
+          <input class="form-control mb-3" name="nome" id="tec_nome" required placeholder="Ex: Mauro Monteiro" autocomplete="name">
+          <label class="form-label fw-bold">WhatsApp</label>
+          <input class="form-control mb-3" name="telefone" id="tec_telefone" placeholder="DDD + número" inputmode="numeric" autocomplete="tel">
+          <label class="form-label fw-bold">E-mail</label>
+          <input class="form-control mb-3" name="email" id="tec_email" type="email" placeholder="tecnico@empresa.com" autocomplete="email">
+          <label class="form-label fw-bold">Senha de acesso</label>
+          <input class="form-control" name="senha" id="tec_senha" type="password" placeholder="Deixe em branco para manter/gerar automaticamente" autocomplete="new-password">
+          <div class="form-text">WhatsApp: use somente número brasileiro. O técnico também aparecerá em Usuários para editar e-mail, senha e permissões.</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary" type="submit">Salvar técnico</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toastCampo(msg){
+  let el=document.getElementById('toast-campo');
+  if(!el){
+    el=document.createElement('div');
+    el.id='toast-campo';
+    el.className='toast-campo';
+    document.body.appendChild(el);
+  }
+  el.textContent=msg;
+  el.classList.add('show');
+  clearTimeout(window.__toastCampoTimer);
+  window.__toastCampoTimer=setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+function copiarTexto(texto){
+  texto = texto || '';
+  if(!texto){ toastCampo('Nada para copiar.'); return; }
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(texto).then(()=>toastCampo('Link do app copiado.')).catch(()=>copiarTextoFallback(texto));
+  }else{
+    copiarTextoFallback(texto);
+  }
+}
+
+function copiarTextoFallback(texto){
+  const ta=document.createElement('textarea');
+  ta.value=texto;
+  ta.setAttribute('readonly','');
+  ta.style.position='fixed';
+  ta.style.left='-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand('copy'); toastCampo('Link do app copiado.'); }
+  catch(e){ toastCampo('Não consegui copiar automaticamente.'); }
+  document.body.removeChild(ta);
+}
+
+function novoTecnico(nome=''){
+  const id=document.getElementById('tec_id');
+  const n=document.getElementById('tec_nome');
+  const t=document.getElementById('tec_telefone');
+  const e=document.getElementById('tec_email');
+  const senha=document.getElementById('tec_senha');
+  if(id) id.value='';
+  if(n) n.value=nome||'';
+  if(t) t.value='';
+  if(e) e.value='';
+  if(senha) senha.value='';
+}
+
+function editarTecnico(t){
+  t = t || {};
+  const id=document.getElementById('tec_id');
+  const n=document.getElementById('tec_nome');
+  const tel=document.getElementById('tec_telefone');
+  const email=document.getElementById('tec_email');
+  const senha=document.getElementById('tec_senha');
+  if(id) id.value=t.id||'';
+  if(n) n.value=t.nome||'';
+  if(tel) tel.value=t.telefone||'';
+  if(email) email.value=t.email||'';
+  if(senha) senha.value='';
+}
+
+(function manterAbaCampo(){
+  const tabs=document.querySelectorAll('#campoTabs button[data-bs-toggle="pill"]');
+  tabs.forEach(btn=>{
+    btn.addEventListener('shown.bs.tab', function(ev){
+      const target=ev.target.getAttribute('data-bs-target');
+      if(target) history.replaceState(null,'',target);
+    });
+  });
+  const hash=window.location.hash;
+  if(hash){
+    const btn=document.querySelector(`#campoTabs button[data-bs-target="${hash}"]`);
+    if(btn && window.bootstrap){ new bootstrap.Tab(btn).show(); }
+  }
+})();
+</script>
+{% endblock %}

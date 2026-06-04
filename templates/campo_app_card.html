@@ -1,0 +1,130 @@
+{% set status_norm = (r.status or '')|string|lower %}
+{% set finalizada_txt = (r.finalizada or '')|string|lower %}
+{% set finalizada_bool = finalizada_txt in ['sim','true','1','finalizada'] or 'finalizada' in status_norm or 'conclu' in status_norm or 'entregue' in status_norm %}
+{% set atrasada_txt = (r.atrasada or '')|string|lower %}
+{% set atrasada_bool = (r.atrasada is sameas true) or atrasada_txt in ['sim','true','1','atrasada'] %}
+{% set crit = (r.criticidade or '')|string|lower %}
+{% set link = r.link_campo or r.link_mobile or campo_app_link_for_os_row(r) %}
+{% set responsavel_nome = (r.responsavel or '')|string|trim %}
+{% set tecnico_nome = (tecnico.nome if tecnico else '')|string|trim %}
+{% set tecnico_email = (tecnico.email if tecnico else '')|string|trim %}
+{% set livre = not responsavel_nome %}
+{% set minha = responsavel_nome and ((tecnico_nome and responsavel_nome|lower == tecnico_nome|lower) or (tecnico_email and responsavel_nome|lower == tecnico_email|lower)) %}
+
+{% if atrasada_bool and not finalizada_bool %}
+<style>
+@keyframes card-pulse-red{
+  0%,100%{box-shadow:0 0 0 0 rgba(239,66,111,0),border-color:rgba(239,66,111,.38)}
+  50%{box-shadow:0 0 0 8px rgba(239,66,111,.18),border-color:rgba(239,66,111,.75)}
+}
+@keyframes card-shake{
+  0%,100%{transform:translateX(0)}
+  15%{transform:translateX(-4px)}
+  30%{transform:translateX(4px)}
+  45%{transform:translateX(-3px)}
+  60%{transform:translateX(3px)}
+  75%{transform:translateX(-2px)}
+  90%{transform:translateX(2px)}
+}
+.os-card.is-late-alert{
+  border-color:rgba(239,66,111,.55) !important;
+  animation:card-pulse-red 2.2s ease-in-out infinite, card-shake 3.5s ease-in-out infinite;
+}
+.late-alert-banner{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(239,66,111,.12);border:1px solid rgba(239,66,111,.28);
+  border-radius:14px;padding:9px 11px;margin-top:10px;
+  font-size:.78rem;font-weight:800;color:var(--pink,#ef426f);
+}
+.late-alert-banner i{font-size:1rem}
+.btn-justificar{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  width:100%;border:0;border-radius:14px;padding:10px;margin-top:8px;
+  background:linear-gradient(100deg,#ef426f,#f06292);color:#fff;
+  font-family:inherit;font-size:.8rem;font-weight:900;cursor:pointer;
+}
+</style>
+{% endif %}
+
+<div class="os-card {% if atrasada_bool and not finalizada_bool %}is-late is-late-alert{% endif %}" style="cursor:default">
+  <a href="{{ link }}" style="text-decoration:none;color:inherit;display:block">
+    <div class="os-top">
+      <div>
+        <div class="os-id">O.S. #{{ r.numero_visivel or r.numero_os or r.id }}</div>
+        <div class="os-date">{{ r.data or 'Sem data' }}</div>
+      </div>
+      <span class="badge {% if finalizada_bool %}crit-finalizada{% elif atrasada_bool %}crit-alta{% elif 'alta' in crit or 'critica' in crit or 'crítica' in crit %}crit-alta{% elif 'media' in crit or 'média' in crit %}crit-media{% elif 'baixa' in crit %}crit-baixa{% else %}crit-default{% endif %}">
+        {% if finalizada_bool %}Finalizada
+        {% elif atrasada_bool %}⚠ Atrasada
+        {% else %}{{ r.criticidade or r.status or 'Aberta' }}{% endif %}
+      </span>
+    </div>
+    <div class="os-main">
+      <div class="os-icon"><i class="bi bi-tools"></i></div>
+      <div>
+        <div class="meta-title">{{ r.sistema or 'Sistema não informado' }}</div>
+        <div class="meta-unit">{{ r.equipamento or r.ativo_nome or 'Unidade/equipamento não informado' }}</div>
+      </div>
+    </div>
+    <div class="desc">
+      {{ r.descricao or r.descricao_resumo or 'Sem descrição cadastrada.' }}
+    </div>
+
+    {% if atrasada_bool and not finalizada_bool %}
+      {% if r.motivo_atraso %}
+        <div class="late-alert-banner">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span><strong>Justificativa:</strong> {{ r.motivo_atraso }}</span>
+        </div>
+      {% else %}
+        <div class="late-alert-banner">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span>Esta O.S. está em atraso — justificativa não registrada</span>
+        </div>
+      {% endif %}
+    {% endif %}
+
+    {% if r.motivo_pausa and 'pausada' in status_norm %}
+      <div style="background:rgba(246,164,0,.10);border:1px solid rgba(246,164,0,.28);border-radius:14px;padding:9px 11px;margin-top:8px;font-size:.78rem;font-weight:800;color:var(--amber,#f6a400)">
+        <i class="bi bi-pause-circle-fill"></i> <strong>Motivo da pausa:</strong> {{ r.motivo_pausa }}
+      </div>
+    {% endif %}
+
+    <div class="os-footer">
+      <span>
+        {% if finalizada_bool %}
+          <span class="claim-pill claim-done"><i class="bi bi-check-circle-fill"></i> Finalizada{% if r.campo_finalizado_em %} · {{ r.campo_finalizado_em }}{% endif %}</span>
+        {% elif atrasada_bool %}
+          <span class="claim-pill claim-other"><i class="bi bi-exclamation-triangle-fill"></i> Atrasada</span>
+        {% elif 'pausada' in status_norm %}
+          <span class="claim-pill claim-other"><i class="bi bi-pause-circle-fill"></i> Pausada</span>
+        {% elif livre %}
+          <span class="claim-pill claim-free"><i class="bi bi-unlock-fill"></i> Disponível para assumir</span>
+        {% elif minha %}
+          <span class="claim-pill claim-mine"><i class="bi bi-person-check-fill"></i> Assumida por você</span>
+        {% elif responsavel_nome %}
+          <span class="claim-pill claim-other"><i class="bi bi-lock-fill"></i> Assumida por {{ responsavel_nome }}</span>
+        {% elif 'andamento' in status_norm or 'execução' in status_norm or 'execucao' in status_norm %}
+          Em andamento
+        {% else %}
+          Aguardando início
+        {% endif %}
+      </span>
+      <span class="open-pill">
+        {% if livre and not finalizada_bool %}Iniciar{% else %}Abrir{% endif %}
+      </span>
+    </div>
+  </a>
+
+  {% if atrasada_bool and not finalizada_bool and not r.motivo_atraso %}
+    <button class="btn-justificar" type="button"
+      onclick="event.stopPropagation(); abrirSheetAtraso('{{ r.id }}','{{ link }}')">
+      <i class="bi bi-exclamation-triangle-fill"></i> Justificar atraso
+    </button>
+  {% elif atrasada_bool and not finalizada_bool and r.motivo_atraso %}
+    <button class="btn-justificar" type="button" style="background:#64748b"
+      onclick="event.stopPropagation(); abrirSheetAtraso('{{ r.id }}','{{ link }}')">
+      <i class="bi bi-pencil-fill"></i> Editar justificativa
+    </button>
+  {% endif %}
+</div>

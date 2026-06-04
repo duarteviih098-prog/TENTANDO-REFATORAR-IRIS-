@@ -1,0 +1,791 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero dash-hero clean-shell">
+  <div>
+    <div class="mini text-uppercase fw-bold mb-2 soft-kicker">Painel operacional</div>
+    <h1 id="dashGreeting">Olá{% if current_user and current_user.nome %}, {{ current_user.nome.split()[0] }}{% endif %} 👋</h1>
+    <p>{% set _h = now_hour|default(12)|int %}{% if _h < 12 %}Bom dia{% elif _h < 18 %}Boa tarde{% else %}Boa noite{% endif %} — aqui está o resumo operacional de hoje.</p>
+  </div>
+  <div class="hero-chip-wrap">
+    <a class="hero-chip dash-link-card" href="{{ url_for('os_page', status='andamento') }}">
+      <span>O.S. em andamento</span>
+      <strong>{{ dashboard_data.cards.os_em_andamento }}</strong>
+    </a>
+    <a class="hero-chip dash-link-card" href="{{ url_for('os_page', status='pausadas') }}">
+      <span>O.S. pausadas</span>
+      <strong>{{ dashboard_data.cards.os_pausadas }}</strong>
+    </a>
+  </div>
+</section>
+
+{% set modo = dashboard_data.modo or '' %}
+{% set periodo_label = dashboard_data.periodo_label or '' %}
+
+<div class="periodo-bar clean-shell">
+  <div class="periodo-label"><i class="bi bi-calendar3"></i> Período financeiro</div>
+  <div class="periodo-opcoes">
+    <a class="periodo-btn {% if modo == 'mes_atual' %}active{% endif %}" href="{{ url_for('dashboard') }}">Mês atual</a>
+    <a class="periodo-btn {% if modo == '3m' %}active{% endif %}" href="{{ url_for('dashboard', periodo='3m') }}">3 meses</a>
+    <a class="periodo-btn {% if modo == '6m' %}active{% endif %}" href="{{ url_for('dashboard', periodo='6m') }}">6 meses</a>
+    <a class="periodo-btn {% if modo == 'ano' %}active{% endif %}" href="{{ url_for('dashboard', periodo='ano') }}">Ano atual</a>
+    <a class="periodo-btn {% if modo == 'tudo' %}active{% endif %}" href="{{ url_for('dashboard', periodo='tudo') }}">Tudo</a>
+    <span class="periodo-sep">ou</span>
+    <form class="periodo-custom" method="get" action="{{ url_for('dashboard') }}" id="periodoForm">
+      <input class="form-control periodo-input" name="mes" id="periodoMes" value="{{ request.args.get('mes','') }}" placeholder="De MM/AAAA" maxlength="7" autocomplete="off">
+      <input class="form-control periodo-input" name="mes_fim" id="periodoMesFim" value="{{ request.args.get('mes_fim','') }}" placeholder="Até MM/AAAA" maxlength="7" autocomplete="off">
+      <button class="btn-gg btn-outline" type="submit"><i class="bi bi-funnel-fill"></i> Aplicar</button>
+    </form>
+  </div>
+  {% if periodo_label %}<div class="periodo-ativo-label"><i class="bi bi-check-circle-fill"></i> {{ periodo_label }}</div>{% endif %}
+</div>
+
+<!-- CARDS -->
+<section class="dash-cards clean-shell compact-cards">
+  <article class="dash-card">
+    <div class="card-icon" style="background:rgba(37,99,235,.08);color:#2563eb"><i class="bi bi-wrench-adjustable-circle-fill"></i></div>
+    <div class="label">Bombas em estoque</div>
+    <div class="value" style="color:#2563eb">{{ dashboard_data.cards.bombas_estoque }}</div>
+    <div class="hint">prontas para uso</div>
+  </article>
+  <article class="dash-card">
+    <div class="card-icon" style="background:rgba(5,150,105,.08);color:#059669"><i class="bi bi-tools"></i></div>
+    <div class="label">Bombas em conserto</div>
+    <div class="value" style="color:#059669">{{ dashboard_data.cards.bombas_conserto }}</div>
+    <div class="hint">na oficina ou ajuste</div>
+  </article>
+  <article class="dash-card">
+    <div class="card-icon" style="background:rgba(217,119,6,.08);color:#b45309"><i class="bi bi-cash-stack"></i></div>
+    <div class="label">OPEX — {{ periodo_label }}</div>
+    <div class="value" style="color:#b45309">{{ dashboard_data.cards.valor_pendente|br_money }}</div>
+    <a class="dash-total-link" href="{{ url_for('pagamentos', todos=1) }}" id="dash-gasto-total-link">Ver total geral <i class="bi bi-arrow-right-short"></i></a>
+  </article>
+  <article class="dash-card">
+    <div class="card-icon" style="background:rgba(124,58,237,.08);color:#7c3aed"><i class="bi bi-graph-up-arrow"></i></div>
+    <div class="label">CAPEX — {{ periodo_label }}</div>
+    <div class="value" style="color:#7c3aed">{{ dashboard_data.cards.investimento_mes|br_money }}</div>
+    <a class="dash-total-link" href="{{ url_for('pagamentos', todos=1) }}" id="dash-invest-total-link">Ver total geral <i class="bi bi-arrow-right-short"></i></a>
+  </article>
+  <article class="dash-card">
+    <div class="card-icon" style="background:rgba(14,165,233,.08);color:#0891b2"><i class="bi bi-fuel-pump-fill"></i></div>
+    <div class="label">Combustível — {{ periodo_label }}</div>
+    <div class="value" style="color:#0891b2">{{ dashboard_data.cards.combustivel_mes_total|br_money }}</div>
+    <div class="hint">lançamentos de combustível no período</div>
+  </article>
+  <a class="dash-card dash-link-card" href="{{ url_for('os_page', status='atrasadas') }}">
+    <div class="card-icon" style="background:rgba(220,38,38,.08);color:#dc2626"><i class="bi bi-exclamation-triangle-fill"></i></div>
+    <div class="label">O.S. em atraso</div>
+    <div class="value" style="color:#dc2626">{{ dashboard_data.cards.os_atrasadas }}</div>
+    <div class="hint">clique para ver na aba de O.S.</div>
+  </a>
+</section>
+
+<!-- GRID PRINCIPAL -->
+<section class="dash-grid clean-grid" id="dashMainGrid">
+
+  <!-- Gráfico duplo OPEX + CAPEX (span 2) -->
+  <div class="chart-card wide clean-shell">
+    <div class="chart-head">
+      <div><h3>OPEX e CAPEX</h3><span>comparativo por mês — {{ periodo_label }}</span></div>
+      <div style="display:flex;gap:6px">
+        <span class="tag-pill amber">OPEX</span>
+        <span class="tag-pill purple">CAPEX</span>
+      </div>
+    </div>
+    <canvas id="custoInvestChart"></canvas>
+  </div>
+
+  <!-- MAPA de técnicos em campo -->
+  <div class="chart-card clean-shell mapa-card" id="mapaCard">
+    <div>
+      <div id="map"></div>
+      <!-- Controles flutuantes -->
+      <div class="mapa-ui-top">
+        <div class="mapa-search-wrap">
+          <i class="bi bi-search mapa-search-icon"></i>
+          <input class="mapa-search-input" id="mapaBusca" placeholder="Buscar endereço ou traçar rota…" autocomplete="off">
+          <div class="mapa-search-results" id="mapaBuscaResults"></div>
+        </div>
+        <div class="mapa-actions">
+          <button class="mapa-btn" id="mapaRotaBtn" title="Traçar rota" onclick="toggleModoRota()">
+            <i class="bi bi-signpost-2"></i> Rota
+          </button>
+          <button class="mapa-btn mapa-btn-danger" id="mapaLimparBtn" title="Limpar rota" onclick="limparRota()" style="display:none">
+            <i class="bi bi-x-lg"></i> Limpar
+          </button>
+        </div>
+      </div>
+      <!-- Badge ativos -->
+      <div class="mapa-badge" id="mapaBadge">
+        <span class="mapa-badge-dot" id="mapaBadgeDot"></span>
+        <span id="mapaCount">0</span> ativo(s)
+      </div>
+      <!-- Lista técnicos -->
+      <div class="mapa-tec-list" id="tecnicosList"></div>
+    </div>
+  </div>
+
+<!-- O.S. por sistema -->
+  <div class="chart-card clean-shell">
+    <div class="chart-head">
+      <div><h3>O.S. por sistema</h3><span>onde a demanda mais aperta</span></div>
+      <span class="tag-pill">Operação</span>
+    </div>
+    <canvas id="osSistemaChart"></canvas>
+  </div>
+
+  <!-- Componentes mais trocados -->
+  <div class="chart-card clean-shell">
+    <div class="chart-head">
+      <div><h3>Componentes mais trocados</h3><span>ranking pelo texto informado na O.S.</span></div>
+      <span class="tag-pill">Manutenção</span>
+    </div>
+    <canvas id="componentesTipoChart"></canvas>
+  </div>
+
+  <!-- Entrega bombas -->
+  <div class="chart-card clean-shell">
+    <div class="chart-head">
+      <div><h3>Entrega das bombas</h3><span>andamento, entregue ou atraso</span></div>
+      <span class="tag-pill">Entrega</span>
+    </div>
+    <canvas id="osStatusChart"></canvas>
+  </div>
+
+  <!-- Tipo O.S. -->
+  <div class="chart-card clean-shell">
+    <div class="chart-head">
+      <div><h3>Tipo das O.S.</h3><span>corretivas x preventivas</span></div>
+      <span class="tag-pill">Tipo O.S.</span>
+    </div>
+    <canvas id="osTipoChart"></canvas>
+  </div>
+
+  <!-- O.S. em atraso por sistema -->
+  <div class="chart-card clean-shell">
+    <div class="chart-head">
+      <div><h3>O.S. em atraso por sistema</h3><span>onde a fila já passou do ponto</span></div>
+      <span class="tag-pill">Sistema</span>
+    </div>
+    <canvas id="osAtrasadasChart"></canvas>
+  </div>
+
+  <!-- Sistemas com troca -->
+  <div class="chart-card clean-shell">
+    <div class="chart-head">
+      <div><h3>Sistemas com troca de componentes</h3><span>{{ periodo_label }}</span></div>
+      <span class="tag-pill">Componentes</span>
+    </div>
+    <canvas id="componentesSistemaChart"></canvas>
+  </div>
+
+  <!-- Equipamentos problemáticos -->
+  <div class="chart-card clean-shell">
+    <div class="chart-head">
+      <div><h3>Equipamentos problemáticos</h3><span>prioridade por O.S., atraso e troca</span></div>
+      <span class="tag-pill">Inteligência</span>
+    </div>
+    <canvas id="equipamentosCriticosChart"></canvas>
+  </div>
+
+  <!-- Alertas -->
+  <div class="alerts-card clean-shell">
+    <div class="chart-head">
+      <div><h3>Alertas de manutenção</h3><span>o que merece atenção primeiro</span></div>
+      <span class="tag-pill">Radar</span>
+    </div>
+    <div class="alerts-list">
+      {% for alert in dashboard_data.alerts %}
+      {% if alert.title not in ['Troca de componentes', 'Inventário geral'] %}
+      <a class="alert-row {{ alert.level }} dash-link-card" href="{{ url_for('os_page') }}">
+        <div><i class="bi bi-gear-fill" style="color:var(--muted);font-size:.85rem"></i><small>{{ alert.title }}</small></div>
+        <strong>{{ alert.value }}</strong>
+      </a>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+</section>
+{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* ── Reset & base ─────────────────────────────────────── */
+.clean-shell{position:relative}
+.dash-link-card{text-decoration:none;color:inherit;transition:transform .18s ease,box-shadow .18s ease}
+.dash-link-card:hover{transform:translateY(-2px);color:inherit;box-shadow:0 20px 40px rgba(15,23,42,.10)}
+
+/* ── Hero ─────────────────────────────────────────────── */
+.dash-hero{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:20px 4px 22px;margin-bottom:20px}
+.soft-kicker{letter-spacing:.16em;color:#94a3b8;font-size:.72rem}
+.dash-hero h1{margin:0;font-size:1.6rem;font-weight:800;letter-spacing:-.03em}
+.dash-hero p{margin:4px 0 0;color:var(--muted);font-size:.88rem}
+.hero-chip-wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.hero-chip{min-width:148px;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 8px rgba(15,23,42,.04)}
+.hero-chip span{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:3px;font-weight:700}
+.hero-chip strong{font-size:1.3rem;font-weight:800;color:var(--text)}
+
+/* ── Período bar ──────────────────────────────────────── */
+.periodo-bar{display:flex;align-items:center;flex-wrap:wrap;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 16px;margin-bottom:16px}
+.periodo-label{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.periodo-opcoes{display:flex;align-items:center;flex-wrap:wrap;gap:6px;flex:1}
+.periodo-btn{padding:5px 12px;border-radius:8px;font-size:.78rem;font-weight:600;text-decoration:none;color:var(--muted);background:transparent;border:1px solid transparent;transition:.12s ease;white-space:nowrap}
+.periodo-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--line)}
+.periodo-btn.active{background:var(--surface2);color:var(--text);border-color:var(--line);font-weight:700}
+.periodo-sep{font-size:.72rem;color:var(--muted)}
+.periodo-custom{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.periodo-input{width:120px;min-height:32px;font-size:.78rem;border-radius:8px}
+.periodo-ativo-label{font-size:.74rem;font-weight:700;color:#2563eb;white-space:nowrap;padding:4px 10px;background:rgba(37,99,235,.07);border-radius:7px;display:flex;align-items:center;gap:5px}
+
+/* ── Cards ────────────────────────────────────────────── */
+.compact-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
+.dash-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;min-height:100px;display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden}
+.dash-card::before{content:'';position:absolute;inset:0;border-radius:16px;opacity:0;transition:opacity .18s ease;background:rgba(0,0,0,.015)}
+.dash-card:hover::before{opacity:1}
+.card-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.9rem;margin-bottom:4px}
+.dash-card .label{font-weight:600;color:var(--muted);font-size:.75rem;line-height:1.2}
+.dash-card .value{font-size:1.55rem;font-weight:800;line-height:1;letter-spacing:-.03em;margin:2px 0}
+.dash-card .hint{font-size:.72rem;color:var(--muted);line-height:1.3}
+.dash-total-link{display:inline-flex;align-items:center;gap:3px;font-size:.7rem;font-weight:600;color:#2563eb;text-decoration:none;margin-top:2px;opacity:.7}
+.dash-total-link:hover{opacity:1}
+
+/* ── Grid principal ───────────────────────────────────── */
+.clean-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch;grid-auto-rows:minmax(320px,auto);grid-template-rows:auto}
+.chart-card,.alerts-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;position:relative;overflow:hidden}
+.chart-card.wide{grid-column:span 2;min-height:320px}
+.chart-card canvas{width:100%!important;height:240px!important;cursor:pointer}
+.chart-card.wide canvas{height:270px!important}
+
+/* ── Mapa — ocupa toda a altura ──────────────────────── */
+.mapa-card{grid-row:span 2;padding:0 !important;overflow:hidden;display:flex;flex-direction:column;height:100%}
+.mapa-card > div{flex:1;position:relative;min-height:400px;height:100%}
+#map{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+/* UI flutuante */
+.mapa-ui-top{position:absolute;top:12px;left:12px;right:12px;z-index:800;display:flex;gap:8px;align-items:flex-start;pointer-events:none}
+.mapa-search-wrap{flex:1;position:relative;pointer-events:auto}
+.mapa-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#6b7280;font-size:.78rem;pointer-events:none}
+.mapa-search-input{width:100%;padding:9px 12px 9px 30px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;font-size:.84rem;color:#111827;outline:none;box-shadow:0 2px 12px rgba(0,0,0,.15);transition:border-color .12s}
+.mapa-search-input:focus{border-color:#1d4ed8;box-shadow:0 2px 16px rgba(29,78,216,.2)}
+.mapa-search-results{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);max-height:220px;overflow-y:auto;display:none;z-index:900}
+.mapa-search-result{padding:10px 14px;cursor:pointer;font-size:.82rem;color:#111827;border-bottom:1px solid #f3f4f6;transition:background .1s}
+.mapa-search-result:last-child{border-bottom:none}
+.mapa-search-result:hover{background:#eff6ff;color:#1d4ed8}
+.mapa-actions{display:flex;flex-direction:column;gap:6px;pointer-events:auto}
+.mapa-btn{display:inline-flex;align-items:center;gap:5px;padding:8px 12px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#374151;font-size:.78rem;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:background .12s,border-color .12s;white-space:nowrap}
+.mapa-btn:hover{background:#f9fafb;border-color:#d1d5db}
+.mapa-btn.ativo{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8}
+.mapa-btn-danger{color:#991b1b;border-color:#fca5a5}
+.mapa-btn-danger:hover{background:#fef2f2}
+/* Badge ativos */
+.mapa-badge{position:absolute;bottom:12px;left:12px;z-index:800;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:#fff;border:1px solid #e5e7eb;font-size:.76rem;font-weight:600;color:#374151;box-shadow:0 2px 8px rgba(0,0,0,.12);pointer-events:none}
+.mapa-badge-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:mapaDotPulse 2s infinite}
+@keyframes mapaDotPulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* Lista técnicos */
+.mapa-tec-list{position:absolute;bottom:48px;left:12px;z-index:800;display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;pointer-events:none}
+.mapa-tec-chip{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);font-size:.76rem;pointer-events:auto}
+.mapa-tec-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden}
+.mapa-tec-avatar img{width:100%;height:100%;object-fit:cover}
+.mapa-tec-nome{font-weight:600;color:#111827}
+.mapa-tec-os{font-size:.7rem;color:#6b7280}
+/* Ícone técnico no mapa */
+.mapa-marker-wrap{display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.mapa-marker-bubble{width:38px;height:38px;border-radius:50%;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;overflow:hidden;transition:transform .15s}
+.mapa-marker-bubble:hover{transform:scale(1.15)}
+.mapa-marker-bubble img{width:100%;height:100%;object-fit:cover}
+.mapa-marker-name{background:#fff;border-radius:4px;padding:2px 6px;font-size:.65rem;font-weight:700;color:#111827;box-shadow:0 1px 4px rgba(0,0,0,.2);margin-top:3px;white-space:nowrap}
+/* Popup do marcador */
+.mapa-popup{min-width:160px}
+.mapa-popup-nome{font-weight:700;font-size:.88rem;color:#111827;margin-bottom:4px}
+.mapa-popup-os{font-size:.76rem;color:#6b7280}
+.mapa-popup-link{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:.74rem;font-weight:600;color:#1d4ed8;text-decoration:none}
+/* Dark mode */
+html[data-theme="dark"] .mapa-search-input{background:#1e293b;border-color:#334155;color:#f1f5f9;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+html[data-theme="dark"] .mapa-search-input::placeholder{color:#475569}
+html[data-theme="dark"] .mapa-search-results{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .mapa-search-result{color:#f1f5f9;border-color:#334155}
+html[data-theme="dark"] .mapa-search-result:hover{background:rgba(29,78,216,.15)}
+html[data-theme="dark"] .mapa-btn{background:#1e293b;border-color:#334155;color:#cbd5e1;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+html[data-theme="dark"] .mapa-btn:hover{background:#273549}
+html[data-theme="dark"] .mapa-btn.ativo{background:rgba(29,78,216,.2);border-color:#3b82f6;color:#60a5fa}
+html[data-theme="dark"] .mapa-btn-danger{color:#fca5a5;border-color:#7f1d1d}
+html[data-theme="dark"] .mapa-badge{background:#1e293b;border-color:#334155;color:#cbd5e1}
+html[data-theme="dark"] .mapa-tec-chip{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .mapa-tec-nome{color:#f1f5f9}
+html[data-theme="dark"] .mapa-marker-name{background:#1e293b;color:#f1f5f9}
+
+/* ── Chart head ───────────────────────────────────────── */
+.chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:14px}
+.chart-head h3{margin:0;font-size:.95rem;font-weight:700;color:var(--text);letter-spacing:-.01em}
+.chart-head span{font-size:.78rem;color:var(--muted);margin-top:2px}
+
+/* ── Tag pills — substituem chart-pill gritante ──────── */
+.tag-pill{padding:4px 10px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap;flex-shrink:0}
+.tag-pill.amber{background:rgba(217,119,6,.07);border-color:rgba(217,119,6,.18);color:#92400e}
+.tag-pill.purple{background:rgba(124,58,237,.07);border-color:rgba(124,58,237,.18);color:#6d28d9}
+.tag-pill.green{background:rgba(5,150,105,.07);border-color:rgba(5,150,105,.18);color:#065f46}
+
+/* ── Alertas ──────────────────────────────────────────── */
+.alerts-card{min-height:200px}
+.alerts-list{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.alert-row{display:flex;justify-content:space-between;align-items:center;border-radius:12px;padding:10px 12px;background:var(--surface2);border:1px solid var(--line);gap:12px;text-decoration:none;color:inherit;transition:.14s ease}
+.alert-row:hover{border-color:rgba(37,99,235,.2);background:var(--surface)}
+.alert-row div{display:flex;align-items:center;gap:7px}
+.alert-row small{color:var(--muted);font-size:.8rem;font-weight:600}
+.alert-row strong{font-size:.95rem;font-weight:700}
+.alert-row.warning strong{color:#d97706}.alert-row.danger strong{color:#dc2626}
+.alert-row.ok strong{color:#059669}.alert-row.info strong{color:#2563eb}
+
+/* ── Leaflet ──────────────────────────────────────────── */
+
+
+/* ── Responsive ───────────────────────────────────────── */
+@media(max-width:1400px){
+  .compact-cards{grid-template-columns:repeat(3,1fr)}
+  .clean-grid{grid-template-columns:1fr 1fr}
+  .chart-card.wide{grid-column:span 2}
+  .mapa-card{grid-row:span 1}
+  #mapaContainer{min-height:360px}
+}
+@media(max-width:980px){
+  .dash-hero{flex-direction:column;align-items:flex-start}
+  .hero-chip-wrap{justify-content:flex-start}
+  .clean-grid,.compact-cards{grid-template-columns:1fr}
+  .chart-card.wide{grid-column:span 1}
+  .mapa-card{grid-row:span 1}
+  .periodo-bar{flex-direction:column;align-items:flex-start}
+  .periodo-input{width:100px}
+}
+html[data-theme="dark"] .periodo-btn.active{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.10)}
+html[data-theme="dark"] .tag-pill{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);color:var(--muted)}
+html[data-theme="dark"] .tag-pill.amber{background:rgba(217,119,6,.10);border-color:rgba(217,119,6,.22);color:#fcd34d}
+html[data-theme="dark"] .tag-pill.purple{background:rgba(124,58,237,.10);border-color:rgba(124,58,237,.22);color:#c4b5fd}
+html[data-theme="dark"] .tag-pill.green{background:rgba(5,150,105,.10);border-color:rgba(5,150,105,.22);color:#6ee7b7}
+html[data-theme="dark"] .alert-row{background:rgba(255,255,255,.03)}
+</style>
+<script>
+(function loadTotaisGerais(){
+  async function fetchTotal(tipo,elId){
+    try{const r=await fetch('/api/pagamentos/totais-gerais?tipo='+tipo);const d=await r.json();const el=document.getElementById(elId);if(el&&d.ok)el.dataset.total=d.total_fmt;}catch(e){}
+  }
+  fetchTotal('gasto','dash-gasto-total-link');
+  fetchTotal('investimento','dash-invest-total-link');
+})();
+
+const chartHolders=[];let chartBuildQueued=false;
+function brMoney(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);}
+
+function themeTokens(){
+  const r=getComputedStyle(document.documentElement);
+  return{
+    font:r.getPropertyValue('--text').trim()||'#1e293b',
+    muted:r.getPropertyValue('--muted').trim()||'#64748b',
+    grid:'rgba(148,163,184,0.15)',
+    gridSoft:'rgba(148,163,184,0.08)',
+    tooltipBg:r.getPropertyValue('--surface').trim()||'#fff',
+    tooltipTitle:r.getPropertyValue('--text').trim()||'#1e293b',
+    tooltipBody:r.getPropertyValue('--muted').trim()||'#64748b',
+  };
+}
+
+function tooltipOpts(t){
+  return{backgroundColor:t.tooltipBg,borderColor:t.grid,borderWidth:1,titleColor:t.tooltipTitle,bodyColor:t.tooltipBody,padding:12,cornerRadius:12,displayColors:true,
+    callbacks:{label:ctx=>{const v=ctx.parsed.y??ctx.parsed;if(typeof v==='number'&&v>100)return' '+brMoney(v);return' '+v;}}};
+}
+
+function createCharts(){
+  chartBuildQueued=false;
+  chartHolders.splice(0).forEach(c=>c.destroy());
+  const t=themeTokens();
+  Chart.defaults.color=t.muted;
+  Chart.defaults.font.family='Inter,system-ui,sans-serif';
+  Chart.defaults.font.size=11;
+
+  // Paleta refinada — menos saturada
+  const P={
+    blue:'rgba(59,130,246,0.75)',
+    indigo:'rgba(99,102,241,0.75)',
+    violet:'rgba(124,58,237,0.75)',
+    amber:'rgba(217,119,6,0.75)',
+    teal:'rgba(20,184,166,0.72)',
+    rose:'rgba(244,63,94,0.72)',
+    sky:'rgba(14,165,233,0.72)',
+    green:'rgba(34,197,94,0.72)',
+    slate:'rgba(100,116,139,0.65)',
+  };
+
+  // Gráfico duplo linha
+  const ciEl=document.getElementById('custoInvestChart');
+  if(ciEl){
+    const ctx=ciEl.getContext('2d');
+    const gC=ctx.createLinearGradient(0,0,0,260);gC.addColorStop(0,'rgba(217,119,6,.12)');gC.addColorStop(1,'rgba(217,119,6,.01)');
+    const gI=ctx.createLinearGradient(0,0,0,260);gI.addColorStop(0,'rgba(124,58,237,.12)');gI.addColorStop(1,'rgba(124,58,237,.01)');
+    const labC={{ dashboard_data.gasto_mes_labels|tojson }};
+    const labI={{ dashboard_data.investimento_mes_labels|tojson }};
+    const allL=[...new Set([...labC,...labI])].sort((a,b)=>{const p=s=>{const m=s.match(/(\d+)\/(\d+)/);return m?parseInt(m[2])*100+parseInt(m[1]):0;};return p(a)-p(b);});
+    const vC={{ dashboard_data.gasto_mes_values|tojson }};
+    const vI={{ dashboard_data.investimento_mes_values|tojson }};
+    const mC=Object.fromEntries(labC.map((l,i)=>[l,vC[i]]));
+    const mI=Object.fromEntries(labI.map((l,i)=>[l,vI[i]]));
+    const c=new Chart(ctx,{type:'line',data:{labels:allL,datasets:[
+      {label:'OPEX',data:allL.map(l=>mC[l]||0),borderColor:'#d97706',backgroundColor:gC,fill:true,tension:.4,pointRadius:4,pointHoverRadius:6,pointBackgroundColor:'#d97706',pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5},
+      {label:'CAPEX',data:allL.map(l=>mI[l]||0),borderColor:'#7c3aed',backgroundColor:gI,fill:true,tension:.4,pointRadius:4,pointHoverRadius:6,pointBackgroundColor:'#7c3aed',pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5}
+    ]},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true,position:'top',labels:{color:t.muted,padding:14,font:{weight:'600',size:11}}},tooltip:tooltipOpts(t)},
+      scales:{x:{ticks:{color:t.muted},grid:{color:t.gridSoft,drawBorder:false}},y:{ticks:{color:t.muted,callback:v=>v>100?brMoney(v):v},grid:{color:t.grid,drawBorder:false}}}}});
+    chartHolders.push(c);
+  }
+
+  // Donuts
+  function donut(id,labels,values,colors){
+    const el=document.getElementById(id);if(!el)return;
+    const c=new Chart(el.getContext('2d'),{type:'doughnut',data:{labels,datasets:[{data:values,backgroundColor:colors,borderColor:getComputedStyle(document.documentElement).getPropertyValue('--surface').trim()||'#fff',borderWidth:3,hoverOffset:8}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'68%',animation:false,plugins:{legend:{position:'bottom',labels:{color:t.muted,padding:14,font:{size:11,weight:'600'}}},tooltip:tooltipOpts(t)}}});
+    chartHolders.push(c);
+  }
+  donut('osStatusChart',{{ dashboard_data.os_status_labels|tojson }},{{ dashboard_data.os_status_values|tojson }},[P.blue,P.teal,P.rose]);
+  donut('osTipoChart',{{ dashboard_data.os_tipo_labels|tojson }},{{ dashboard_data.os_tipo_values|tojson }},[P.indigo,P.green]);
+
+  // Barras horizontais
+  function hBar(id,labels,values,color,cb){
+    const el=document.getElementById(id);if(!el)return;
+    const c=new Chart(el.getContext('2d'),{type:'bar',data:{labels,datasets:[{data:values,backgroundColor:color,borderRadius:8,borderSkipped:false,maxBarThickness:28}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:false,indexAxis:'y',
+        plugins:{legend:{display:false},tooltip:tooltipOpts(t)},
+        scales:{x:{ticks:{color:t.muted},grid:{color:t.gridSoft,drawBorder:false}},y:{ticks:{color:t.muted},grid:{display:false}}}}});
+    if(cb)c.options.onClick=(evt,els)=>{const h=els&&els[0];if(h)cb(labels[h.index]);};
+    chartHolders.push(c);
+  }
+  const goTo=u=>window.location.href=u;
+  const uw=(b,p)=>{const u=new URL(b,location.origin);Object.entries(p||{}).forEach(([k,v])=>{if(v!=null&&String(v).trim())u.searchParams.set(k,v);});return u.pathname+u.search;};
+  hBar('osSistemaChart',{{ dashboard_data.os_sistema_labels|tojson }},{{ dashboard_data.os_sistema_values|tojson }},P.indigo,l=>goTo(uw('/os',{q:l})));
+  hBar('osAtrasadasChart',{{ dashboard_data.os_atrasadas_labels|tojson }},{{ dashboard_data.os_atrasadas_values|tojson }},P.rose,l=>goTo(uw('/os',{status:'atrasadas',q:l})));
+  hBar('componentesSistemaChart',{{ dashboard_data.componentes_sistema_labels|tojson }},{{ dashboard_data.componentes_sistema_values|tojson }},P.teal,l=>{if(!l.toLowerCase().includes('sem'))goTo(uw('/os',{componentes:'Sim',q:l}));});
+  hBar('componentesTipoChart',{{ dashboard_data.componentes_tipo_labels|tojson }},{{ dashboard_data.componentes_tipo_values|tojson }},P.sky,l=>{if(!l.toLowerCase().includes('sem'))goTo(uw('/os',{componentes:'Sim',q:l}));});
+  hBar('equipamentosCriticosChart',{{ dashboard_data.equipamentos_criticos_labels|tojson }},{{ dashboard_data.equipamentos_criticos_values|tojson }},P.amber,l=>{if(!l.toLowerCase().includes('sem'))goTo(uw('/os',{q:l}));});
+}
+
+function queueCharts(){if(chartBuildQueued)return;chartBuildQueued=true;if('requestIdleCallback'in window)requestIdleCallback(createCharts,{timeout:400});else setTimeout(createCharts,60);}
+queueCharts();
+window.addEventListener('gg-theme-change',queueCharts);
+
+// ── Mapa Leaflet ──────────────────────────────────────────
+let _map = null, _modoRota = false, _rotaLayer = null;
+let _rotaMarkers = [], _tecMarkers = {};
+let _buscaTimer = null;
+
+function iniciarMapa(){
+  if(_map) return;
+  if(typeof L === 'undefined') {
+    setTimeout(iniciarMapa, 200);
+    return;
+  }
+  try {
+    const mapEl = document.getElementById('map');
+    if(!mapEl) return;
+    // Usa 100% do container — não força altura fixa
+    mapEl.style.width = '100%';
+    mapEl.style.height = '100%';
+    // Garante que o pai também tem altura
+    const mapaCard = document.getElementById('mapaCard');
+    if(mapaCard) {
+      mapaCard.style.minHeight = '640px';
+    }
+
+    _map = L.map('map', {
+      zoomControl: false,
+      attributionControl: false,
+      scrollWheelZoom: true,
+    }).setView([-22.9, -47.1], 13);
+
+    // Tiles CartoDB — dark ou light conforme tema
+    var _mapIsDark = document.documentElement.getAttribute('data-theme')==='dark';
+    var _dashTileLayer = L.tileLayer(
+      _mapIsDark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                 : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd',
+    }).addTo(_map);
+
+    // Trocar tiles quando tema muda
+    window.addEventListener('iris-theme-change', function(e){
+      var dark = e.detail.theme === 'dark';
+      if(_dashTileLayer) _map.removeLayer(_dashTileLayer);
+      _dashTileLayer = L.tileLayer(
+        dark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+             : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        {maxZoom:19, subdomains:'abcd'}
+      ).addTo(_map);
+    });
+
+    // Controle de zoom no canto inferior direito
+    L.control.zoom({ position: 'bottomright' }).addTo(_map);
+
+    // Click no mapa para traçar rota
+    _map.on('click', async function(e) {
+      if(!_modoRota) return;
+      await tracarRotaParaPonto(e.latlng.lat, e.latlng.lng);
+    });
+
+  } catch(err) {
+    const el = document.getElementById('map');
+    if(el) el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9ca3af;font-size:.84rem">Mapa indisponível</div>';
+  }
+}
+
+function criarIconeTecnico(t) {
+  const cor = t.cor || '#2563eb';
+  const temFoto = t.foto_url;
+  const html = `
+    <div class="mapa-marker-wrap">
+      <div class="mapa-marker-bubble" style="background:${cor}">
+        ${temFoto
+          ? `<img src="${t.foto_url}" alt="${t.iniciais}">`
+          : `<span>${t.iniciais}</span>`}
+      </div>
+      <div class="mapa-marker-name">${t.nome.split(' ')[0]}</div>
+    </div>`;
+  return L.divIcon({
+    html,
+    className: '',
+    iconSize: [60, 52],
+    iconAnchor: [30, 52],
+    popupAnchor: [0, -52],
+  });
+}
+
+async function atualizarMapa(){
+  iniciarMapa();
+  try {
+    const r = await fetch('/api/campo/tecnicos-mapa', {cache:'no-store'});
+    if(r.redirected && r.url.includes('/login')) return;
+    if(!r.ok) return;
+    const d = await r.json();
+    if(!d.ok) return;
+    const ts = d.tecnicos || [];
+
+    // Atualiza badge
+    document.getElementById('mapaCount').textContent = ts.length;
+    const dot = document.getElementById('mapaBadgeDot');
+    if(dot) dot.style.background = ts.length ? '#22c55e' : '#94a3b8';
+
+    // Remove marcadores antigos
+    Object.values(_tecMarkers).forEach(m => _map?.removeLayer(m));
+    _tecMarkers = {};
+
+    // Adiciona marcadores dos técnicos
+    ts.filter(t => t.lat && t.lng).forEach(t => {
+      const marker = L.marker([t.lat, t.lng], {icon: criarIconeTecnico(t), zIndexOffset: 1000});
+      const popupHtml = `
+        <div class="mapa-popup">
+          <div class="mapa-popup-nome">${t.nome}</div>
+          ${t.os?.numero ? `<div class="mapa-popup-os">O.S. #${t.os.numero} · ${t.os.sistema||''}</div>` : '<div class="mapa-popup-os">Sem O.S. ativa</div>'}
+          <a class="mapa-popup-link" href="/os/lista">Ver O.S. <i class="bi bi-arrow-right"></i></a>
+        </div>`;
+      marker.bindPopup(popupHtml, {maxWidth: 200, className: 'mapa-popup-container'});
+      if(_map) marker.addTo(_map);
+      _tecMarkers[t.id] = marker;
+    });
+
+    // Ajusta o zoom para mostrar todos os técnicos
+    if(ts.length > 0 && _map && !_modoRota) {
+      const coords = ts.filter(t => t.lat && t.lng).map(t => [t.lat, t.lng]);
+      if(coords.length === 1) {
+        _map.setView(coords[0], 14);
+      } else if(coords.length > 1) {
+        _map.fitBounds(L.latLngBounds(coords), {padding: [40, 40], maxZoom: 15});
+      }
+    }
+
+    // Lista de técnicos abaixo do badge
+    const listEl = document.getElementById('tecnicosList');
+    if(listEl) {
+      listEl.innerHTML = ts.length ? ts.map(t => `
+        <div class="mapa-tec-chip" onclick="focarTecnico(${t.id})">
+          <div class="mapa-tec-avatar" style="background:${t.cor||'#2563eb'}">
+            ${t.foto_url ? `<img src="${t.foto_url}" alt="${t.iniciais}">` : t.iniciais}
+          </div>
+          <div>
+            <div class="mapa-tec-nome">${t.nome.split(' ')[0]}</div>
+            ${t.os?.numero ? `<div class="mapa-tec-os">O.S. #${t.os.numero}</div>` : ''}
+          </div>
+        </div>`).join('') : '';
+    }
+  } catch(err) { console.warn('Mapa:', err); }
+}
+
+function focarTecnico(id) {
+  const m = _tecMarkers[id];
+  if(m && _map) { _map.setView(m.getLatLng(), 16); m.openPopup(); }
+}
+
+// ── Busca de endereço ────────────────────────────────────
+const _searchInput = () => document.getElementById('mapaBusca');
+const _searchResults = () => document.getElementById('mapaBuscaResults');
+
+function configurarBusca() {
+  const inp = _searchInput();
+  if(!inp) return;
+  inp.addEventListener('input', () => {
+    clearTimeout(_buscaTimer);
+    const q = inp.value.trim();
+    if(q.length < 3) { esconderResultados(); return; }
+    _buscaTimer = setTimeout(() => buscarEndereco(q), 400);
+  });
+  inp.addEventListener('keydown', e => {
+    if(e.key === 'Escape') esconderResultados();
+    if(e.key === 'Enter') {
+      const first = _searchResults()?.querySelector('.mapa-search-result');
+      if(first) first.click();
+    }
+  });
+  document.addEventListener('click', e => {
+    if(!e.target.closest('.mapa-search-wrap')) esconderResultados();
+  });
+}
+
+async function buscarEndereco(q) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q + ' Brasil')}&format=json&limit=5&addressdetails=1`;
+    const r = await fetch(url, {headers:{'Accept-Language':'pt-BR'}});
+    const data = await r.json();
+    mostrarResultados(data);
+  } catch(e) {}
+}
+
+function mostrarResultados(data) {
+  const el = _searchResults();
+  if(!el) return;
+  if(!data.length) {
+    el.innerHTML = '<div class="mapa-search-result" style="color:#9ca3af">Nenhum resultado encontrado.</div>';
+    el.style.display = 'block';
+    return;
+  }
+  el.innerHTML = data.map((item, i) => `
+    <div class="mapa-search-result" onclick="irParaEndereco(${item.lat}, ${item.lon}, '${(item.display_name||'').replace(/'/g,"&#39;").slice(0,60)}')">
+      <i class="bi bi-geo-alt" style="color:#9ca3af;margin-right:6px;font-size:.8rem"></i>${(item.display_name||'').slice(0, 60)}…
+    </div>`).join('');
+  el.style.display = 'block';
+}
+
+function esconderResultados() {
+  const el = _searchResults();
+  if(el) el.style.display = 'none';
+}
+
+function irParaEndereco(lat, lng, nome) {
+  iniciarMapa();
+  esconderResultados();
+  const inp = _searchInput();
+  if(inp) inp.value = nome;
+  _map.setView([lat, lng], 16);
+  // Se em modo rota, traça rota para esse ponto
+  if(_modoRota) {
+    tracarRotaParaPonto(lat, lng);
+  } else {
+    // Apenas vai para o local com marcador temporário
+    const m = L.marker([lat, lng]).addTo(_map);
+    m.bindPopup(`<div style="font-size:.82rem;font-weight:600">${nome}</div>`).openPopup();
+    setTimeout(() => _map?.removeLayer(m), 8000);
+  }
+}
+
+// ── Rota ─────────────────────────────────────────────────
+function toggleModoRota() {
+  _modoRota = !_modoRota;
+  const btn = document.getElementById('mapaRotaBtn');
+  if(btn) {
+    btn.classList.toggle('ativo', _modoRota);
+    btn.innerHTML = _modoRota
+      ? '<i class="bi bi-cursor-fill"></i> Clique no mapa'
+      : '<i class="bi bi-signpost-2"></i> Rota';
+  }
+  if(!_modoRota) limparRota();
+}
+
+async function tracarRotaParaPonto(lat, lng) {
+  // Limpa rota anterior
+  if(_rotaLayer) { _map.removeLayer(_rotaLayer); _rotaLayer = null; }
+  _rotaMarkers.forEach(m => _map.removeLayer(m));
+  _rotaMarkers = [];
+
+  // Marcador de destino
+  const dest = L.marker([lat, lng], {
+    icon: L.divIcon({
+      html: '<div style="width:14px;height:14px;border-radius:50%;background:#ef4444;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>',
+      className: '', iconSize: [14,14], iconAnchor: [7,7]
+    })
+  }).addTo(_map);
+  _rotaMarkers.push(dest);
+
+  // Tenta traçar rota via OSRM (gratuito, sem API key)
+  try {
+    // Usa o centro do mapa atual como origem
+    const center = _map.getCenter();
+    const orig = `${center.lng},${center.lat}`;
+    const destStr = `${lng},${lat}`;
+    const url = `https://router.project-osrm.org/route/v1/driving/${orig};${destStr}?overview=full&geometries=geojson`;
+    const r = await fetch(url);
+    const d = await r.json();
+    if(d.routes?.length) {
+      const geo = d.routes[0].geometry;
+      _rotaLayer = L.geoJSON(geo, {
+        style: {color:'#1d4ed8', weight:5, opacity:.8, dashArray: null}
+      }).addTo(_map);
+      _map.fitBounds(_rotaLayer.getBounds(), {padding: [40, 40]});
+      // Mostra botão limpar
+      document.getElementById('mapaLimparBtn').style.display = '';
+      // Distância e tempo
+      const km = (d.routes[0].distance / 1000).toFixed(1);
+      const min = Math.round(d.routes[0].duration / 60);
+      const popup = L.popup({closeButton:false})
+        .setLatLng([lat, lng])
+        .setContent(`<div style="font-size:.8rem;font-weight:700">${km} km · ~${min} min</div>`)
+        .openOn(_map);
+    }
+  } catch(e) {
+    // Fallback: linha reta
+    const center = _map.getCenter();
+    _rotaLayer = L.polyline([[center.lat, center.lng], [lat, lng]], {
+      color:'#1d4ed8', weight:4, opacity:.7, dashArray:'8,6'
+    }).addTo(_map);
+    _map.fitBounds(_rotaLayer.getBounds(), {padding:[40,40]});
+    document.getElementById('mapaLimparBtn').style.display = '';
+  }
+}
+
+function limparRota() {
+  if(_rotaLayer) { _map?.removeLayer(_rotaLayer); _rotaLayer = null; }
+  _rotaMarkers.forEach(m => _map?.removeLayer(m));
+  _rotaMarkers = [];
+  _modoRota = false;
+  const btn = document.getElementById('mapaRotaBtn');
+  if(btn) { btn.classList.remove('ativo'); btn.innerHTML = '<i class="bi bi-signpost-2"></i> Rota'; }
+  document.getElementById('mapaLimparBtn').style.display = 'none';
+  const inp = _searchInput();
+  if(inp) inp.value = '';
+}
+
+// ── Init ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  iniciarMapa();
+  configurarBusca();
+  atualizarMapa();
+  setInterval(atualizarMapa, 30000);
+  // Leaflet precisa recalcular o tamanho após o layout estar pronto
+  [100, 300, 600, 1200].forEach(t => setTimeout(() => { try { _map?.invalidateSize(); } catch(e){} }, t));
+});
+
+// Máscaras período
+(function(){
+  function mask(el){el.addEventListener('input',function(){let v=this.value.replace(/\D/g,'');if(v.length>2)v=v.slice(0,2)+'/'+v.slice(2,6);this.value=v;});el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('periodoForm')?.submit();}});}
+  const m=document.getElementById('periodoMes');const f=document.getElementById('periodoMesFim');
+  if(m)mask(m);if(f)mask(f);
+})();
+</script>
+{% endblock %}

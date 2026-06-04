@@ -1,0 +1,528 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.outlook-tabs-card{position:sticky;top:12px;z-index:20} 
+.outlook-tabbar{display:flex;flex-wrap:wrap;gap:10px} 
+.outlook-tabbtn{border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:999px;padding:10px 16px;font-weight:800;display:inline-flex;align-items:center;gap:8px;transition:all .18s ease} 
+.outlook-tabbtn:hover{transform:translateY(-1px);box-shadow:var(--shadow)} 
+.outlook-tabbtn.active{background:linear-gradient(180deg,var(--blue) 0%, var(--blue-dark) 100%);color:#fff;border-color:transparent;box-shadow:0 12px 20px rgba(42,84,141,.18)} 
+.outlook-tabpanel{display:none;animation:cardRise .25s ease both} 
+.outlook-tabpanel.active{display:block} 
+@media (max-width:1200px){.outlook-tabs-card{position:relative;top:0}}
+</style>
+<section class="hero">
+  <h1>Central de E-mail</h1>
+  <p>Agora com tudo num só lugar: cadastro, modelos, revisão, testes, monitoramento e histórico do Outlook sem caça ao tesouro.</p>
+</section>
+
+<div class="content-card outlook-tabs-card">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+    <div>
+      <h3 class="mb-1">Navegação rápida do módulo</h3>
+      <div class="mini">As abas ficam visíveis no topo e trocam a área principal sem sumir com o resto do sistema.</div>
+    </div>
+    <div class="mini">Tudo roda dentro da mesma tela: cadastro, teste, envio e histórico.</div>
+  </div>
+  <div class="outlook-tabbar mt-3">
+    <button class="outlook-tabbtn active" type="button" data-tab-target="cadastros"><i class="bi bi-people-fill"></i>Cadastros</button>
+    <button class="outlook-tabbtn" type="button" data-tab-target="modelos"><i class="bi bi-layout-text-window-reverse"></i>Modelos</button>
+    <button class="outlook-tabbtn" type="button" data-tab-target="preparo"><i class="bi bi-envelope-open-heart-fill"></i>Preparação</button>
+    <button class="outlook-tabbtn" type="button" data-tab-target="monitor"><i class="bi bi-radar"></i>Monitoramento</button>
+    <button class="outlook-tabbtn" type="button" data-tab-target="testes"><i class="bi bi-bezier2"></i>Testes</button>
+    <button class="outlook-tabbtn" type="button" data-tab-target="historico"><i class="bi bi-clock-history"></i>Histórico</button>
+  </div>
+</div>
+
+<div class="outlook-tabpanel active" data-tab-panel="cadastros">
+
+<div class="grid-2 mb-3">
+  <div class="soft-card">
+    <div class="metric">Remetentes cadastrados</div>
+    <div class="metric-value" style="color:#3f8edb">{{ senders|length }}</div>
+    <div class="mini">Conta principal já semeada: auxiliar.adm@getec-capivari.com.br</div>
+  </div>
+  <div class="soft-card">
+    <div class="metric">Contatos salvos</div>
+    <div class="metric-value">{{ contacts|length }}</div>
+    <div class="mini">TO e CC separados por área, com múltiplos e-mails usando <code>;</code>.</div>
+  </div>
+</div>
+
+{% if pending_alerts %}
+<div class="content-card" id="alertas-monitorados">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+      <h3 class="mb-1">Alertas do monitoramento</h3>
+      <div class="mini">SC aprovadas, boletos e NFs detectados no e-mail aparecem aqui para sua revisão.</div>
+    </div>
+    <span class="badge text-bg-danger">{{ pending_alerts|length }} pendente(s)</span>
+  </div>
+  <div class="row g-3">
+    {% for alert in pending_alerts %}
+    <div class="col-md-6">
+      <div class="soft-card h-100 border {% if alert.evento == 'boleto_nf_detectado' %}border-danger-subtle{% else %}border-warning-subtle{% endif %}">
+        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+          <div>
+            <div class="fw-bold">{{ alert.status_processamento or alert.evento }}</div>
+            <div class="mini">{{ alert.quando }} • {{ alert.remetente }}</div>
+          </div>
+          <span class="badge {% if alert.evento == 'boleto_nf_detectado' %}text-bg-danger{% else %}text-bg-warning{% endif %}">
+            {% if alert.evento == 'boleto_nf_detectado' %}📄 Boleto/NF{% else %}{{ alert.sugestao_fluxo or 'monitorado' }}{% endif %}
+          </span>
+        </div>
+        <div class="mini mb-2"><strong>Assunto:</strong> {{ alert.assunto or 'Sem assunto' }}</div>
+
+        {% if alert.evento == 'boleto_nf_detectado' %}
+          {# ── Card de Boleto/NF detectado ── #}
+          {% if alert.detalhes_json %}
+          <div class="alert alert-danger py-2 mb-3" style="font-size:.85rem">
+            {% for d in alert.detalhes_json %}<div>{{ d }}</div>{% endfor %}
+          </div>
+          {% endif %}
+          <form method="post" action="{{ url_for('outlook_monitor_event_confirmar_boleto', event_id=alert.id) }}">
+            <div class="row g-2 mb-3">
+              {% set valor_det = '' %}{% set venc_det = '' %}{% set forn_det = '' %}{% set tipo_det = 'Boleto' %}
+              {% for d in (alert.detalhes_json or []) %}
+                {% if 'Valor:' in d %}{% set valor_det = d.split('R$')[-1].strip() if 'R$' in d else d.split(':')[-1].strip() %}{% endif %}
+                {% if 'Vencimento:' in d %}{% set venc_det = d.split(':')[-1].strip() %}{% endif %}
+                {% if 'Fornecedor:' in d %}{% set forn_det = d.split(':',1)[-1].strip() %}{% endif %}
+                {% if 'Tipo:' in d %}{% set tipo_det = d.split(':')[-1].strip() %}{% endif %}
+              {% endfor %}
+              <div class="col-12">
+                <label class="form-label fw-bold mb-1" style="font-size:.8rem">Fornecedor *</label>
+                <input class="form-control form-control-sm" name="fornecedor" value="{{ forn_det if forn_det and forn_det != 'não identificado' else '' }}" placeholder="Nome do fornecedor" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold mb-1" style="font-size:.8rem">Valor *</label>
+                <input class="form-control form-control-sm" name="valor" value="{{ valor_det }}" placeholder="0,00" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold mb-1" style="font-size:.8rem">Vencimento</label>
+                <input class="form-control form-control-sm" name="vencimento" value="{{ venc_det }}" placeholder="dd/mm/aaaa">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold mb-1" style="font-size:.8rem">Tipo</label>
+                <select class="form-select form-select-sm" name="tipo_lancamento">
+                  <option value="Gasto">Gasto</option>
+                  <option value="Investimento">Investimento</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold mb-1" style="font-size:.8rem">Descrição</label>
+                <input class="form-control form-control-sm" name="descricao" value="{{ alert.assunto or '' }}" placeholder="Descrição do serviço/produto">
+              </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button class="btn-gg btn-green" type="submit"><i class="bi bi-plus-circle-fill"></i>Adicionar pagamento</button>
+            </div>
+          </form>
+          <form method="post" action="{{ url_for('outlook_monitor_event_dismiss', event_id=alert.id) }}" class="mt-2">
+            <button class="btn-gg btn-ghost btn-sm" type="submit"><i class="bi bi-bell-slash-fill"></i>Ignorar</button>
+          </form>
+
+        {% else %}
+          {# ── Card de SC aprovada / fluxo normal ── #}
+          <div class="mini"><strong>SC:</strong> {{ alert.numero_sc or '—' }} • <strong>Pedido:</strong> {{ alert.numero_pedido or '—' }} • <strong>Registro:</strong> {% if alert.pagamento_id %}#{{ alert.pagamento_id }}{% else %}—{% endif %}</div>
+          {% if alert.detalhes_json %}
+          <div class="alert alert-light py-2 mt-3 mb-2" style="white-space:pre-line">{% for d in alert.detalhes_json %}• {{ d }}{% if not loop.last %}
+{% endif %}{% endfor %}</div>
+          {% endif %}
+          <div class="d-flex gap-2 flex-wrap mt-2">
+            <form method="post" action="{{ url_for('outlook_monitor_event_prepare', event_id=alert.id) }}">
+              <input type="hidden" name="flow" value="{{ alert.sugestao_fluxo or 'compras' }}">
+              <button class="btn-gg btn-green" type="submit"><i class="bi bi-send-check-fill"></i>Preparar envio {{ 'para Compras' if (alert.sugestao_fluxo or 'compras') == 'compras' else '' }}</button>
+            </form>
+            <form method="post" action="{{ url_for('outlook_monitor_event_dismiss', event_id=alert.id) }}">
+              <button class="btn-gg btn-ghost" type="submit"><i class="bi bi-bell-slash-fill"></i>Dispensar alerta</button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="modal fade" id="monitorAlertModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-bell-fill me-2 text-warning"></i>Novo alerta detectado</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        {% set alert = pending_alerts[0] %}
+        <div class="mini mb-2">O sistema detectou um evento importante. Revise abaixo.</div>
+        <div class="soft-card">
+          <div class="fw-bold mb-1">{{ alert.status_processamento or alert.evento }}</div>
+          <div class="mini mb-2">{{ alert.quando }} • {{ alert.remetente }}</div>
+          <div class="mb-2"><strong>Assunto:</strong> {{ alert.assunto or 'Sem assunto' }}</div>
+          {% if alert.evento == 'boleto_nf_detectado' and alert.detalhes_json %}
+            {% for d in alert.detalhes_json %}<div class="mini">{{ d }}</div>{% endfor %}
+          {% else %}
+            <div class="mini"><strong>SC:</strong> {{ alert.numero_sc or '—' }} • <strong>Pedido:</strong> {{ alert.numero_pedido or '—' }}</div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <form method="post" action="{{ url_for('outlook_monitor_event_dismiss', event_id=alert.id) }}">
+          <button class="btn-gg btn-ghost" type="submit">Dispensar</button>
+        </form>
+        {% if alert.evento != 'boleto_nf_detectado' %}
+        <form method="post" action="{{ url_for('outlook_monitor_event_prepare', event_id=alert.id) }}">
+          <input type="hidden" name="flow" value="{{ alert.sugestao_fluxo or 'compras' }}">
+          <button class="btn-gg btn-green" type="submit"><i class="bi bi-arrow-right-circle-fill"></i>Abrir revisão do envio</button>
+        </form>
+        {% endif %}
+        <button class="btn-gg btn-blue" data-bs-dismiss="modal">Ver detalhes na tela</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="content-card">
+  <h3 class="mb-3">Configuração de remetente</h3>
+  <form method="post" action="{{ url_for('outlook_sender_save') }}">
+    <div class="row g-3">
+      <div class="col-md-3"><input class="form-control" name="nome" placeholder="Nome do remetente"></div>
+      <div class="col-md-3"><input class="form-control" name="email" placeholder="email@dominio.com.br"></div>
+      <div class="col-md-2">
+        <select class="form-select" name="provider">
+          <option value="desktop">Outlook do PC</option>
+          <option value="graph">Microsoft Graph</option>
+          <option value="smtp">SMTP Outlook</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-center gap-3">
+        <label class="mini"><input type="checkbox" name="ativo" checked> Ativo</label>
+        <label class="mini"><input type="checkbox" name="is_default"> Padrão</label>
+      </div>
+      <div class="col-md-2"><input class="form-control" name="observacoes" placeholder="Observações"></div>
+      <div class="col-12"><button class="btn-gg btn-blue" type="submit"><i class="bi bi-floppy-fill"></i>Salvar remetente</button></div>
+    </div>
+  </form>
+  <form method="get" action="{{ url_for('outlook_page') }}#monitor-history" class="toolbar-form mt-3">
+    <div class="field-inline"><label>Evento</label><select class="form-select" name="monitor_event"><option value="">Todos</option><option value="sc_aprovada" {% if monitor_filters.event == 'sc_aprovada' %}selected{% endif %}>SC aprovada</option><option value="sc_fechada_100" {% if monitor_filters.event == 'sc_fechada_100' %}selected{% endif %}>SC 100% fechada</option><option value="boleto_nf_detectado" {% if monitor_filters.event == 'boleto_nf_detectado' %}selected{% endif %}>Boleto/NF detectado</option><option value="pedido_identificado" {% if monitor_filters.event == 'pedido_identificado' %}selected{% endif %}>Pedido identificado</option><option value="ignorado" {% if monitor_filters.event == 'ignorado' %}selected{% endif %}>Ignorado</option></select></div>
+    <div class="field-inline"><label>Popup</label><select class="form-select" name="monitor_popup"><option value="">Todos</option><option value="novo" {% if monitor_filters.popup == 'novo' %}selected{% endif %}>Novo</option><option value="dispensado" {% if monitor_filters.popup == 'dispensado' %}selected{% endif %}>Dispensado</option><option value="acao_tomada" {% if monitor_filters.popup == 'acao_tomada' %}selected{% endif %}>Ação tomada</option></select></div>
+    <div class="field-inline"><label>Status lido</label><input class="form-control" name="monitor_status" value="{{ monitor_filters.status }}" placeholder="SC APROVADA, IGNORADO..."></div>
+    <div class="field-inline"><label>Buscar</label><input class="form-control" name="monitor_search" value="{{ monitor_filters.search }}" placeholder="assunto, SC, pedido, remetente"></div>
+    <button class="btn-gg btn-blue" type="submit"><i class="bi bi-funnel-fill"></i>Filtrar</button>
+    <a class="btn-gg btn-soft" href="{{ url_for('outlook_monitor_events_export', monitor_event=monitor_filters.event, monitor_popup=monitor_filters.popup, monitor_status=monitor_filters.status, monitor_link=monitor_filters.link, monitor_flow=monitor_filters.flow, monitor_from=monitor_filters.from, monitor_to=monitor_filters.to, monitor_search=monitor_filters.search) }}"><i class="bi bi-download"></i>Exportar CSV</a>
+  </form>
+
+  <div class="grid-4 mt-3">
+    <div class="metric-card"><div class="metric">Filtrados agora</div><div class="metric-value">{{ monitor_counts.filtrados }}</div><div class="mini">Total geral: {{ monitor_counts.total }}</div></div>
+    <div class="metric-card"><div class="metric">Vinculados</div><div class="metric-value" style="color:#1e8b57">{{ monitor_counts.vinculados }}</div><div class="mini">Sem vínculo: {{ monitor_counts.nao_vinculados }}</div></div>
+    <div class="metric-card"><div class="metric">Ignorados</div><div class="metric-value" style="color:#b0723e">{{ monitor_counts.ignorados }}</div><div class="mini">Últimas 24h: {{ monitor_counts.ultimas_24h }}</div></div>
+    <div class="metric-card"><div class="metric">Auditoria viva</div><div class="mini">Último evento: <strong>{{ monitor_audit.ultimo_evento or '—' }}</strong></div><div class="mini">Pendentes popup: <strong>{{ monitor_audit.pendentes_popup }}</strong></div></div>
+  </div>
+
+  <div class="table-shell mt-3" id="monitor-history">
+    <div class="table-responsive">
+      <table class="table-gg">
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Provider</th><th>Status</th><th>Padrão</th><th>Observações</th></tr></thead>
+        <tbody>
+          {% for s in senders %}<tr><td>{{ s.nome }}</td><td>{{ s.email }}</td><td>{{ s.provider|upper }}</td><td>{% if s.ativo %}<span class="badge text-bg-success">Ativo</span>{% else %}<span class="badge text-bg-secondary">Inativo</span>{% endif %}</td><td>{% if s.is_default %}<span class="badge text-bg-primary">Principal</span>{% else %}-{% endif %}</td><td>{{ s.observacoes }}</td></tr>
+          {% else %}<tr><td colspan="6" class="empty">Sem remetentes cadastrados.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="content-card">
+  <h3 class="mb-3">Cadastro de destinatários e CC</h3>
+  <form method="post" action="{{ url_for('outlook_contact_save') }}">
+    <input type="hidden" name="id" value="{{ edit_contact.id if edit_contact else '' }}">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-2"><select class="form-select" name="area"><option value="Compras" {% if edit_contact and edit_contact.area == 'Compras' %}selected{% endif %}>Compras</option><option value="Contábil" {% if edit_contact and edit_contact.area == 'Contábil' %}selected{% endif %}>Contábil</option></select></div>
+      <div class="col-md-2"><select class="form-select" name="tipo"><option value="TO" {% if edit_contact and edit_contact.tipo == 'TO' %}selected{% endif %}>Destinatário principal</option><option value="CC" {% if edit_contact and edit_contact.tipo == 'CC' %}selected{% endif %}>CC</option></select></div>
+      <div class="col-md-2"><input class="form-control" name="nome" placeholder="Nome do grupo" value="{{ edit_contact.nome if edit_contact else '' }}"></div>
+      <div class="col-md-4"><input class="form-control" name="emails" placeholder="email1@dominio.com.br;email2@dominio.com.br" value="{{ edit_contact.emails if edit_contact else '' }}"></div>
+      <div class="col-md-2"><input class="form-control" name="observacoes" placeholder="Observações" value="{{ edit_contact.observacoes if edit_contact else '' }}"></div>
+      <div class="col-12 d-flex gap-2 flex-wrap">
+        <button class="btn-gg btn-blue" type="submit"><i class="bi bi-person-lines-fill"></i>{{ 'Atualizar contato' if edit_contact else 'Salvar contato' }}</button>
+        {% if edit_contact %}<a class="btn-gg btn-soft" href="{{ url_for('outlook_page') }}"><i class="bi bi-x-circle"></i>Cancelar edição</a>{% endif %}
+      </div>
+    </div>
+  </form>
+  <div class="table-shell mt-3">
+    <div class="table-responsive">
+      <table class="table-gg">
+        <thead><tr><th>Área</th><th>Tipo</th><th>Nome</th><th>E-mails</th><th>Observações</th><th style="width:170px">Ações</th></tr></thead>
+        <tbody>
+          {% for c in contacts %}<tr><td>{{ c.area }}</td><td>{{ c.tipo }}</td><td>{{ c.nome }}</td><td>{{ c.emails }}</td><td>{{ c.observacoes }}</td><td><div class="d-flex gap-2 flex-wrap"><a href="{{ url_for('outlook_contact_edit', contact_id=c.id) }}" class="btn-gg btn-blue btn-sm"><i class="bi bi-pencil-square"></i>Editar</a><a href="{{ url_for('outlook_contact_delete', contact_id=c.id) }}" class="btn-gg btn-red btn-sm" onclick="return confirm('Excluir?');"><i class="bi bi-trash3"></i>Excluir</a></div></td></tr>
+          {% else %}<tr><td colspan="6" class="empty">Sem destinatários cadastrados.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="outlook-tabpanel" data-tab-panel="modelos">
+<div class="content-card">
+  <h3 class="mb-3">Modelos permanentes + monitoramento</h3>
+  <form method="post" action="{{ url_for('outlook_template_save') }}">
+    <div class="row g-3">
+      <div class="col-md-6"><label class="form-label fw-semibold">Assunto Compras</label><input class="form-control" name="compras_subject" value="{{ templates.get('compras_subject', '') }}"></div>
+      <div class="col-md-6"><label class="form-label fw-semibold">Assunto Contábil</label><input class="form-control" name="contabil_subject" value="{{ templates.get('contabil_subject', '') }}"></div>
+      <div class="col-md-6"><label class="form-label fw-semibold">Corpo Compras</label><textarea class="form-control" rows="9" name="compras_body">{{ templates.get('compras_body', '') }}</textarea></div>
+      <div class="col-md-6"><label class="form-label fw-semibold">Corpo Contábil</label><textarea class="form-control" rows="9" name="contabil_body">{{ templates.get('contabil_body', '') }}</textarea></div>
+      <div class="col-md-4"><label class="form-label fw-semibold">E-mail monitorado</label><input class="form-control" name="monitor_email" value="{{ cfg.get('monitor_email', 'notificacao@approvo.com.br') }}"></div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Leitura do monitor</label>
+        <select class="form-select" name="monitor_provider">
+          <option value="desktop" {% if cfg.get('monitor_provider', 'desktop') == 'desktop' %}selected{% endif %}>Outlook do PC</option>
+          <option value="imap" {% if cfg.get('monitor_provider') == 'imap' %}selected{% endif %}>IMAP (Gmail / Outlook online)</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Provider padrão</label>
+        <select class="form-select" name="email_provider">
+          <option value="desktop" {% if cfg.get('email_provider', 'desktop') == 'desktop' %}selected{% endif %}>Outlook do PC</option>
+          <option value="graph" {% if cfg.get('email_provider') == 'graph' %}selected{% endif %}>Microsoft Graph</option>
+          <option value="smtp" {% if cfg.get('email_provider') == 'smtp' %}selected{% endif %}>SMTP Outlook</option>
+        </select>
+      </div>
+      <div class="col-md-5 d-flex align-items-end"><div class="mini">Tokens: <code>{saudacao}</code>, <code>{numero_sc}</code>, <code>{numero_pd}</code>, <code>{fornecedor}</code>, <code>{valor}</code>, <code>{descricao}</code>, <code>{local_unidade}</code>, <code>{forma_pagamento}</code>, <code>{vencimento}</code>.</div></div>
+      <div class="col-12"><button class="btn-gg btn-green" type="submit"><i class="bi bi-save2-fill"></i>Salvar modelos</button></div>
+    </div>
+  </form>
+</div>
+</div>
+
+<div class="outlook-tabpanel" data-tab-panel="preparo">
+<div class="content-card">
+  <h3 class="mb-3">Preparação automática do e-mail</h3>
+  <form method="get" action="{{ url_for('outlook_page') }}" class="toolbar-form">
+    <div class="field-inline"><label>Registro</label><select class="form-select" name="pagamento_id" style="min-width:360px"><option value="">Selecione um pagamento</option>{% for p in pagamentos %}<option value="{{ p.id }}" {% if preview_id == p.id %}selected{% endif %}>#{{ p.id }} — {{ p.fornecedor }} — SC {{ p.numero_documento or '-' }} — Pedido {{ p.sc_pedido or '-' }}</option>{% endfor %}</select></div>
+    <div class="field-inline"><label>Fluxo</label><select class="form-select" name="flow"><option value="compras" {% if preview_flow == 'compras' %}selected{% endif %}>Compras (SC)</option><option value="contabil" {% if preview_flow == 'contabil' %}selected{% endif %}>Contábil (Pedido)</option></select></div>
+    <button class="btn-gg btn-blue" type="submit"><i class="bi bi-eye-fill"></i>Gerar prévia</button>
+  </form>
+  {% if preview %}
+  <div class="grid-2 mt-3">
+    <div class="soft-card">
+      <div class="fw-bold mb-2">Prévia montada automaticamente</div>
+      <div class="mini mb-2"><strong>Área:</strong> {{ preview.area }}</div>
+      <div class="mini mb-2"><strong>Para:</strong> {{ preview.to or 'Não configurado' }}</div>
+      <div class="mini mb-2"><strong>CC:</strong> {{ preview.cc or 'Sem CC' }}</div>
+      <div class="mini mb-2"><strong>Assunto:</strong> {{ preview.subject }}</div>
+      <label class="form-label fw-semibold mt-3">Corpo</label>
+      <textarea class="form-control" rows="14">{{ preview.body }}</textarea>
+    </div>
+    <div class="soft-card">
+      <div class="fw-bold mb-2">Anexos e validações</div>
+      {% if preview.attachments %}<div class="attachment-list mb-2">{% for a in preview.attachments %}<a href="/{{ a }}" target="_blank"><i class="bi bi-paperclip"></i>{{ a.split('/')[-1] }}</a>{% endfor %}</div>{% else %}<div class="mini mb-3">Nenhum anexo encontrado.</div>{% endif %}
+      {% if preview.warnings %}{% for w in preview.warnings %}<div class="alert alert-warning py-2 mb-2">{{ w }}</div>{% endfor %}{% else %}<div class="alert alert-success py-2">Prévia consistente.</div>{% endif %}
+      <form method="post" action="{{ url_for('outlook_send_real') }}" class="mt-3">
+        <input type="hidden" name="payment_id" value="{{ preview.payment.id }}">
+        <input type="hidden" name="flow" value="{{ preview.flow }}">
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label fw-semibold">Remetente</label><select class="form-select" name="sender_id">{% for s in senders %}<option value="{{ s.id }}" {% if default_sender and s.id == default_sender.id %}selected{% endif %}>{{ s.nome }} — {{ s.email }} ({{ s.provider|upper }})</option>{% endfor %}</select></div>
+          <div class="col-md-6"><label class="form-label fw-semibold">Para</label><input class="form-control" name="to" value="{{ preview.to }}"></div>
+          <div class="col-md-6"><label class="form-label fw-semibold">CC</label><input class="form-control" name="cc" value="{{ preview.cc }}"></div>
+          <div class="col-md-6"><label class="form-label fw-semibold">Assunto</label><input class="form-control" name="subject" value="{{ preview.subject }}"></div>
+          <div class="col-12"><label class="form-label fw-semibold">Corpo revisável</label><textarea class="form-control" rows="12" name="body">{{ preview.body }}</textarea></div>
+          <div class="col-12 d-flex gap-2 flex-wrap">
+            <button class="btn-gg btn-green" type="submit" {% if not preview.can_send %}disabled{% endif %}><i class="bi bi-send-fill"></i>Enviar e-mail real</button>
+            <a class="btn-gg btn-amber" href="{{ url_for('outlook_page', pagamento_id=preview.payment.id, flow=preview.flow) }}"><i class="bi bi-arrow-repeat"></i>Atualizar revisão</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty">Escolha um registro de Pagamentos para gerar a prévia.</div>
+  {% endif %}
+</div>
+</div>
+
+<div class="outlook-tabpanel" data-tab-panel="monitor">
+<div class="content-card">
+  <h3 class="mb-3">Monitoramento de e-mails relevantes</h3>
+  <div class="grid-2 mb-3">
+    <div class="soft-card"><div class="metric">Eventos monitorados</div><div class="metric-value">{{ monitor_counts.total }}</div><div class="mini">SC aprovadas: {{ monitor_counts.aprovadas }} • SC fechadas: {{ monitor_counts.fechadas }}</div></div>
+    <div class="soft-card"><div class="metric">Auditoria dos alertas</div><div class="metric-value" style="color:#3f8edb">{{ monitor_counts.acao_tomada }}</div><div class="mini">Ação tomada: {{ monitor_counts.acao_tomada }} • Dispensados: {{ monitor_counts.dispensados }}</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="soft-card">
+      <div class="fw-bold mb-2">Leitura da caixa monitorada</div>
+      <div class="mini mb-2">Endereço monitorado nas regras: <strong>{{ cfg.get('monitor_email', 'notificacao@approvo.com.br') }}</strong></div>
+      <div class="mini mb-2">Modo de leitura: <strong>{{ 'Outlook do PC' if provider_status.monitor_provider == 'desktop' else 'IMAP (Gmail / Outlook online)' }}</strong></div>
+      <div class="mini mb-2">Host IMAP: <code>{{ provider_status.monitor_host }}</code></div>
+      <div class="mini mb-3">Usuário IMAP configurado: <strong>{{ provider_status.monitor_user or 'não informado' }}</strong></div>
+      <div class="alert {% if provider_status.monitor_ready %}alert-success{% else %}alert-warning{% endif %} py-2 mb-3">
+        {% if provider_status.monitor_ready %}As credenciais do monitoramento estão prontas para leitura real por IMAP.
+        {% else %}Para monitorar a caixa de verdade, preencha <code>MONITOR_IMAP_USER</code> e <code>MONITOR_IMAP_PASS</code> no ambiente.{% endif %}
+      </div>
+      <div class="soft-card mb-3">
+        <div class="fw-bold mb-2">Status do monitor automático</div>
+        <div class="mini"><strong>Worker:</strong> {{ 'ligado' if provider_status.worker.running else 'desligado' }} • <strong>Ambiente:</strong> {{ 'habilitado' if provider_status.worker.enabled else 'desabilitado' }} • <strong>Intervalo:</strong> {{ provider_status.worker.interval_seconds }}s</div>
+        <div class="mini"><strong>Última execução:</strong> {{ provider_status.worker.last_run_at or 'ainda não rodou' }} • <strong>Status:</strong> {{ provider_status.worker.last_status }}</div>
+        <div class="mini"><strong>Resumo:</strong> {{ provider_status.worker.last_summary or 'sem ciclos automáticos ainda' }}</div>
+        {% if provider_status.worker.last_error %}<div class="alert alert-danger py-2 mt-2 mb-0">{{ provider_status.worker.last_error }}</div>{% endif %}
+      </div>
+      <form method="post" action="{{ url_for('outlook_monitor_run') }}" class="row g-3">
+        <input type="hidden" name="mode" value="imap">
+        <div class="col-md-4"><label class="form-label fw-semibold">Máximo de mensagens</label><input class="form-control" type="number" min="1" max="30" name="limit" value="10"></div>
+        <div class="col-md-8 d-flex align-items-end"><button class="btn-gg btn-blue" type="submit"><i class="bi bi-envelope-check-fill"></i>Ler e processar e-mails reais</button></div>
+      </form>
+    </div>
+    <div class="soft-card">
+      <div class="fw-bold mb-2">Simulação do parser</div>
+      <form method="post" action="{{ url_for('outlook_monitor_run') }}" class="row g-3">
+        <input type="hidden" name="mode" value="manual">
+        <div class="col-md-6"><label class="form-label fw-semibold">De</label><input class="form-control" name="sample_from" value="{{ cfg.get('monitor_email', 'notificacao@approvo.com.br') }}"></div>
+        <div class="col-md-6"><label class="form-label fw-semibold">Assunto</label><input class="form-control" name="sample_subject" placeholder="O documento Solicitação de Materiais (12345) foi aprovado"></div>
+        <div class="col-12"><label class="form-label fw-semibold">Corpo</label><textarea class="form-control" rows="6" name="sample_body" placeholder="Boa tarde. SC 100% fechada. Pedido 98765."></textarea></div>
+        <div class="col-12 d-flex justify-content-end"><button class="btn-gg btn-amber" type="submit"><i class="bi bi-cpu-fill"></i>Simular parsing e vínculo</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="table-shell mt-3">
+    <div class="table-responsive">
+      <table class="table-gg">
+        <thead><tr><th>Quando</th><th>Evento</th><th>Status popup</th><th>Remetente</th><th>Assunto</th><th>SC</th><th>Pedido</th><th>Registro</th><th>Sugestão</th><th>Resumo</th><th>Detalhes</th></tr></thead>
+        <tbody>
+          {% for e in monitor_events %}<tr>
+            <td>{{ e.quando }}</td>
+            <td><div>{{ e.status_processamento or e.evento }}</div><div class="mini text-muted">{{ e.evento }}</div></td>
+            <td>{% if (e.popup_status or 'novo') == 'novo' %}<span class="badge text-bg-warning">Novo</span>{% elif e.popup_status == 'acao_tomada' %}<span class="badge text-bg-success">Ação tomada</span>{% elif e.popup_status == 'dispensado' %}<span class="badge text-bg-secondary">Dispensado</span>{% else %}<span class="badge text-bg-light">{{ e.popup_status or '—' }}</span>{% endif %}</td>
+            <td>{{ e.remetente }}</td><td>{{ e.assunto }}</td><td>{{ e.numero_sc or '—' }}</td><td>{{ e.numero_pedido or '—' }}</td>
+            <td>{% if e.pagamento_id %}<span class="badge text-bg-success">#{{ e.pagamento_id }}</span>{% else %}<span class="badge text-bg-light">Sem vínculo</span>{% endif %}</td>
+            <td>{{ e.sugestao_fluxo or '—' }}</td>
+            <td class="mini">{{ e.corpo_resumo|truncate(140, True, '…') if e.corpo_resumo else '—' }}</td>
+            <td style="white-space:pre-line">{% if e.detalhes_json %}{% for d in e.detalhes_json %}• {{ d }}{% if not loop.last %}
+{% endif %}{% endfor %}{% else %}—{% endif %}</td>
+          </tr>{% else %}<tr><td colspan="11" class="empty">Nenhum evento monitorado ainda.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="outlook-tabpanel" data-tab-panel="testes">
+<div class="content-card" id="monitor-tests">
+  <h3 class="mb-3">Testes avançados do monitoramento</h3>
+  <div class="grid-2">
+    <div class="soft-card">
+      <div class="fw-bold mb-2">Bateria automática do parser</div>
+      <div class="mini mb-3">Roda cenários montados com base nos teus próprios registros de Pagamentos.</div>
+      <form method="post" action="{{ url_for('outlook_monitor_test_run') }}"><input type="hidden" name="mode" value="suite"><button class="btn-gg btn-green" type="submit"><i class="bi bi-clipboard2-pulse-fill"></i>Executar bateria automática</button></form>
+      <div class="mini mt-3">{% for scenario in monitor_scenarios %}<div>• {{ scenario.scenario_name }}{% if scenario.expected_sc %} — SC {{ scenario.expected_sc }}{% endif %}{% if scenario.expected_pedido %} — Pedido {{ scenario.expected_pedido }}{% endif %}</div>{% else %}<div>• Ainda não encontrei registros suficientes.</div>{% endfor %}</div>
+    </div>
+    <div class="soft-card">
+      <div class="fw-bold mb-2">Teste customizado do parser</div>
+      <form method="post" action="{{ url_for('outlook_monitor_test_run') }}" class="row g-3">
+        <input type="hidden" name="mode" value="custom">
+        <div class="col-md-6"><label class="form-label fw-semibold">Remetente</label><input class="form-control" name="sender_email" value="{{ cfg.get('monitor_email', 'notificacao@approvo.com.br') }}"></div>
+        <div class="col-md-6"><label class="form-label fw-semibold">Evento esperado</label><select class="form-select" name="expected_evento"><option value="">Qualquer</option><option value="sc_aprovada">SC aprovada</option><option value="sc_fechada_100">SC 100% fechada</option><option value="boleto_nf_detectado">Boleto/NF detectado</option><option value="ignorado">Ignorado</option></select></div>
+        <div class="col-12"><label class="form-label fw-semibold">Assunto</label><input class="form-control" name="subject" placeholder="O documento Solicitação de Materiais (12345) foi aprovado"></div>
+        <div class="col-12"><label class="form-label fw-semibold">Corpo</label><textarea class="form-control" rows="5" name="body"></textarea></div>
+        <div class="col-md-4"><input class="form-control" name="expected_sc" placeholder="SC esperada"></div>
+        <div class="col-md-4"><input class="form-control" name="expected_pedido" placeholder="Pedido esperado"></div>
+        <div class="col-md-4"><input class="form-control" type="number" name="expected_pagamento_id" placeholder="Registro esperado"></div>
+        <div class="col-12 d-flex justify-content-end"><button class="btn-gg btn-amber" type="submit"><i class="bi bi-cpu-fill"></i>Validar cenário</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="table-shell mt-3">
+    <div class="table-responsive">
+      <table class="table-gg">
+        <thead><tr><th>Quando</th><th>Cenário</th><th>Status</th><th>Esperado</th><th>Detectado</th><th>Vínculo</th><th>Detalhes</th></tr></thead>
+        <tbody>
+          {% for r in monitor_test_runs %}<tr><td>{{ r.quando }}</td><td>{{ r.scenario_name }}</td><td>{% if r.status == 'APROVADO' %}<span class="badge text-bg-success">APROVADO</span>{% else %}<span class="badge text-bg-danger">DIVERGENTE</span>{% endif %}</td><td>{{ r.expected_evento or '—' }} / SC {{ r.expected_sc or '—' }}</td><td>{{ r.detected_evento or '—' }} / SC {{ r.detected_sc or '—' }}</td><td>Esperado {% if r.expected_pagamento_id %}#{{ r.expected_pagamento_id }}{% else %}—{% endif %}</td><td style="white-space:pre-line">{{ r.detalhes }}</td></tr>
+          {% else %}<tr><td colspan="7" class="empty">Nenhum teste avançado rodado ainda.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="content-card">
+  <h3 class="mb-3">Testes de envio</h3>
+  <form method="post" action="{{ url_for('outlook_test_run') }}">
+    <div class="row g-3">
+      <div class="col-md-3"><label class="form-label fw-semibold">Registro base</label><select class="form-select" name="payment_id">{% for p in pagamentos %}<option value="{{ p.id }}" {% if preview_id == p.id %}selected{% endif %}>#{{ p.id }} — {{ p.fornecedor }}</option>{% endfor %}</select></div>
+      <div class="col-md-2"><label class="form-label fw-semibold">Fluxo</label><select class="form-select" name="flow"><option value="compras">Compras</option><option value="contabil">Contábil</option></select></div>
+      <div class="col-md-4"><label class="form-label fw-semibold">Remetente</label><select class="form-select" name="sender_id">{% for s in senders %}<option value="{{ s.id }}">{{ s.nome }} ({{ s.provider|upper }})</option>{% endfor %}</select></div>
+      <div class="col-md-3"><label class="form-label fw-semibold">Destino de teste</label><input class="form-control" name="target_email" placeholder="teste@dominio.com.br"></div>
+      <div class="col-md-6"><label class="d-flex align-items-center gap-2"><input type="checkbox" name="do_send" value="1"> Enviar e-mail de teste real</label></div>
+      <div class="col-md-6 d-flex justify-content-md-end"><button class="btn-gg btn-blue" type="submit"><i class="bi bi-beaker"></i>Executar teste</button></div>
+    </div>
+  </form>
+  <div class="table-shell mt-3">
+    <div class="table-responsive">
+      <table class="table-gg">
+        <thead><tr><th>Quando</th><th>Provider</th><th>Remetente</th><th>Destino</th><th>Fluxo</th><th>Status</th><th>Detalhes</th></tr></thead>
+        <tbody>
+          {% for t in test_history %}<tr><td>{{ t.quando }}</td><td>{{ t.provider|upper }}</td><td>{{ t.sender_email }}</td><td>{{ t.target_email or '—' }}</td><td>{{ t.flow }}</td><td>{{ t.status }}</td><td style="white-space:pre-line">{{ t.detalhes }}</td></tr>
+          {% else %}<tr><td colspan="7" class="empty">Nenhum teste executado ainda.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="outlook-tabpanel" data-tab-panel="historico">
+<div class="content-card">
+  <h3 class="mb-3">Histórico avançado do módulo</h3>
+  <form method="get" action="{{ url_for('outlook_page') }}#module-history" class="toolbar-form">
+    <div class="field-inline"><label>Status</label><input class="form-control" name="history_status" value="{{ history_filters.status }}" placeholder="ENVIADO, ERRO..."></div>
+    <div class="field-inline"><label>Fluxo</label><select class="form-select" name="history_flow"><option value="">Todos</option><option value="compras" {% if history_filters.flow == 'compras' %}selected{% endif %}>Compras</option><option value="contabil" {% if history_filters.flow == 'contabil' %}selected{% endif %}>Contábil</option></select></div>
+    <div class="field-inline"><label>Buscar</label><input class="form-control" name="history_search" value="{{ history_filters.search }}" placeholder="assunto, destinatário, SC, pedido"></div>
+    <button class="btn-gg btn-blue" type="submit"><i class="bi bi-search"></i>Filtrar</button>
+    <form method="post" action="{{ url_for('outlook_history_clear_sent') }}" onsubmit="return confirm('Apagar todos os enviados?')"><button class="btn-gg btn-amber" type="submit"><i class="bi bi-eraser-fill"></i>Apagar enviados</button></form>
+    <form method="post" action="{{ url_for('outlook_history_clear_all') }}" onsubmit="return confirm('Apagar o histórico inteiro?')"><button class="btn-gg btn-red" type="submit"><i class="bi bi-trash3-fill"></i>Limpar tudo</button></form>
+  </form>
+  <div class="table-shell" id="module-history">
+    <div class="table-responsive">
+      <table class="table-gg">
+        <thead><tr><th>Quando</th><th>Fluxo</th><th>Remetente</th><th>Para</th><th>CC</th><th>Assunto</th><th>SC</th><th>Pedido</th><th>Anexos</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody>
+          {% for h in history %}<tr><td>{{ h.quando }}</td><td>{{ h.fluxo }}</td><td>{{ h.remetente }}</td><td>{{ h.destinatario }}</td><td>{{ h.cc }}</td><td>{{ h.assunto }}</td><td>{{ h.numero_sc or h.numero }}</td><td>{{ h.numero_pedido }}</td><td>{{ h.anexos }}</td><td>{{ h.status }}</td><td><form method="post" action="{{ url_for('outlook_history_delete', history_id=h.id) }}" onsubmit="return confirm('Apagar?')"><button class="btn-gg btn-soft btn-sm" type="submit"><i class="bi bi-trash3"></i></button></form></td></tr>
+          {% else %}<tr><td colspan="11" class="empty">Ainda sem histórico.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const buttons=[...document.querySelectorAll('[data-tab-target]')];
+  const panels=[...document.querySelectorAll('[data-tab-panel]')];
+  function activateTab(name){
+    const valid=panels.some(panel => panel.dataset.tabPanel===name) ? name : 'cadastros';
+    buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.tabTarget===valid));
+    panels.forEach(panel => panel.classList.toggle('active', panel.dataset.tabPanel===valid));
+    if(location.hash !== '#tab-'+valid){ history.replaceState(null, '', '#tab-'+valid); }
+  }
+  buttons.forEach(btn => btn.addEventListener('click', ()=>activateTab(btn.dataset.tabTarget)));
+  const hash=(location.hash || '').replace('#tab-','');
+  activateTab(hash || 'cadastros');
+});
+</script>
+{% if pending_alerts %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const modalEl = document.getElementById('monitorAlertModal');
+  if(modalEl){
+    const alreadySeen = sessionStorage.getItem('gg-monitor-alert-shown');
+    if(!alreadySeen){
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+      sessionStorage.setItem('gg-monitor-alert-shown', '1');
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

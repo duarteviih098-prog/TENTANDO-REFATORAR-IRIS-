@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>IRIS Mobile</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f4fa;--card:#fff;--card2:#f6f9fd;--text:#0d1b2e;--muted:#6b7a90;
+  --line:#e2eaf4;--blue:#1a6ef5;--blue2:#0d5de0;--green:#16c96a;
+  --red:#f03d3d;--amber:#f59e0b;--purple:#7c3aed;
+  --shadow:0 2px 14px rgba(20,40,80,.07);
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+  --nav-h:66px;
+}
+html[data-theme="dark"]{--bg:#080e1c;--card:#101828;--card2:#141f30;--text:#eef4ff;--muted:#8a9bb5;--line:#1e2d44;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;font-weight:500;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+.shell{display:flex;flex-direction:column;height:100dvh;max-width:540px;margin:0 auto}
+
+/* Header */
+.hdr{flex-shrink:0;height:calc(58px + var(--safe-top));padding-top:var(--safe-top);display:flex;align-items:center;justify-content:space-between;padding-inline:16px;background:var(--card);border-bottom:1px solid var(--line);z-index:10}
+.logo-wrap{display:flex;flex-direction:column;align-items:center;gap:0}
+.logo{font-size:1.15rem;font-weight:900;letter-spacing:.28em;color:var(--blue)}
+.logo-sub{font-size:.55rem;font-weight:700;color:var(--muted);letter-spacing:.1em}
+.icon-btn{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:.95rem;transition:.15s}
+.icon-btn:active{transform:scale(.92)}
+.user-chip{display:flex;align-items:center;gap:6px;background:rgba(26,110,245,.1);border:1px solid rgba(26,110,245,.2);border-radius:999px;padding:5px 10px 5px 6px;font-size:.75rem;font-weight:800;color:var(--blue);cursor:pointer}
+.avatar{width:24px;height:24px;border-radius:999px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:900;color:#fff}
+
+/* Scroll */
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 32px)}
+.scroll::-webkit-scrollbar{display:none}
+
+/* Panels */
+.panel{display:none}
+.panel.active{display:block;animation:up .2s ease both}
+@keyframes up{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* Greeting */
+.greet{padding:14px 16px 6px}
+.greet-date{font-size:.72rem;color:var(--muted);font-weight:700}
+.greet-name{font-size:1.1rem;font-weight:900;margin-top:1px}
+
+/* Stats scroll */
+.stats-row{display:flex;gap:10px;padding:10px 16px 4px;overflow-x:auto;scrollbar-width:none}
+.stats-row::-webkit-scrollbar{display:none}
+.stat-card{flex-shrink:0;width:128px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:13px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s}
+.stat-card:active{transform:scale(.95)}
+.stat-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.9rem;margin-bottom:8px}
+.stat-lbl{font-size:.65rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+.stat-val{font-size:1.75rem;font-weight:900;letter-spacing:-.04em;line-height:1}
+.stat-sub{font-size:.67rem;color:var(--muted);margin-top:3px}
+.ic-blue{background:rgba(26,110,245,.1);color:var(--blue)}.sv-blue{color:var(--blue)}
+.ic-red{background:rgba(240,61,61,.1);color:var(--red)}.sv-red{color:var(--red)}
+.ic-amber{background:rgba(245,158,11,.1);color:var(--amber)}.sv-amber{color:var(--amber)}
+.ic-green{background:rgba(22,201,106,.1);color:var(--green)}.sv-green{color:var(--green)}
+.ic-purple{background:rgba(124,58,237,.1);color:var(--purple)}.sv-purple{color:var(--purple)}
+
+/* Fin scroll */
+.fin-row{display:flex;gap:10px;padding:4px 16px 8px;overflow-x:auto;scrollbar-width:none}
+.fin-row::-webkit-scrollbar{display:none}
+.fin-card{flex-shrink:0;width:138px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:11px 12px;box-shadow:var(--shadow)}
+.fin-lbl{font-size:.64rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.fin-val{font-size:.98rem;font-weight:900;margin-top:3px}
+
+/* Section header */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 6px}
+.sec-ttl{font-size:.92rem;font-weight:900}
+.see-all{font-size:.72rem;font-weight:800;color:var(--blue);background:rgba(26,110,245,.08);border-radius:8px;padding:4px 9px;border:0;cursor:pointer}
+
+/* Menu grid */
+.menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:6px 16px 12px}
+.menu-item{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 8px;text-align:center;text-decoration:none;cursor:pointer;transition:transform .15s;display:block}
+.menu-item:active{transform:scale(.95)}
+.menu-item i{font-size:1.45rem;display:block;margin-bottom:5px}
+.menu-item span{font-size:.72rem;font-weight:800;color:var(--text);display:block}
+
+/* OS cards */
+.list{display:flex;flex-direction:column;gap:9px;padding:0 16px 8px}
+.os-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:13px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s}
+.os-card:active{transform:scale(.98)}
+.os-card.late{border-color:rgba(240,61,61,.28)}
+.os-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:7px}
+.os-num{font-size:.75rem;font-weight:900;color:var(--muted)}
+.os-date{font-size:.7rem;color:var(--muted);margin-top:1px}
+.os-sys{font-size:.9rem;font-weight:800;margin-bottom:2px}
+.os-eq{font-size:.76rem;color:var(--muted)}
+.os-resp{font-size:.74rem;color:var(--muted);margin-top:5px;display:flex;align-items:center;gap:4px}
+.os-mot{font-size:.72rem;margin-top:5px;padding:4px 8px;border-radius:9px;font-weight:700}
+.mot-amber{background:rgba(245,158,11,.1);color:#b45309}
+.mot-red{background:rgba(240,61,61,.1);color:#b91c1c}
+.acts{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+.bs{border:0;border-radius:11px;padding:7px 12px;font:inherit;font-size:.74rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:4px;transition:.12s}
+.bs:active{transform:scale(.94)}
+.bg-green{background:var(--green);color:#fff}
+.bg-amber{background:var(--amber);color:#fff}
+.bg-blue-s{background:rgba(26,110,245,.1);color:var(--blue)}
+.bg-ghost{background:var(--card2);color:var(--text);border:1px solid var(--line)}
+.bg-wpp{background:#25d366;color:#fff}
+.bg-red-s{background:rgba(240,61,61,.1);color:var(--red)}
+.bg-blue{background:var(--blue);color:#fff}
+
+/* Generic list item */
+.list-item{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow);margin-bottom:9px}
+.li-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.li-title{font-size:.88rem;font-weight:800;margin-bottom:2px}
+.li-sub{font-size:.75rem;color:var(--muted)}
+.li-val{font-size:.92rem;font-weight:900;white-space:nowrap}
+
+/* Badge */
+.bdg{border-radius:999px;padding:4px 9px;font-size:.65rem;font-weight:900;white-space:nowrap;flex-shrink:0}
+.bdg-blue{background:rgba(26,110,245,.12);color:var(--blue)}
+.bdg-amber{background:rgba(245,158,11,.14);color:#b45309}
+.bdg-red{background:rgba(240,61,61,.12);color:var(--red)}
+.bdg-green{background:rgba(22,201,106,.12);color:#15803d}
+.bdg-gray{background:var(--card2);color:var(--muted);border:1px solid var(--line)}
+.bdg-purple{background:rgba(124,58,237,.12);color:var(--purple)}
+
+/* Search + chips */
+.search-wrap{padding:8px 16px 4px;position:relative}
+.search-wrap i{position:absolute;left:28px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.search-inp{width:100%;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:10px 12px 10px 36px;font:inherit;font-size:.86rem;font-weight:600;color:var(--text);outline:none;transition:.15s}
+.search-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,110,245,.1)}
+.chips{display:flex;gap:7px;padding:4px 16px 8px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font:inherit;font-size:.72rem;font-weight:800;color:var(--muted);cursor:pointer;transition:.12s;white-space:nowrap}
+.chip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.chip:active{transform:scale(.94)}
+
+/* Bottom nav */
+.bnav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(540px,100vw);height:calc(var(--nav-h) + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);align-items:center;z-index:20;box-shadow:0 -4px 20px rgba(20,40,80,.07)}
+.nb{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;font-size:.56rem;font-weight:800;color:var(--muted);cursor:pointer;padding:6px 2px;transition:color .15s;position:relative}
+.nb i{font-size:1.2rem;transition:transform .2s}
+.nb.on{color:var(--blue)}
+.nb.on i{transform:translateY(-2px)}
+.nb .nbdot{position:absolute;top:3px;right:calc(50% - 16px);min-width:15px;height:15px;border-radius:999px;background:var(--red);color:#fff;font-size:.58rem;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 3px}
+.nb-fab{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;font-size:.56rem;font-weight:800;color:var(--blue);cursor:pointer;padding:2px}
+.fab{width:46px;height:46px;background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 16px rgba(26,110,245,.32);transition:.15s}
+.nb-fab:active .fab{transform:scale(.91)}
+.fab i{font-size:1.3rem;color:#fff}
+
+/* Sheets */
+.backdrop{position:fixed;inset:0;z-index:88;background:rgba(7,14,28,.52);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .24s}
+.backdrop.on{opacity:1;pointer-events:all}
+.sheet{position:fixed;inset:auto 0 0;z-index:90;background:var(--card);border-radius:24px 24px 0 0;border-top:1px solid var(--line);box-shadow:0 -16px 50px rgba(0,0,0,.16);padding:0 0 calc(20px + var(--safe-bottom));transform:translateY(110%);transition:transform .27s cubic-bezier(.32,1,.32,1);max-height:92dvh;overflow-y:auto}
+.sheet::-webkit-scrollbar{display:none}
+.sheet.on{transform:translateY(0)}
+.handle{width:38px;height:4px;border-radius:999px;background:var(--line);margin:12px auto 0}
+.sh-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;border-bottom:1px solid var(--line)}
+.sh-ttl{font-size:.95rem;font-weight:900}
+.sh-x{width:30px;height:30px;border-radius:999px;border:1px solid var(--line);background:var(--card2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted)}
+.sh-body{padding:14px 16px}
+
+/* Form */
+.fld{margin-bottom:12px}
+.fld label{display:block;font-size:.7rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.fld input,.fld select,.fld textarea{width:100%;border:1.5px solid var(--line);background:var(--bg);color:var(--text);border-radius:13px;padding:10px 12px;font:inherit;font-size:.88rem;font-weight:700;outline:none;transition:.15s;appearance:none}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,110,245,.1)}
+.fld textarea{min-height:72px;resize:vertical}
+.btn-p{width:100%;border:0;border-radius:14px;padding:13px;margin-top:6px;background:linear-gradient(90deg,var(--blue),var(--blue2));color:#fff;font:inherit;font-weight:900;font-size:.92rem;cursor:pointer;box-shadow:0 5px 16px rgba(26,110,245,.25);transition:.15s}
+.btn-p:active{transform:scale(.97)}
+.btn-amber-p{background:linear-gradient(90deg,var(--amber),#d97706)}
+
+/* Detail rows */
+.det-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:.83rem}
+.det-row:last-child{border-bottom:0}
+.det-lbl{color:var(--muted);font-weight:700}
+.det-val{font-weight:800;text-align:right;max-width:62%}
+.det-box{background:var(--card2);border-radius:12px;padding:10px 12px;font-size:.82rem;line-height:1.5;margin:5px 0 10px;font-weight:600}
+
+/* User menu */
+.umenu-item{display:flex;align-items:center;gap:11px;padding:12px;background:var(--card2);border:1px solid var(--line);border-radius:14px;text-decoration:none;font-weight:800;font-size:.86rem;color:var(--text);margin-bottom:8px;cursor:pointer}
+.umenu-item i{font-size:1.1rem;width:20px;text-align:center}
+.umenu-item.danger{color:var(--red);background:rgba(240,61,61,.06);border-color:rgba(240,61,61,.15)}
+
+/* Tecnico card */
+.tec-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);margin-bottom:9px}
+.tec-av{width:38px;height:38px;border-radius:999px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:900;color:#fff;flex-shrink:0}
+.tec-name{font-size:.88rem;font-weight:800}
+.tec-tel{font-size:.74rem;color:var(--muted)}
+.tec-acts{display:flex;gap:7px;margin-left:auto;flex-shrink:0}
+
+/* Empty */
+.empty{text-align:center;padding:28px 16px;color:var(--muted)}
+.empty i{font-size:2rem;margin-bottom:8px;display:block;opacity:.35}
+.empty p{font-size:.82rem;font-weight:700}
+
+/* Toast */
+.toast{position:fixed;left:50%;z-index:999;bottom:calc(var(--nav-h) + var(--safe-bottom) + 12px);transform:translateX(-50%) translateY(8px);background:rgba(7,14,28,.9);color:#fff;border-radius:13px;padding:9px 15px;font-size:.8rem;font-weight:750;opacity:0;pointer-events:none;transition:.2s;white-space:nowrap;backdrop-filter:blur(12px)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* FAB context label */
+.fab-lbl{font-size:.55rem;font-weight:800;color:var(--blue);margin-top:1px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Header -->
+  <header class="hdr">
+    <button class="icon-btn" onclick="toggleTheme()" id="theme-btn"><i class="bi bi-moon-stars-fill"></i></button>
+    <div class="logo-wrap">
+      <span class="logo">IRIS</span>
+      <span class="logo-sub">SISTEMA DE GESTÃO</span>
+    </div>
+    <div class="user-chip" onclick="abrirSheet('sh-user')">
+      <div class="avatar">{{ (user.nome or 'G')[0]|upper }}</div>
+      {{ user.nome.split(' ')[0] if user else 'Gestor' }}
+      <i class="bi bi-chevron-down" style="font-size:.6rem;margin-left:2px"></i>
+    </div>
+  </header>
+
+  <div class="scroll" id="scroll">
+
+    <!-- ═══ PAINEL: HOME ═══ -->
+    <div class="panel active" id="pn-home">
+      <div class="greet">
+        <div class="greet-date">{{ mes_ref }}</div>
+        <div class="greet-name">Olá, {{ user.nome.split(' ')[0] if user else 'Gestor' }} 👋</div>
+      </div>
+
+      {% if can('view_os') %}
+      <div class="sec-hdr" style="padding-bottom:2px">
+        <div class="sec-ttl">Ordens de serviço</div>
+        <button class="see-all" onclick="goPanel('pn-os','all')">Ver todas</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card" onclick="goPanel('pn-os','atrasadas')">
+          <div class="stat-icon ic-red"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          <div class="stat-lbl">Atrasadas</div>
+          <div class="stat-val sv-red">{{ cards.atrasadas }}</div>
+        </div>
+        <div class="stat-card" onclick="goPanel('pn-os','andamento')">
+          <div class="stat-icon ic-amber"><i class="bi bi-activity"></i></div>
+          <div class="stat-lbl">Andamento</div>
+          <div class="stat-val sv-amber">{{ cards.andamento }}</div>
+        </div>
+        <div class="stat-card" onclick="goPanel('pn-os','pausadas')">
+          <div class="stat-icon ic-purple"><i class="bi bi-pause-circle-fill"></i></div>
+          <div class="stat-lbl">Pausadas</div>
+          <div class="stat-val sv-purple">{{ cards.pausadas }}</div>
+        </div>
+        <div class="stat-card" onclick="goPanel('pn-os','abertas')">
+          <div class="stat-icon ic-blue"><i class="bi bi-clipboard-check"></i></div>
+          <div class="stat-lbl">Abertas</div>
+          <div class="stat-val sv-blue">{{ cards.abertas }}</div>
+        </div>
+        <div class="stat-card" onclick="goPanel('pn-os','finalizadas')">
+          <div class="stat-icon ic-green"><i class="bi bi-check-circle-fill"></i></div>
+          <div class="stat-lbl">Finalizadas</div>
+          <div class="stat-val sv-green">{{ cards.finalizadas_hoje }}</div>
+          <div class="stat-sub">hoje</div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if can('view_pagamentos') %}
+      <div class="sec-hdr" style="padding-top:8px;padding-bottom:2px">
+        <div class="sec-ttl">Financeiro — {{ mes_ref }}</div>
+        <button class="see-all" onclick="goPanel('pn-pag','all')">Ver tudo</button>
+      </div>
+      <div class="fin-row">
+        <div class="fin-card">
+          <div class="fin-lbl">Gasto</div>
+          <div class="fin-val" style="color:var(--amber)">{{ cards.gasto_mes|br_money }}</div>
+        </div>
+        <div class="fin-card">
+          <div class="fin-lbl">Investimento</div>
+          <div class="fin-val" style="color:var(--purple)">{{ cards.investimento_mes|br_money }}</div>
+        </div>
+        <div class="fin-card">
+          <div class="fin-lbl">Combustível</div>
+          <div class="fin-val" style="color:var(--blue)">{{ cards.combustivel_mes|br_money }}</div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Menu módulos -->
+      <div class="sec-hdr" style="padding-top:10px">
+        <div class="sec-ttl">Módulos</div>
+      </div>
+      <div class="menu-grid">
+        {% if can('view_os') %}
+        <div class="menu-item" onclick="goPanel('pn-os','all')">
+          <i class="bi bi-clipboard-check" style="color:var(--blue)"></i><span>O.S.</span>
+        </div>
+        {% endif %}
+        {% if can('view_pagamentos') %}
+        <div class="menu-item" onclick="goPanel('pn-pag','all')">
+          <i class="bi bi-cash-stack" style="color:var(--amber)"></i><span>Pagamentos</span>
+        </div>
+        {% endif %}
+        {% if can('view_combustivel') %}
+        <div class="menu-item" onclick="goPanel('pn-comb','all')">
+          <i class="bi bi-fuel-pump-fill" style="color:var(--blue)"></i><span>Combustível</span>
+        </div>
+        {% endif %}
+        {% if can('view_controle') %}
+        <div class="menu-item" onclick="goPanel('pn-estoque','all')">
+          <i class="bi bi-tools" style="color:var(--green)"></i><span>Estoque</span>
+        </div>
+        {% endif %}
+        {% if can('view_os') %}
+        <div class="menu-item" onclick="goPanel('pn-campo','')">
+          <i class="bi bi-whatsapp" style="color:#25d366"></i><span>Campo</span>
+        </div>
+        {% endif %}
+        {% if can('view_custos') %}
+        <div class="menu-item" onclick="goPanel('pn-custos','')">
+          <i class="bi bi-graph-up" style="color:var(--purple)"></i><span>Custos</span>
+        </div>
+        {% endif %}
+        {% if can('view_inventario') %}
+        <div class="menu-item" onclick="goPanel('pn-inv','')">
+          <i class="bi bi-boxes" style="color:var(--amber)"></i><span>Inventário</span>
+        </div>
+        {% endif %}
+        {% if can('view_outlook') %}
+        <div class="menu-item" onclick="goPanel('pn-outlook','')">
+          <i class="bi bi-envelope-fill" style="color:var(--blue)"></i><span>Outlook</span>
+        </div>
+        {% endif %}
+        <div class="menu-item" onclick="abrirSheet('sh-user')">
+          <i class="bi bi-person-circle" style="color:var(--muted)"></i><span>Conta</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAINEL: O.S. ═══ -->
+    <div class="panel" id="pn-os">
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input class="search-inp" type="search" id="osQ" placeholder="Sistema, equipamento, responsável..." oninput="filtrarLista('osQ','osContainer','os')">
+      </div>
+      <div class="chips">
+        <button class="chip on" data-f="all" onclick="setChip(this,'osContainer','os')">Todas</button>
+        <button class="chip" data-f="atrasadas" onclick="setChip(this,'osContainer','os')">⚠️ Atrasadas ({{ cards.atrasadas }})</button>
+        <button class="chip" data-f="andamento" onclick="setChip(this,'osContainer','os')">⚡ Andamento ({{ cards.andamento }})</button>
+        <button class="chip" data-f="pausadas" onclick="setChip(this,'osContainer','os')">⏸ Pausadas ({{ cards.pausadas }})</button>
+        <button class="chip" data-f="abertas" onclick="setChip(this,'osContainer','os')">📋 Abertas ({{ cards.abertas }})</button>
+        <button class="chip" data-f="finalizadas" onclick="setChip(this,'osContainer','os')">✅ Hoje ({{ cards.finalizadas_hoje }})</button>
+      </div>
+      <div class="list" id="osContainer">
+        {% set all_os = atrasadas + andamento + pausadas + abertas + finalizadas_hoje %}
+        {% for r in all_os %}
+        {% set st = (r.status or '')|lower %}
+        {% set fin = (r.finalizada or '')|lower == 'sim' %}
+        {% set atr = r.atrasada %}
+        {% if atr %}{% set grp = 'atrasadas' %}
+        {% elif st == 'pausada' %}{% set grp = 'pausadas' %}
+        {% elif st == 'em andamento' %}{% set grp = 'andamento' %}
+        {% elif fin %}{% set grp = 'finalizadas' %}
+        {% else %}{% set grp = 'abertas' %}{% endif %}
+        {% set bc = 'bdg-red' if atr else ('bdg-amber' if st == 'pausada' else ('bdg-green' if fin else ('bdg-blue' if st == 'em andamento' else 'bdg-gray'))) %}
+        {% set bt = 'Atrasada' if atr else (r.status or 'Aberta') %}
+        <div class="os-card {{ 'late' if atr else '' }}" data-g="{{ grp }}" data-s="{{ ((r.sistema or '') + ' ' + (r.equipamento or '') + ' ' + (r.responsavel or ''))|lower }}" onclick="abrirOSDetalhe({{ r.id }})">
+          <div class="os-top">
+            <div><div class="os-num">O.S. #{{ r.numero_visivel or r.numero_os or r.id }}</div><div class="os-date">{{ r.data or '' }}</div></div>
+            <span class="bdg {{ bc }}">{{ bt }}</span>
+          </div>
+          <div class="os-sys">{{ r.sistema or 'Sem sistema' }}</div>
+          <div class="os-eq">{{ r.equipamento or '' }}</div>
+          {% if r.responsavel %}<div class="os-resp"><i class="bi bi-person-fill"></i> {{ r.responsavel }}</div>{% endif %}
+          {% if r.motivo_pausa %}<div class="os-mot mot-amber"><i class="bi bi-pause-circle"></i> {{ r.motivo_pausa }}</div>{% endif %}
+          {% if r.motivo_atraso %}<div class="os-mot mot-red"><i class="bi bi-exclamation-triangle"></i> {{ r.motivo_atraso }}</div>{% endif %}
+          <div class="acts" onclick="event.stopPropagation()">
+            <a class="bs bg-wpp" href="/campo/whatsapp/equipe/{{ r.id }}" target="_blank"><i class="bi bi-whatsapp"></i> Avisar</a>
+            {% if can('edit_os') %}<button class="bs bg-ghost" onclick="abrirOSDetalhe({{ r.id }})"><i class="bi bi-pencil"></i> Editar</button>{% endif %}
+          </div>
+        </div>
+        {% else %}<div class="empty"><i class="bi bi-clipboard-x"></i><p>Nenhuma O.S.</p></div>{% endfor %}
+      </div>
+    </div>
+
+    <!-- ═══ PAINEL: PAGAMENTOS ═══ -->
+    <div class="panel" id="pn-pag">
+      <div class="sec-hdr">
+        <div class="sec-ttl">Pagamentos</div>
+        {% if can('edit_pagamentos') %}<button class="see-all" style="background:rgba(26,110,245,.1);color:var(--blue)" onclick="abrirSheet('sh-novo-pag')">+ Novo</button>{% endif %}
+      </div>
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input class="search-inp" type="search" id="pagQ" placeholder="Fornecedor, descrição..." oninput="filtrarLista('pagQ','pagContainer','pag')">
+      </div>
+      <div class="chips">
+        <button class="chip on" data-f="all" onclick="setChip(this,'pagContainer','pag')">Todos</button>
+        <button class="chip" data-f="pendente" onclick="setChip(this,'pagContainer','pag')">Pendentes</button>
+        <button class="chip" data-f="pago" onclick="setChip(this,'pagContainer','pag')">Pagos</button>
+      </div>
+      <div class="list" id="pagContainer" style="padding-top:4px">
+        {% for r in pagamentos_rows %}
+        {% set pago = r.status_fmt == 'Pago' %}
+        <div class="list-item" data-g="{{ 'pago' if pago else 'pendente' }}" data-s="{{ ((r.fornecedor or '') + ' ' + (r.descricao_servico or ''))|lower }}">
+          <div class="li-top">
+            <div style="flex:1;min-width:0">
+              <div class="li-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.fornecedor or 'Sem fornecedor' }}</div>
+              <div class="li-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.descricao_servico or '-' }}</div>
+              <div class="li-sub" style="margin-top:2px">{{ r.pagamento_mes or '' }}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;margin-left:8px">
+              <div class="li-val" style="color:{{ 'var(--green)' if pago else 'var(--amber)' }}">{{ r.valor_fmt }}</div>
+              <span class="bdg {{ 'bdg-green' if pago else 'bdg-amber' }}" style="margin-top:4px;display:inline-block">{{ r.status_fmt }}</span>
+            </div>
+          </div>
+        </div>
+        {% else %}<div class="empty"><i class="bi bi-cash-stack"></i><p>Nenhum pagamento.</p></div>{% endfor %}
+      </div>
+    </div>
+
+    <!-- ═══ PAINEL: COMBUSTÍVEL ═══ -->
+    <div class="panel" id="pn-comb">
+      <div class="sec-hdr">
+        <div class="sec-ttl">Combustível</div>
+        {% if can('edit_combustivel') %}<button class="see-all" onclick="abrirSheet('sh-novo-comb')">+ Novo</button>{% endif %}
+      </div>
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input class="search-inp" type="search" id="combQ" placeholder="Motorista, placa, modelo..." oninput="filtrarLista('combQ','combContainer','comb')">
+      </div>
+      <div class="list" id="combContainer" style="padding-top:4px">
+        {% for r in combustivel_rows %}
+        <div class="list-item" data-s="{{ ((r.motorista or '') + ' ' + (r.placa or '') + ' ' + (r.modelo_veiculo or ''))|lower }}">
+          <div class="li-top">
+            <div style="flex:1;min-width:0">
+              <div class="li-title">{{ r.motorista or 'Sem motorista' }}</div>
+              <div class="li-sub">{{ r.modelo_veiculo or '' }} {% if r.placa %}· {{ r.placa }}{% endif %}</div>
+              <div class="li-sub" style="margin-top:2px">{{ r.data or '' }} {% if r.mes_ref %}· {{ r.mes_ref }}{% endif %}</div>
+              {% if r.km %}<div class="li-sub">{{ r.km }} km</div>{% endif %}
+            </div>
+            <div style="text-align:right;flex-shrink:0;margin-left:8px">
+              <div class="li-val" style="color:var(--blue)">{{ r.custo_fmt }}</div>
+            </div>
+          </div>
+        </div>
+        {% else %}<div class="empty"><i class="bi bi-fuel-pump-fill"></i><p>Nenhum lançamento.</p></div>{% endfor %}
+      </div>
+    </div>
+
+    <!-- ═══ PAINEL: ESTOQUE ═══ -->
+    <div class="panel" id="pn-estoque">
+      <div class="sec-hdr">
+        <div class="sec-ttl">Estoque de bombas</div>
+        {% if can('edit_controle') %}<button class="see-all" onclick="abrirSheet('sh-nova-bomba')">+ Nova</button>{% endif %}
+      </div>
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input class="search-inp" type="search" id="estQ" placeholder="Equipamento, modelo, fornecedor..." oninput="filtrarLista('estQ','estContainer','est')">
+      </div>
+      <div class="chips">
+        <button class="chip on" data-f="all" onclick="setChip(this,'estContainer','est')">Todos</button>
+        <button class="chip" data-f="estoque" onclick="setChip(this,'estContainer','est')">Em estoque</button>
+        <button class="chip" data-f="conserto" onclick="setChip(this,'estContainer','est')">Em conserto</button>
+        <button class="chip" data-f="retirada" onclick="setChip(this,'estContainer','est')">Retirada</button>
+      </div>
+      <div class="list" id="estContainer" style="padding-top:4px">
+        {% for r in bombas_rows %}
+        {% set loc = (r.localizacao or 'estoque')|lower %}
+        {% set bc = 'bdg-green' if loc == 'estoque' else ('bdg-amber' if loc == 'conserto' else 'bdg-gray') %}
+        <div class="list-item" data-g="{{ loc }}" data-s="{{ ((r.equipamento or '') + ' ' + (r.modelo or '') + ' ' + (r.fornecedor or ''))|lower }}">
+          <div class="li-top">
+            <div style="flex:1;min-width:0">
+              <div class="li-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.equipamento or 'Sem nome' }}</div>
+              {% if r.modelo %}<div class="li-sub">{{ r.modelo }}</div>{% endif %}
+              {% if r.fornecedor %}<div class="li-sub">{{ r.fornecedor }}</div>{% endif %}
+              {% if r.status_entrega and r.status_entrega != 'Em estoque' %}<div class="li-sub" style="margin-top:2px">{{ r.status_entrega }}</div>{% endif %}
+            </div>
+            <span class="bdg {{ bc }}">{{ r.localizacao or 'Estoque' }}</span>
+          </div>
+        </div>
+        {% else %}<div class="empty"><i class="bi bi-tools"></i><p>Nenhum item no estoque.</p></div>{% endfor %}
+      </div>
+    </div>
+
+    <!-- ═══ PAINEL: CAMPO ═══ -->
+    <div class="panel" id="pn-campo">
+      <div class="sec-hdr">
+        <div class="sec-ttl">Técnicos de campo</div>
+      </div>
+      <div class="list" style="padding-top:4px">
+        {% for t in tecnicos_lista %}
+        <div class="tec-card">
+          <div class="tec-av">{{ (t.nome or 'T')[0]|upper }}</div>
+          <div style="flex:1;min-width:0">
+            <div class="tec-name">{{ t.nome }}</div>
+            {% if t.telefone %}<div class="tec-tel"><i class="bi bi-telephone-fill"></i> {{ t.telefone|phone_br }}</div>{% endif %}
+          </div>
+          <div class="tec-acts">
+            {% if t.app_link %}
+            <a class="bs bg-blue-s" href="{{ t.app_link }}" target="_blank" style="padding:6px 10px"><i class="bi bi-phone-fill"></i></a>
+            {% endif %}
+            {% if t.telefone %}
+            <a class="bs bg-wpp" href="https://wa.me/{{ t.telefone|replace(' ','')|replace('(','') |replace(')','') |replace('-','') }}" target="_blank" style="padding:6px 10px"><i class="bi bi-whatsapp"></i></a>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}<div class="empty"><i class="bi bi-people"></i><p>Nenhum técnico cadastrado.</p></div>{% endfor %}
+      </div>
+    </div>
+
+    <!-- ═══ PAINEL: CUSTOS ═══ -->
+    <div class="panel" id="pn-custos">
+      <div class="sec-hdr">
+        <div class="sec-ttl">Custos</div>
+        {% if can('edit_custos') %}<button class="see-all" onclick="abrirSheet('sh-novo-custo')">+ Novo</button>{% endif %}
+      </div>
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input class="search-inp" type="search" id="cusQ" placeholder="Sistema, equipamento, O.S...." oninput="filtrarLista('cusQ','cusContainer','cus')">
+      </div>
+      <div class="list" id="cusContainer" style="padding-top:4px">
+        {% for r in custos_rows %}
+        <div class="list-item" data-s="{{ ((r.sistema or '') + ' ' + (r.equipamento or '') + ' ' + (r.nr_os or '') + ' ' + (r.descricao_os or ''))|lower }}">
+          <div class="li-top">
+            <div style="flex:1;min-width:0">
+              <div class="li-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sistema or 'Sem sistema' }}</div>
+              <div class="li-sub">{{ r.equipamento or '' }}{% if r.nr_os %} · O.S. #{{ r.nr_os }}{% endif %}</div>
+              {% if r.descricao_os %}<div class="li-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.descricao_os }}</div>{% endif %}
+            </div>
+            {% if r.mes %}<span class="bdg bdg-gray" style="flex-shrink:0;margin-left:8px">{{ r.mes }}</span>{% endif %}
+          </div>
+        </div>
+        {% else %}<div class="empty"><i class="bi bi-graph-up"></i><p>Nenhum custo registrado.</p></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ═══ PAINEL: INVENTÁRIO ═══ -->
+    <div class="panel" id="pn-inv">
+      <div class="sec-hdr">
+        <div class="sec-ttl">Inventário</div>
+        {% if can('edit_inventario') %}<button class="see-all" onclick="abrirSheet('sh-inv-acao')">+ Ação</button>{% endif %}
+      </div>
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input class="search-inp" type="search" id="invQ" placeholder="Nome, categoria, fornecedor..." oninput="filtrarLista('invQ','invContainer','inv')">
+      </div>
+      <div class="chips">
+        <button class="chip on" data-f="all" onclick="setChip(this,'invContainer','inv')">Todos</button>
+        <button class="chip" data-f="baixo" onclick="setChip(this,'invContainer','inv')">⚠️ Estoque baixo</button>
+      </div>
+      <div class="list" id="invContainer" style="padding-top:4px">
+        {% for r in inv_rows %}
+        <div class="list-item" data-g="{{ 'baixo' if r.baixo else 'normal' }}" data-s="{{ ((r.nome or '') + ' ' + (r.categoria or '') + ' ' + (r.fornecedor or ''))|lower }}">
+          <div class="li-top">
+            <div style="flex:1;min-width:0">
+              <div class="li-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.nome }}</div>
+              <div class="li-sub">{{ r.categoria or 'Sem categoria' }}{% if r.localizacao %} · {{ r.localizacao }}{% endif %}</div>
+              {% if r.fornecedor %}<div class="li-sub">{{ r.fornecedor }}</div>{% endif %}
+            </div>
+            <div style="text-align:right;flex-shrink:0;margin-left:8px">
+              <div class="li-val" style="color:{{ 'var(--red)' if r.baixo else 'var(--green)' }}">{{ r.quantidade|int }} {{ r.unidade or 'un' }}</div>
+              {% if r.baixo %}<span class="bdg bdg-red" style="display:inline-block;margin-top:3px">Estoque baixo</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        {% else %}<div class="empty"><i class="bi bi-boxes"></i><p>Nenhum item no inventário.</p></div>
+        {% endfor %}
+      </div>
+      {% if inv_pedidos %}
+      <div class="sec-hdr" style="padding-top:8px"><div class="sec-ttl">Aguardando recebimento</div></div>
+      <div class="list">
+        {% for p in inv_pedidos %}
+        <div class="list-item">
+          <div class="li-top">
+            <div><div class="li-title">{{ p.item_nome or 'Item' }}</div><div class="li-sub">{{ p.solicitado_por or '' }} · {{ p.solicitado_em or '' }}</div></div>
+            <div style="text-align:right"><div class="li-val" style="color:var(--amber)">{{ p.quantidade|int }} {{ p.unidade or 'un' }}</div></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ═══ PAINEL: OUTLOOK ═══ -->
+    <div class="panel" id="pn-outlook">
+      <div class="sec-hdr"><div class="sec-ttl">Outlook / E-mail</div></div>
+      <div class="list" style="padding-top:4px">
+        <a href="/outlook" class="list-item" style="text-decoration:none;display:block">
+          <div class="li-top">
+            <div><div class="li-title">Histórico de e-mails</div><div class="li-sub">Ver envios e monitoramento</div></div>
+            <i class="bi bi-chevron-right" style="color:var(--muted);font-size:.8rem"></i>
+          </div>
+        </a>
+        <a href="/outlook#tab-monitor" class="list-item" style="text-decoration:none;display:block;margin-top:9px">
+          <div class="li-top">
+            <div><div class="li-title">Monitoramento de SC</div><div class="li-sub">Alertas de aprovação e pedidos</div></div>
+            <i class="bi bi-chevron-right" style="color:var(--muted);font-size:.8rem"></i>
+          </div>
+        </a>
+      </div>
+    </div>
+
+  </div><!-- /scroll -->
+</div><!-- /shell -->
+
+<!-- Bottom Nav -->
+<nav class="bnav">
+  <button class="nb on" id="nb-home" onclick="goPanel('pn-home','')"><i class="bi bi-house-door-fill"></i><span>Início</span></button>
+  <button class="nb" id="nb-os" onclick="goPanel('pn-os','all')">
+    <i class="bi bi-clipboard-check"></i><span>O.S.</span>
+    {% if cards.atrasadas > 0 %}<span class="nbdot">{{ cards.atrasadas }}</span>{% endif %}
+  </button>
+  {% if can('create_os') %}
+  <button class="nb-fab" id="nb-fab" onclick="fabAction()">
+    <div class="fab"><i class="bi bi-plus-lg"></i></div>
+    <span class="fab-lbl" id="fab-lbl">Nova O.S.</span>
+  </button>
+  {% else %}<div></div>{% endif %}
+  <button class="nb" id="nb-pag" onclick="goPanel('pn-pag','all')"><i class="bi bi-cash-stack"></i><span>Pagamentos</span></button>
+  <button class="nb" id="nb-conta" onclick="abrirSheet('sh-user')"><i class="bi bi-person-circle"></i><span>Conta</span></button>
+</nav>
+
+<!-- Backdrop -->
+<div class="backdrop" id="backdrop" onclick="fecharSheets()"></div>
+
+<!-- Sheet: Conta -->
+<div class="sheet" id="sh-user">
+  <div class="handle"></div>
+  <div class="sh-hd"><span class="sh-ttl">Minha conta</span><button class="sh-x" onclick="fecharSheets()"><i class="bi bi-x"></i></button></div>
+  <div class="sh-body">
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 0 14px;border-bottom:1px solid var(--line);margin-bottom:12px">
+      <div style="width:46px;height:46px;border-radius:999px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;flex-shrink:0">{{ (user.nome or 'G')[0]|upper }}</div>
+      <div>
+        <div style="font-weight:900;font-size:.95rem">{{ user.nome or 'Gestor' }}</div>
+        <div style="font-size:.76rem;color:var(--muted);font-weight:700">{{ user.email or '' }}</div>
+        <div style="font-size:.72rem;color:var(--blue);font-weight:800;margin-top:2px">{{ user.perfil|title if user.perfil else 'Gestor' }}</div>
+      </div>
+    </div>
+    {% if can('manage_users') %}<a href="/usuarios" class="umenu-item"><i class="bi bi-people-fill" style="color:var(--purple)"></i> Gerenciar usuários</a>{% endif %}
+    {% if can('view_dashboard') %}<a href="/home" class="umenu-item"><i class="bi bi-bar-chart-fill" style="color:var(--amber)"></i> Dashboard completo</a>{% endif %}
+    <a href="/home" class="umenu-item"><i class="bi bi-display" style="color:var(--blue)"></i> Versão desktop</a>
+    <div style="height:1px;background:var(--line);margin:6px 0"></div>
+    <a href="/logout" class="umenu-item danger"><i class="bi bi-box-arrow-right"></i> Sair da conta</a>
+  </div>
+</div>
+
+<!-- Sheet: Nova O.S. -->
+{% if can('create_os') %}
+<div class="sheet" id="sh-nova-os">
+  <div class="handle"></div>
+  <div class="sh-hd"><span class="sh-ttl">Nova O.S.</span><button class="sh-x" onclick="fecharSheets()"><i class="bi bi-x"></i></button></div>
+  <div class="sh-body">
+    <form method="post" action="/os/save">
+      <input type="hidden" name="status" value="Aberta">
+      <div class="fld"><label>Data</label><input type="text" name="data" id="gs-data" placeholder="dd/mm/aaaa"></div>
+      <div class="fld"><label>Sistema</label><select name="sistema" id="gs-sist" onchange="onSistChange()"><option value="">Selecione...</option>{% for s in sistemas_map.keys() %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select></div>
+      <div class="fld"><label>Equipamento</label><select name="equipamento" id="gs-equip"><option value="">Selecione o sistema primeiro</option></select></div>
+      <div class="fld"><label>Responsável</label><select name="responsavel"><option value="">Disponível para equipe</option>{% for t in tecnicos_campo %}<option value="{{ t.nome }}">{{ t.nome }}</option>{% endfor %}</select></div>
+      <div class="fld"><label>Criticidade</label><select name="criticidade"><option value="">Não definida</option><option value="Baixa">Baixa</option><option value="Média">Média</option><option value="Alta">Alta</option></select></div>
+      <div class="fld"><label>Descrição</label><textarea name="descricao" placeholder="Descreva o problema..."></textarea></div>
+      <button type="submit" class="btn-p"><i class="bi bi-plus-circle-fill"></i> Criar O.S.</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Sheet: Novo Pagamento -->
+{% if can('edit_pagamentos') %}
+<div class="sheet" id="sh-novo-pag">
+  <div class="handle"></div>
+  <div class="sh-hd"><span class="sh-ttl">Novo pagamento</span><button class="sh-x" onclick="fecharSheets()"><i class="bi bi-x"></i></button></div>
+  <div class="sh-body">
+    <div class="fld"><label>Fornecedor</label><input type="text" id="pag-forn" placeholder="Nome do fornecedor"></div>
+    <div class="fld"><label>Descrição do serviço</label><input type="text" id="pag-desc" placeholder="Descrição"></div>
+    <div class="fld"><label>Valor (R$)</label><input type="text" id="pag-val" placeholder="0,00"></div>
+    <div class="fld"><label>Mês referência</label><input type="text" id="pag-mes" placeholder="MM/AAAA"></div>
+    <div class="fld"><label>Tipo</label><select id="pag-tipo"><option value="Gasto">Gasto</option><option value="Investimento">Investimento</option></select></div>
+    <div class="fld"><label>Status</label><select id="pag-status"><option value="Não">Não pago</option><option value="Sim">Pago</option></select></div>
+    <button class="btn-p" onclick="salvarPagamento()"><i class="bi bi-check-circle-fill"></i> Salvar pagamento</button>
+  </div>
+</div>
+{% endif %}
+
+<!-- Sheet: Novo Combustível -->
+{% if can('edit_combustivel') %}
+<div class="sheet" id="sh-novo-comb">
+  <div class="handle"></div>
+  <div class="sh-hd"><span class="sh-ttl">Lançar combustível</span><button class="sh-x" onclick="fecharSheets()"><i class="bi bi-x"></i></button></div>
+  <div class="sh-body">
+    <div class="fld"><label>Data</label><input type="text" id="comb-data" placeholder="dd/mm/aaaa"></div>
+    <div class="fld"><label>Motorista</label><select id="comb-motor">{% for v in comb_vinculos %}<option value="{{ v.motorista }}">{{ v.motorista }}</option>{% endfor %}</select></div>
+    <div class="fld"><label>Modelo / Veículo</label><input type="text" id="comb-modelo" placeholder="Ex: Saveiro, Argo..."></div>
+    <div class="fld"><label>Placa</label><input type="text" id="comb-placa" placeholder="ABC-1234"></div>
+    <div class="fld"><label>KM</label><input type="number" id="comb-km" placeholder="0"></div>
+    <div class="fld"><label>Custo (R$)</label><input type="text" id="comb-custo" placeholder="0,00"></div>
+    <div class="fld"><label>Observações</label><input type="text" id="comb-obs" placeholder="Opcional"></div>
+    <button class="btn-p" onclick="salvarCombustivel()"><i class="bi bi-check-circle-fill"></i> Salvar abastecimento</button>
+  </div>
+</div>
+{% endif %}
+
+<!-- Sheet: Nova Bomba -->
+{% if can('edit_controle') %}
+<div class="sheet" id="sh-nova-bomba">
+  <div class="handle"></div>
+  <div class="sh-hd"><span class="sh-ttl">Registrar bomba</span><button class="sh-x" onclick="fecharSheets()"><i class="bi bi-x"></i></button></div>
+  <div class="sh-body">
+    <div class="fld"><label>Equipamento</label><input type="text" id="bom-equip" placeholder="Nome do equipamento"></div>
+    <div class="fld"><label>Modelo</label><input type="text" id="bom-modelo" placeholder="Modelo"></div>
+    <div class="fld"><label>Localização</label><select id="bom-loc"><option value="estoque">Em estoque</option><option value="conserto">Em conserto</option><option value="retirada">Retirada</option></select></div>
+    <div class="fld"><label>Fornecedor</label><input type="text" id="bom-forn" placeholder="Fornecedor"></div>
+    <div class="fld"><label>Observações</label><input type="text" id="bom-obs" placeholder="Observações"></div>
+    <button class="btn-p" onclick="salvarBomba()"><i class="bi bi-check-circle-fill"></i> Salvar</button>
+  </div>
+</div>
+{% endif %}
+
+<!-- Sheet: Detalhe O.S. -->
+<div class="sheet" id="sh-os-det">
+  <div class="handle"></div>
+  <div class="sh-hd"><span class="sh-ttl" id="os-det-ttl">O.S.</span><button class="sh-x" onclick="fecharSheets()"><i class="bi bi-x"></i></button></div>
+  <div class="sh-body" id="os-det-body"><div class="empty"><i class="bi bi-hourglass-split"></i><p>Carregando...</p></div></div>
+</div>
+
+<!-- Sheet: Pausar -->
+<div class="sheet" id="sh-pausar">
+  <div class="handle"></div>
+  <div class="sh-hd"><span class="sh-ttl">⏸ Pausar O.S.</span><button class="sh-x" onclick="fecharSheets()"><i class="bi bi-x"></i></button></div>
+  <div class="sh-body">
+    <div class="fld"><label>Motivo da pausa</label><textarea id="mot-pausar" placeholder="Descreva o motivo..."></textarea></div>
+    <button class="btn-p btn-amber-p" onclick="confirmarPausa()"><i class="bi bi-pause-circle-fill"></i> Confirmar pausa</button>
+  </div>
+</div>
+
+
+<!-- Sheet: Novo Custo -->
+{% if can('edit_custos') %}
+<div class="sheet" id="sh-novo-custo">
+  <div class="handle"></div>
+  <div class="sh-hd"><span class="sh-ttl">Novo custo</span><button class="sh-x" onclick="fecharSheets()"><i class="bi bi-x"></i></button></div>
+  <div class="sh-body">
+    <div class="fld"><label>Sistema</label><select id="cus-sist" onchange="onCusSistChange()"><option value="">Selecione...</option>{% for s in sistemas_map.keys() %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select></div>
+    <div class="fld"><label>Equipamento</label><select id="cus-equip"><option value="">Selecione o sistema primeiro</option></select></div>
+    <div class="fld"><label>Nº O.S.</label><input type="text" id="cus-os" placeholder="Número da O.S."></div>
+    <div class="fld"><label>Descrição</label><input type="text" id="cus-desc" placeholder="Descrição do custo"></div>
+    <div class="fld"><label>Mês referência</label><input type="text" id="cus-mes" placeholder="MM/AAAA"></div>
+    <button class="btn-p" onclick="salvarCusto()"><i class="bi bi-check-circle-fill"></i> Salvar custo</button>
+  </div>
+</div>
+{% endif %}
+
+<!-- Sheet: Ações de inventário -->
+{% if can('edit_inventario') %}
+<div class="sheet" id="sh-inv-acao">
+  <div class="handle"></div>
+  <div class="sh-hd"><span class="sh-ttl">Inventário</span><button class="sh-x" onclick="fecharSheets()"><i class="bi bi-x"></i></button></div>
+  <div class="sh-body">
+    <!-- Abas -->
+    <div style="display:flex;gap:6px;margin-bottom:14px">
+      <button class="chip on" id="inv-tab-saida" onclick="invTab('saida')" style="flex:1;justify-content:center">Saída</button>
+      <button class="chip" id="inv-tab-entrada" onclick="invTab('entrada')" style="flex:1;justify-content:center">Entrada</button>
+      <button class="chip" id="inv-tab-pedido" onclick="invTab('pedido')" style="flex:1;justify-content:center">Pedido</button>
+      {% if inv_pedidos %}<button class="chip" id="inv-tab-receber" onclick="invTab('receber')" style="flex:1;justify-content:center">Receber</button>{% endif %}
+    </div>
+
+    <!-- Saída -->
+    <div id="inv-form-saida">
+      <div class="fld"><label>Item</label><select id="inv-item-saida"><option value="">Selecione...</option>{% for r in inv_rows %}<option value="{{ r.id }}">{{ r.nome }} ({{ r.quantidade|int }} {{ r.unidade or 'un' }})</option>{% endfor %}</select></div>
+      <div class="fld"><label>Quantidade</label><input type="number" id="inv-qtd-saida" placeholder="1" min="1"></div>
+      <div class="fld"><label>Destino / O.S.</label><input type="text" id="inv-dest-saida" placeholder="Local ou número da O.S."></div>
+      <div class="fld"><label>Motivo</label><input type="text" id="inv-mot-saida" placeholder="Motivo da saída"></div>
+      <button class="btn-p" style="background:linear-gradient(90deg,var(--red),#c81e1e)" onclick="salvarSaida()"><i class="bi bi-box-arrow-up-right"></i> Registrar saída</button>
+    </div>
+
+    <!-- Entrada -->
+    <div id="inv-form-entrada" style="display:none">
+      <div class="fld"><label>Item</label><select id="inv-item-entrada"><option value="">Selecione...</option>{% for r in inv_rows %}<option value="{{ r.id }}">{{ r.nome }}</option>{% endfor %}</select></div>
+      <div class="fld"><label>Quantidade</label><input type="number" id="inv-qtd-entrada" placeholder="1" min="1"></div>
+      <div class="fld"><label>Motivo</label><input type="text" id="inv-mot-entrada" placeholder="Ex: Compra, devolução..."></div>
+      <button class="btn-p" onclick="salvarEntrada()"><i class="bi bi-box-arrow-in-down"></i> Registrar entrada</button>
+    </div>
+
+    <!-- Pedido -->
+    <div id="inv-form-pedido" style="display:none">
+      <div class="fld"><label>Item</label><select id="inv-item-pedido"><option value="">Selecione...</option>{% for r in inv_rows %}<option value="{{ r.id }}">{{ r.nome }}</option>{% endfor %}</select></div>
+      <div class="fld"><label>Quantidade</label><input type="number" id="inv-qtd-pedido" placeholder="1" min="1"></div>
+      <div class="fld"><label>Fornecedor</label><input type="text" id="inv-forn-pedido" placeholder="Fornecedor (opcional)"></div>
+      <div class="fld"><label>Observações</label><input type="text" id="inv-obs-pedido" placeholder="Observações"></div>
+      <button class="btn-p" onclick="salvarPedidoInv()"><i class="bi bi-cart-plus-fill"></i> Registrar pedido</button>
+    </div>
+
+    <!-- Receber pedidos -->
+    <div id="inv-form-receber" style="display:none">
+      {% for p in inv_pedidos %}
+      <div class="list-item" style="margin-bottom:9px">
+        <div class="li-top">
+          <div><div class="li-title">{{ p.item_nome or 'Item' }}</div><div class="li-sub">{{ p.quantidade|int }} {{ p.unidade or 'un' }} · {{ p.fornecedor or 'Sem fornecedor' }}</div></div>
+          <button class="bs bg-green" onclick="receberPedido({{ p.id }})"><i class="bi bi-check-circle-fill"></i> Receber</button>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty"><i class="bi bi-inbox"></i><p>Nenhum pedido pendente.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+<div class="toast" id="toast"></div>
+
+<script>
+const SIST = {{ sistemas_map|tojson }};
+const COMB_VINCULOS = {{ comb_vinculos|tojson }};
+let _pausaId = null;
+let _currentPanel = 'pn-home';
+const _chipFilters = {};
+
+// ── Navegação ──
+function goPanel(id, filter) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+  _currentPanel = id;
+  // Nav buttons
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+  const map = {'pn-home':'nb-home','pn-os':'nb-os','pn-pag':'nb-pag'};
+  if (map[id]) document.getElementById(map[id])?.classList.add('on');
+  // FAB context
+  updateFab(id);
+  // Filter
+  if (filter) {
+    const chipContainer = id === 'pn-os' ? 'osContainer' : (id === 'pn-pag' ? 'pagContainer' : (id === 'pn-estoque' ? 'estContainer' : null));
+    const type = id === 'pn-os' ? 'os' : (id === 'pn-pag' ? 'pag' : 'est');
+    if (chipContainer) {
+      const chip = document.querySelector(`[data-f="${filter}"]`);
+      if (chip) setChip(chip, chipContainer, type);
+    }
+  }
+  document.getElementById('scroll').scrollTo({top:0,behavior:'smooth'});
+}
+
+function updateFab(panelId) {
+  const fab = document.getElementById('nb-fab');
+  const lbl = document.getElementById('fab-lbl');
+  if (!fab) return;
+  const map = {
+    'pn-home':    ['sh-nova-os','Nova O.S.'],
+    'pn-os':      ['sh-nova-os','Nova O.S.'],
+    'pn-pag':     ['sh-novo-pag','Novo'],
+    'pn-comb':    ['sh-novo-comb','Lançar'],
+    'pn-estoque': ['sh-nova-bomba','Nova'],
+    'pn-inv':     ['sh-inv-acao','Inventário'],
+    'pn-custos':  ['sh-novo-custo','Novo custo'],
+    'pn-campo':   ['sh-nova-os','Nova O.S.'],
+  };
+  const [sheetId, label] = map[panelId] || ['sh-nova-os','Nova O.S.'];
+  fab.onclick = () => {
+    if (panelId === 'pn-comb') preencherDataComb();
+    if (panelId === 'pn-home' || panelId === 'pn-os' || panelId === 'pn-campo') preencherDataOS();
+    abrirSheet(sheetId);
+  };
+  if (lbl) lbl.textContent = label;
+}
+
+// ── Chips + filtro ──
+function setChip(el, containerId, type) {
+  const parent = el.closest('.chips');
+  if (parent) parent.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  _chipFilters[containerId] = el.dataset.f;
+  aplicarFiltro(containerId, type);
+}
+
+function filtrarLista(inputId, containerId, type) {
+  aplicarFiltro(containerId, type);
+}
+
+function aplicarFiltro(containerId, type) {
+  const f = _chipFilters[containerId] || 'all';
+  const qId = containerId === 'osContainer' ? 'osQ' : (containerId === 'pagContainer' ? 'pagQ' : (containerId === 'combContainer' ? 'combQ' : 'estQ'));
+  const q = (document.getElementById(qId)?.value || '').toLowerCase();
+  let found = 0;
+  document.querySelectorAll(`#${containerId} [data-s]`).forEach(el => {
+    const grupo = el.dataset.g || '';
+    const show = (f === 'all' || grupo === f) && (!q || el.dataset.s.includes(q));
+    el.style.display = show ? '' : 'none';
+    if (show) found++;
+  });
+  const empId = containerId + '-empty';
+  let emp = document.getElementById(empId);
+  if (!found) {
+    if (!emp) { emp = document.createElement('div'); emp.id = empId; emp.className = 'empty'; emp.innerHTML = '<i class="bi bi-inbox"></i><p>Nenhum resultado.</p>'; document.getElementById(containerId).appendChild(emp); }
+    emp.style.display = '';
+  } else if (emp) emp.style.display = 'none';
+}
+
+// ── Sheets ──
+function abrirSheet(id) {
+  document.getElementById('backdrop').classList.add('on');
+  document.getElementById(id)?.classList.add('on');
+}
+function fecharSheets() {
+  document.getElementById('backdrop').classList.remove('on');
+  document.querySelectorAll('.sheet').forEach(s => s.classList.remove('on'));
+}
+
+// ── FAB inicial ──
+function fabAction() {
+  preencherDataOS();
+  abrirSheet('sh-nova-os');
+}
+
+function preencherDataOS() {
+  const hoje = new Date();
+  const d = document.getElementById('gs-data');
+  if (d) d.value = `${String(hoje.getDate()).padStart(2,'0')}/${String(hoje.getMonth()+1).padStart(2,'0')}/${hoje.getFullYear()}`;
+}
+function preencherDataComb() {
+  const hoje = new Date();
+  const d = document.getElementById('comb-data');
+  if (d) d.value = `${String(hoje.getDate()).padStart(2,'0')}/${String(hoje.getMonth()+1).padStart(2,'0')}/${hoje.getFullYear()}`;
+  // preenche motorista/modelo/placa do vínculo
+  const sel = document.getElementById('comb-motor');
+  if (sel) autoFillCombVinculo(sel.value);
+}
+
+// Sistema → Equipamento
+function onSistChange() {
+  const s = document.getElementById('gs-sist').value;
+  const sel = document.getElementById('gs-equip');
+  sel.innerHTML = '<option value="">Selecione...</option>' + (SIST[s]||[]).map(e=>`<option value="${e}">${e}</option>`).join('');
+}
+
+// Motorista → Modelo/Placa
+function autoFillCombVinculo(nome) {
+  const v = COMB_VINCULOS.find(x => x.motorista === nome);
+  if (v) {
+    const m = document.getElementById('comb-modelo');
+    const p = document.getElementById('comb-placa');
+    if (m) m.value = v.modelo || '';
+    if (p) p.value = v.placa || '';
+  }
+}
+document.getElementById('comb-motor')?.addEventListener('change', e => autoFillCombVinculo(e.target.value));
+
+// ── Detalhe O.S. ──
+async function abrirOSDetalhe(id) {
+  abrirSheet('sh-os-det');
+  document.getElementById('os-det-ttl').textContent = `O.S. #${id}`;
+  document.getElementById('os-det-body').innerHTML = '<div class="empty"><i class="bi bi-hourglass-split"></i><p>Carregando...</p></div>';
+  try {
+    const d = await (await fetch(`/api/os/${id}`)).json();
+    if (!d?.id) { document.getElementById('os-det-body').innerHTML = '<div class="empty"><i class="bi bi-x-circle"></i><p>Erro ao carregar.</p></div>'; return; }
+    const fin = (d.finalizada||'').toLowerCase() === 'sim';
+    const st = (d.status||'').toLowerCase();
+    const atr = d.atrasada;
+    const bc = atr?'bdg-red':fin?'bdg-green':st==='pausada'?'bdg-amber':st==='em andamento'?'bdg-blue':'bdg-gray';
+    const bt = atr?'Atrasada':fin?'Finalizada':(d.status||'Aberta');
+    document.getElementById('os-det-ttl').innerHTML = `O.S. #${d.numero_os||d.id} <span class="bdg ${bc}">${bt}</span>`;
+    const rows = [['Data',d.data||'-'],['Sistema',d.sistema||'-'],['Equipamento',d.equipamento||'-'],['Responsável',d.responsavel||'Equipe'],['Criticidade',d.criticidade||'Não definida'],['Início',d.data_inicio||'-'],['Fim',d.data_fim||'-']].map(([l,v])=>`<div class="det-row"><span class="det-lbl">${l}</span><span class="det-val">${v}</span></div>`).join('');
+    const desc = d.descricao ? `<div style="font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;margin:10px 0 3px">Descrição</div><div class="det-box">${d.descricao}</div>` : '';
+    const serv = d.servico_executado ? `<div style="font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;margin:6px 0 3px">Serviço executado</div><div class="det-box">${d.servico_executado}</div>` : '';
+    let acts = '';
+    {% if can('edit_os') %}
+    if (!fin) {
+      if (st==='em andamento') acts+=`<button class="bs bg-amber" onclick="pausarOS(${d.id})"><i class="bi bi-pause-circle-fill"></i> Pausar</button><button class="bs bg-green" onclick="finalizarOS(${d.id})"><i class="bi bi-check-circle-fill"></i> Finalizar</button>`;
+      else if (st==='pausada') acts+=`<button class="bs bg-blue-s" onclick="iniciarOS(${d.id})"><i class="bi bi-arrow-clockwise"></i> Retomar</button><button class="bs bg-green" onclick="finalizarOS(${d.id})"><i class="bi bi-check-circle-fill"></i> Finalizar</button>`;
+      else acts+=`<button class="bs bg-green" onclick="iniciarOS(${d.id})"><i class="bi bi-play-circle-fill"></i> Iniciar</button>`;
+    }
+    {% endif %}
+    acts+=`<a class="bs bg-wpp" href="/campo/whatsapp/equipe/${d.id}" target="_blank"><i class="bi bi-whatsapp"></i> Avisar</a>`;
+    document.getElementById('os-det-body').innerHTML = rows+desc+serv+(acts?`<div class="acts" style="margin-top:12px">${acts}</div>`:'');
+  } catch(e) { document.getElementById('os-det-body').innerHTML = '<div class="empty"><i class="bi bi-x-circle"></i><p>Erro ao carregar.</p></div>'; }
+}
+
+// ── Ações O.S. ──
+async function iniciarOS(id) {
+  fecharSheets();
+  await fetch(`/os/iniciar/${id}`,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'}});
+  toast('O.S. iniciada ✓'); setTimeout(()=>location.reload(),900);
+}
+function pausarOS(id) {
+  _pausaId=id; fecharSheets();
+  setTimeout(()=>{document.getElementById('mot-pausar').value='';abrirSheet('sh-pausar');},200);
+}
+async function confirmarPausa() {
+  const mot=document.getElementById('mot-pausar').value.trim();
+  if(!mot){toast('Informe o motivo');return;}
+  const f=new FormData();f.append('motivo_pausa',mot);
+  await fetch(`/os/pausar/${_pausaId}`,{method:'POST',body:f});
+  fecharSheets();toast('O.S. pausada ⏸');setTimeout(()=>location.reload(),900);
+}
+async function finalizarOS(id) {
+  if(!confirm('Finalizar esta O.S.?'))return;
+  fecharSheets();
+  await fetch(`/os/finalizar/${id}`,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'}});
+  toast('O.S. finalizada ✓');setTimeout(()=>location.reload(),900);
+}
+
+// ── Salvar Pagamento ──
+async function salvarPagamento() {
+  const fd = new FormData();
+  fd.append('fornecedor', document.getElementById('pag-forn').value);
+  fd.append('descricao_servico', document.getElementById('pag-desc').value);
+  fd.append('valor', document.getElementById('pag-val').value);
+  fd.append('pagamento_mes', document.getElementById('pag-mes').value);
+  fd.append('tipo_lancamento', document.getElementById('pag-tipo').value);
+  fd.append('status', document.getElementById('pag-status').value);
+  const r = await fetch('/api/mobile/pagamentos/save',{method:'POST',body:fd});
+  const d = await r.json();
+  if (d.ok) { fecharSheets(); toast('Pagamento salvo ✓'); setTimeout(()=>location.reload(),900); }
+  else toast('Erro: '+d.error);
+}
+
+// ── Salvar Combustível ──
+async function salvarCombustivel() {
+  const fd = new FormData();
+  fd.append('data', document.getElementById('comb-data').value);
+  fd.append('motorista', document.getElementById('comb-motor').value);
+  fd.append('modelo_veiculo', document.getElementById('comb-modelo').value);
+  fd.append('placa', document.getElementById('comb-placa').value);
+  fd.append('km', document.getElementById('comb-km').value);
+  fd.append('custo', document.getElementById('comb-custo').value);
+  fd.append('observacoes', document.getElementById('comb-obs').value);
+  const r = await fetch('/api/mobile/combustivel/save',{method:'POST',body:fd});
+  const d = await r.json();
+  if (d.ok) { fecharSheets(); toast('Abastecimento salvo ✓'); setTimeout(()=>location.reload(),900); }
+  else toast('Erro: '+d.error);
+}
+
+// ── Salvar Bomba ──
+async function salvarBomba() {
+  const fd = new FormData();
+  fd.append('equipamento', document.getElementById('bom-equip').value);
+  fd.append('modelo', document.getElementById('bom-modelo').value);
+  fd.append('localizacao', document.getElementById('bom-loc').value);
+  fd.append('fornecedor', document.getElementById('bom-forn').value);
+  fd.append('obs', document.getElementById('bom-obs').value);
+  const r = await fetch('/api/mobile/bomba/save',{method:'POST',body:fd});
+  const d = await r.json();
+  if (d.ok) { fecharSheets(); toast('Bomba registrada ✓'); setTimeout(()=>location.reload(),900); }
+  else toast('Erro: '+d.error);
+}
+
+
+// Sistema → Equipamento (custos)
+function onCusSistChange() {
+  const s = document.getElementById('cus-sist').value;
+  const sel = document.getElementById('cus-equip');
+  sel.innerHTML = '<option value="">Selecione...</option>' + (SIST[s]||[]).map(e=>`<option value="${e}">${e}</option>`).join('');
+}
+
+async function salvarCusto() {
+  const fd = new FormData();
+  fd.append('sistema', document.getElementById('cus-sist').value);
+  fd.append('equipamento', document.getElementById('cus-equip').value);
+  fd.append('nr_os', document.getElementById('cus-os').value);
+  fd.append('descricao_os', document.getElementById('cus-desc').value);
+  fd.append('mes', document.getElementById('cus-mes').value);
+  const r = await fetch('/custos/save',{method:'POST',body:fd});
+  fecharSheets(); toast('Custo salvo ✓'); setTimeout(()=>location.reload(),900);
+}
+
+function invTab(tab) {
+  ['saida','entrada','pedido','receber'].forEach(t => {
+    const f = document.getElementById('inv-form-'+t);
+    const b = document.getElementById('inv-tab-'+t);
+    if (f) f.style.display = t === tab ? '' : 'none';
+    if (b) b.classList.toggle('on', t === tab);
+  });
+}
+
+async function salvarSaida() {
+  const item_id = document.getElementById('inv-item-saida').value;
+  const qtd = document.getElementById('inv-qtd-saida').value;
+  if (!item_id || !qtd) { toast('Preencha item e quantidade'); return; }
+  const fd = new FormData();
+  fd.append('item_id', item_id);
+  fd.append('quantidade', qtd);
+  fd.append('destino', document.getElementById('inv-dest-saida').value);
+  fd.append('motivo', document.getElementById('inv-mot-saida').value);
+  await fetch('/inventario/retirada',{method:'POST',body:fd});
+  fecharSheets(); toast('Saída registrada ✓'); setTimeout(()=>location.reload(),900);
+}
+
+async function salvarEntrada() {
+  const item_id = document.getElementById('inv-item-entrada').value;
+  const qtd = document.getElementById('inv-qtd-entrada').value;
+  if (!item_id || !qtd) { toast('Preencha item e quantidade'); return; }
+  const fd = new FormData();
+  fd.append('item_id', item_id);
+  fd.append('quantidade', qtd);
+  fd.append('motivo', document.getElementById('inv-mot-entrada').value);
+  fd.append('tipo', 'entrada');
+  await fetch('/inventario/movimento',{method:'POST',body:fd});
+  fecharSheets(); toast('Entrada registrada ✓'); setTimeout(()=>location.reload(),900);
+}
+
+async function salvarPedidoInv() {
+  const item_id = document.getElementById('inv-item-pedido').value;
+  const qtd = document.getElementById('inv-qtd-pedido').value;
+  if (!item_id || !qtd) { toast('Preencha item e quantidade'); return; }
+  const fd = new FormData();
+  fd.append('item_id', item_id);
+  fd.append('quantidade', qtd);
+  fd.append('fornecedor', document.getElementById('inv-forn-pedido').value);
+  fd.append('observacoes', document.getElementById('inv-obs-pedido').value);
+  await fetch('/inventario/pedido/save',{method:'POST',body:fd});
+  fecharSheets(); toast('Pedido registrado ✓'); setTimeout(()=>location.reload(),900);
+}
+
+async function receberPedido(pid) {
+  if (!confirm('Confirmar recebimento?')) return;
+  const fd = new FormData();
+  await fetch(`/inventario/pedido/receber/${pid}`,{method:'POST',body:fd});
+  toast('Recebimento confirmado ✓'); setTimeout(()=>location.reload(),900);
+}
+
+// ── Toast ──
+function toast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2200);
+}
+
+// ── Tema ──
+function toggleTheme() {
+  const dark=document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme',dark?'light':'dark');
+  document.querySelector('#theme-btn i').className=dark?'bi bi-moon-stars-fill':'bi bi-sun-fill';
+  localStorage.setItem('iris-t',dark?'light':'dark');
+}
+(()=>{
+  const t=localStorage.getItem('iris-t')||'light';
+  document.documentElement.setAttribute('data-theme',t);
+  const ic=document.querySelector('#theme-btn i');
+  if(ic)ic.className=t==='dark'?'bi bi-sun-fill':'bi bi-moon-stars-fill';
+  updateFab('pn-home');
+})();
+</script>
+</body>
+</html>

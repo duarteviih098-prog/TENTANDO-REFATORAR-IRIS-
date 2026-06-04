@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+.apr-header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 16px;flex-wrap:wrap;gap:12px}
+.apr-header h1{margin:0;font-size:1.25rem;font-weight:700;color:#111827}
+.apr-header p{margin:3px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .apr-header h1{color:#f1f5f9}
+html[data-theme="dark"] .apr-header p{color:#64748b}
+
+/* KPIs */
+.apr-kpis{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.apr-kpi{flex:1;min-width:140px;background:#fff;border:1px solid #e5e7eb;border-radius:9px;padding:14px 18px}
+.apr-kpi-label{font-size:.7rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px}
+.apr-kpi-value{font-size:1.2rem;font-weight:700;color:#111827}
+.apr-kpi-value.red{color:#991b1b}
+.apr-kpi-value.amber{color:#92400e}
+html[data-theme="dark"] .apr-kpi{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .apr-kpi-label{color:#64748b}
+html[data-theme="dark"] .apr-kpi-value{color:#f1f5f9}
+
+/* Barra de ações em lote */
+.apr-bulk-bar{display:none;align-items:center;gap:10px;background:#fff;border:1px solid #1d4ed8;border-radius:9px;padding:12px 16px;margin-bottom:14px;box-shadow:0 0 0 3px rgba(29,78,216,.08);animation:_aprBarIn .18s ease}
+.apr-bulk-bar.show{display:flex}
+.apr-bulk-count{font-size:.84rem;font-weight:700;color:#1d4ed8;flex:1}
+.apr-bulk-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:7px;font-size:.8rem;font-weight:700;cursor:pointer;border:none;transition:opacity .12s}
+.apr-bulk-aprovar{background:#16a34a;color:#fff}
+.apr-bulk-aprovar:hover{opacity:.88}
+.apr-bulk-reprovar{background:#fff;color:#991b1b;border:1px solid #fca5a5}
+.apr-bulk-reprovar:hover{background:#fef2f2}
+.apr-bulk-clear{background:none;border:none;color:#9ca3af;cursor:pointer;font-size:.8rem;padding:4px 8px;border-radius:5px}
+.apr-bulk-clear:hover{color:#374151;background:#f3f4f6}
+@keyframes _aprBarIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+html[data-theme="dark"] .apr-bulk-bar{background:#1e293b;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+html[data-theme="dark"] .apr-bulk-count{color:#60a5fa}
+html[data-theme="dark"] .apr-bulk-reprovar{background:#1e293b;border-color:#7f1d1d;color:#fca5a5}
+html[data-theme="dark"] .apr-bulk-reprovar:hover{background:rgba(239,68,68,.08)}
+html[data-theme="dark"] .apr-bulk-clear{color:#475569}
+html[data-theme="dark"] .apr-bulk-clear:hover{color:#cbd5e1;background:#334155}
+
+/* Tabs */
+.apr-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.apr-tabs{display:flex;gap:6px;flex:1;flex-wrap:wrap}
+.apr-tab{padding:6px 14px;border-radius:20px;border:1px solid #e5e7eb;background:#fff;color:#6b7280;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .12s}
+.apr-tab:hover,.apr-tab.active{border-color:#1d4ed8;background:#eff6ff;color:#1d4ed8}
+.apr-tab.danger.active{border-color:#dc2626;background:#fef2f2;color:#991b1b}
+.apr-select-all-wrap{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;color:#6b7280;cursor:pointer;padding:6px 10px;border-radius:7px;border:1px solid #e5e7eb;background:#fff;white-space:nowrap}
+.apr-select-all-wrap:hover{border-color:#d1d5db;background:#f9fafb}
+html[data-theme="dark"] .apr-tab{background:#1e293b;border-color:#334155;color:#64748b}
+html[data-theme="dark"] .apr-tab:hover,.apr-tab.active{border-color:#3b82f6;background:rgba(59,130,246,.1);color:#60a5fa}
+html[data-theme="dark"] .apr-select-all-wrap{background:#1e293b;border-color:#334155;color:#64748b}
+html[data-theme="dark"] .apr-select-all-wrap:hover{border-color:#475569;background:#273549}
+
+/* Cards */
+.apr-list{display:flex;flex-direction:column;gap:10px}
+.apr-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;transition:box-shadow .12s,border-color .12s}
+.apr-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.apr-card.selected{border-color:#1d4ed8;box-shadow:0 0 0 2px rgba(29,78,216,.15)}
+.apr-card-urgente{border-left:3px solid #ef4444}
+.apr-card-hoje{border-left:3px solid #f59e0b}
+.apr-card-semana{border-left:3px solid #1d4ed8}
+.apr-card-normal{border-left:3px solid #e5e7eb}
+.apr-card-top{padding:14px 16px;display:flex;align-items:flex-start;gap:12px}
+/* Checkbox */
+.apr-check{width:18px;height:18px;accent-color:#1d4ed8;cursor:pointer;flex-shrink:0;margin-top:2px}
+.apr-card-body{flex:1;min-width:0}
+.apr-card-nome{font-size:.88rem;font-weight:700;color:#111827;margin:0 0 3px;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.apr-card-desc{font-size:.78rem;color:#6b7280;margin:0 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.apr-card-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.apr-meta-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:500;background:#f3f4f6;color:#374151}
+.apr-meta-invest{background:#dbeafe;color:#1e40af}
+.apr-card-valor{text-align:right;flex-shrink:0}
+.apr-card-valor-num{font-size:1rem;font-weight:700;color:#111827}
+.apr-card-venc{font-size:.72rem;margin-top:2px;font-weight:500}
+.apr-card-venc.vencido{color:#991b1b}
+.apr-card-venc.urgente{color:#92400e}
+.apr-card-venc.ok{color:#6b7280}
+/* Badges */
+.apr-urgencia-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:700}
+.badge-vencido{background:#fef2f2;color:#991b1b}
+.badge-hoje{background:#fef9c3;color:#92400e}
+.badge-amanha{background:#fef3c7;color:#b45309}
+.badge-semana{background:#dbeafe;color:#1e40af}
+.badge-normal{background:#f3f4f6;color:#6b7280}
+.apr-aprovado-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:600}
+.apr-aprovado-sim{background:#dcfce7;color:#166534}
+.apr-aprovado-nao{background:#fef2f2;color:#991b1b}
+.apr-aprovado-wait{background:#f3f4f6;color:#6b7280}
+/* Ações individuais */
+.apr-card-actions{padding:10px 16px;border-top:1px solid #f3f4f6;display:flex;align-items:center;gap:8px;background:#fafafa}
+.apr-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:7px;font-size:.8rem;font-weight:700;cursor:pointer;transition:opacity .12s,background .12s;border:none}
+.apr-btn-aprovar{background:#16a34a;color:#fff}
+.apr-btn-aprovar:hover{opacity:.88}
+.apr-btn-reprovar{background:#fff;color:#991b1b;border:1px solid #fca5a5}
+.apr-btn-reprovar:hover{background:#fef2f2}
+.apr-btn-ver{background:#fff;color:#374151;border:1px solid #e5e7eb;font-weight:500;margin-left:auto;text-decoration:none}
+.apr-btn-ver:hover{background:#f9fafb}
+.apr-form-reprovar{display:none;padding:12px 16px;border-top:1px solid #f3f4f6;background:#fef2f2;flex-direction:column;gap:8px}
+.apr-form-reprovar input{padding:7px 10px;border:1px solid #fca5a5;border-radius:7px;font-size:.82rem;color:#111827;width:100%}
+.apr-form-reprovar-btns{display:flex;gap:6px}
+.apr-empty{padding:60px;text-align:center;color:#9ca3af;background:#fff;border:1px solid #e5e7eb;border-radius:10px}
+html[data-theme="dark"] .apr-card{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .apr-card.selected{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.2)}
+html[data-theme="dark"] .apr-card-nome{color:#f1f5f9}
+html[data-theme="dark"] .apr-card-desc{color:#64748b}
+html[data-theme="dark"] .apr-card-valor-num{color:#f1f5f9}
+html[data-theme="dark"] .apr-card-actions{background:#162032;border-color:#334155}
+html[data-theme="dark"] .apr-meta-pill{background:#334155;color:#94a3b8}
+html[data-theme="dark"] .apr-meta-invest{background:rgba(29,78,216,.15);color:#93c5fd}
+html[data-theme="dark"] .apr-btn-reprovar{background:#1e293b;border-color:#7f1d1d;color:#fca5a5}
+html[data-theme="dark"] .apr-btn-ver{background:#1e293b;border-color:#334155;color:#cbd5e1}
+html[data-theme="dark"] .apr-form-reprovar{background:rgba(239,68,68,.08);border-color:#334155}
+html[data-theme="dark"] .apr-form-reprovar input{background:#0f172a;border-color:#7f1d1d;color:#f1f5f9}
+html[data-theme="dark"] .apr-empty{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .badge-normal{background:#334155;color:#64748b}
+
+/* Modal reprovar em lote */
+.apr-modal-overlay{display:none;position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);align-items:center;justify-content:center}
+.apr-modal-overlay.show{display:flex;animation:_aprFadeIn .15s ease}
+.apr-modal{background:#fff;border-radius:14px;padding:24px;width:min(400px,calc(100vw - 32px));box-shadow:0 24px 64px rgba(0,0,0,.18)}
+.apr-modal h3{margin:0 0 6px;font-size:1rem;font-weight:700;color:#991b1b}
+.apr-modal p{margin:0 0 16px;font-size:.84rem;color:#6b7280}
+.apr-modal input{width:100%;padding:8px 12px;border:1px solid #fca5a5;border-radius:8px;font-size:.84rem;margin-bottom:12px;color:#111827}
+.apr-modal-btns{display:flex;gap:8px}
+@keyframes _aprFadeIn{from{opacity:0}to{opacity:1}}
+html[data-theme="dark"] .apr-modal{background:#1e293b;border:1px solid #334155}
+html[data-theme="dark"] .apr-modal h3{color:#fca5a5}
+html[data-theme="dark"] .apr-modal p{color:#64748b}
+html[data-theme="dark"] .apr-modal input{background:#0f172a;border-color:#7f1d1d;color:#f1f5f9}
+</style>
+
+<div class="apr-header">
+  <div>
+    <h1>Aprovações</h1>
+    <p>Fila de pagamentos pendentes, ordenados por urgência de vencimento</p>
+  </div>
+  <a class="erp-btn erp-btn-ghost erp-btn-sm" href="{{ url_for('pagamentos_hub') }}">
+    <i class="bi bi-grid-3x3-gap"></i> Hub
+  </a>
+</div>
+
+<!-- KPIs -->
+<div class="apr-kpis">
+  <div class="apr-kpi">
+    <span class="apr-kpi-label">Total pendente</span>
+    <span class="apr-kpi-value">{{ total_pendente|br_money }}</span>
+  </div>
+  <div class="apr-kpi">
+    <span class="apr-kpi-label">Vencidos</span>
+    <span class="apr-kpi-value red">{{ count_vencidos }}</span>
+  </div>
+  <div class="apr-kpi">
+    <span class="apr-kpi-label">Urgentes (7 dias)</span>
+    <span class="apr-kpi-value amber">{{ count_urgentes }}</span>
+  </div>
+  <div class="apr-kpi">
+    <span class="apr-kpi-label">Total na fila</span>
+    <span class="apr-kpi-value">{{ count_total }}</span>
+  </div>
+</div>
+
+<!-- Barra de ações em lote (aparece ao selecionar) -->
+<div class="apr-bulk-bar" id="aprBulkBar">
+  <span class="apr-bulk-count" id="aprBulkCount">0 selecionados</span>
+  <button class="apr-bulk-btn apr-bulk-aprovar" onclick="loteAprovar()">
+    <i class="bi bi-check-circle-fill"></i> Aprovar selecionados
+  </button>
+  <button class="apr-bulk-btn apr-bulk-reprovar" onclick="abrirModalReprovar()">
+    <i class="bi bi-x-circle"></i> Reprovar selecionados
+  </button>
+  <button class="apr-bulk-clear" onclick="limparSelecao()">Limpar seleção</button>
+</div>
+
+<!-- Toolbar: tabs + selecionar todos -->
+<div class="apr-toolbar">
+  <div class="apr-tabs">
+    <button class="apr-tab active" onclick="filtrarUrgencia(this, '')">Todos ({{ count_total }})</button>
+    <button class="apr-tab danger" onclick="filtrarUrgencia(this, 'vencido')">Vencidos ({{ count_vencidos }})</button>
+    <button class="apr-tab" onclick="filtrarUrgencia(this, 'urgente')">Esta semana ({{ count_urgentes }})</button>
+  </div>
+  {% if can('edit_pagamentos') %}
+  <label class="apr-select-all-wrap">
+    <input type="checkbox" id="aprSelectAll" onchange="toggleSelectAll(this)" style="accent-color:#1d4ed8;width:15px;height:15px">
+    Selecionar todos
+  </label>
+  {% endif %}
+</div>
+
+<!-- Lista -->
+<div class="apr-list" id="aprList">
+{% for r in pendentes %}
+{% set urgclass = 'apr-card-urgente' if r.urgencia == 'vencido' else ('apr-card-hoje' if r.urgencia in ('hoje','amanha') else ('apr-card-semana' if r.urgencia == 'semana' else 'apr-card-normal')) %}
+{% set urgbadge = 'badge-vencido' if r.urgencia == 'vencido' else ('badge-hoje' if r.urgencia == 'hoje' else ('badge-amanha' if r.urgencia == 'amanha' else ('badge-semana' if r.urgencia == 'semana' else 'badge-normal'))) %}
+{% set urgtext = 'Vencido' if r.urgencia == 'vencido' else ('Vence hoje' if r.urgencia == 'hoje' else ('Vence amanhã' if r.urgencia == 'amanha' else ('Esta semana' if r.urgencia == 'semana' else 'Normal'))) %}
+<div class="apr-card {{ urgclass }}" data-urgencia="{{ r.urgencia }}" data-id="{{ r.id }}" id="apr-{{ r.id }}">
+  <div class="apr-card-top">
+    {% if can('edit_pagamentos') %}
+    <input type="checkbox" class="apr-check apr-row-check" value="{{ r.id }}" onchange="onCheckChange()">
+    {% endif %}
+    <div class="apr-card-body">
+      <div class="apr-card-nome">
+        {{ r.fornecedor or 'Sem fornecedor' }}
+        <span class="apr-urgencia-badge {{ urgbadge }}">{{ urgtext }}</span>
+        {% if r.aprovado_label == 'Aprovado' %}
+        <span class="apr-aprovado-badge apr-aprovado-sim"><i class="bi bi-check-circle-fill"></i> Aprovado</span>
+        {% elif r.aprovado_label == 'Reprovado' %}
+        <span class="apr-aprovado-badge apr-aprovado-nao"><i class="bi bi-x-circle-fill"></i> Reprovado</span>
+        {% else %}
+        <span class="apr-aprovado-badge apr-aprovado-wait"><i class="bi bi-clock"></i> Aguardando</span>
+        {% endif %}
+      </div>
+      <div class="apr-card-desc">{{ r.descricao_servico or '—' }}</div>
+      <div class="apr-card-meta">
+        {% if r.pagamento_mes %}<span class="apr-meta-pill"><i class="bi bi-calendar3"></i> {{ r.pagamento_mes }}</span>{% endif %}
+        {% if r.numero_documento %}<span class="apr-meta-pill">SC {{ r.numero_documento }}</span>{% endif %}
+        {% if r.sc_pedido %}<span class="apr-meta-pill">PD {{ r.sc_pedido }}</span>{% endif %}
+        <span class="apr-meta-pill {{ 'apr-meta-invest' if (r.tipo_lancamento or 'Gasto') == 'Investimento' else '' }}">{{ r.tipo_lancamento or 'Gasto' }}</span>
+        {% if r.anexos_count > 0 %}<span class="apr-meta-pill"><i class="bi bi-paperclip"></i> {{ r.anexos_count }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="apr-card-valor">
+      <div class="apr-card-valor-num">{{ r.valor_fmt or r.valor or '—' }}</div>
+      {% if r.data_vencimento %}
+      <div class="apr-card-venc {{ 'vencido' if r.urgencia == 'vencido' else ('urgente' if r.urgencia in ('hoje','amanha') else 'ok') }}">
+        <i class="bi bi-calendar-event"></i> {{ r.data_vencimento }}
+        {% if r.dias_venc is not none %}
+          {% if r.dias_venc < 0 %}({{ r.dias_venc|abs }}d atrás)
+          {% elif r.dias_venc == 0 %}(hoje)
+          {% elif r.dias_venc == 1 %}(amanhã)
+          {% else %}(em {{ r.dias_venc }}d){% endif %}
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% if can('edit_pagamentos') %}
+  <div class="apr-card-actions">
+    <form method="post" action="{{ url_for('pagamentos_aprovar', rid=r.id) }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="acao" value="aprovar">
+      <button type="submit" class="apr-btn apr-btn-aprovar"><i class="bi bi-check-circle-fill"></i> Aprovar</button>
+    </form>
+    <button class="apr-btn apr-btn-reprovar" onclick="mostrarReprovar({{ r.id }})"><i class="bi bi-x-circle"></i> Reprovar</button>
+    <a class="apr-btn apr-btn-ver" href="{{ url_for('pagamentos') }}?todos=1"><i class="bi bi-eye"></i> Ver</a>
+  </div>
+  <form method="post" action="{{ url_for('pagamentos_aprovar', rid=r.id) }}" id="form-reprovar-{{ r.id }}"
+        class="apr-form-reprovar">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="acao" value="reprovar">
+    <input type="text" name="motivo" placeholder="Motivo da reprovação…">
+    <div class="apr-form-reprovar-btns">
+      <button type="submit" class="apr-btn" style="background:#ef4444;color:#fff">Confirmar reprovação</button>
+      <button type="button" class="apr-btn" style="background:#fff;border:1px solid #e5e7eb;color:#374151;font-weight:500"
+              onclick="esconderReprovar({{ r.id }})">Cancelar</button>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% else %}
+<div class="apr-empty">
+  <i class="bi bi-check2-all" style="font-size:2.5rem;display:block;margin-bottom:10px;opacity:.3"></i>
+  Nenhum pagamento pendente de aprovação.
+</div>
+{% endfor %}
+</div>
+
+<!-- Modal reprovar em lote -->
+<div class="apr-modal-overlay" id="aprModalReprovar">
+  <div class="apr-modal">
+    <h3><i class="bi bi-x-circle-fill"></i> Reprovar selecionados</h3>
+    <p id="aprModalDesc">Informe o motivo da reprovação para os registros selecionados.</p>
+    <input type="text" id="aprMotivoLote" placeholder="Motivo da reprovação…">
+    <div class="apr-modal-btns">
+      <button class="apr-btn" style="background:#ef4444;color:#fff;flex:1" onclick="loteReprovar()">
+        <i class="bi bi-x-circle-fill"></i> Confirmar reprovação
+      </button>
+      <button class="apr-btn" style="background:#fff;border:1px solid #e5e7eb;color:#374151;font-weight:500"
+              onclick="fecharModalReprovar()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CSRF = document.querySelector('meta[name=csrf-token]')?.content || window.IRIS_CSRF_TOKEN || '';
+
+function selectedIds() {
+  return [...document.querySelectorAll('.apr-row-check:checked')].map(c => parseInt(c.value));
+}
+
+function onCheckChange() {
+  const ids = selectedIds();
+  const bar = document.getElementById('aprBulkBar');
+  const count = document.getElementById('aprBulkCount');
+  const selectAll = document.getElementById('aprSelectAll');
+
+  // Atualiza visual do card
+  document.querySelectorAll('.apr-row-check').forEach(cb => {
+    cb.closest('.apr-card')?.classList.toggle('selected', cb.checked);
+  });
+
+  if(ids.length > 0) {
+    bar.classList.add('show');
+    count.textContent = `${ids.length} selecionado(s)`;
+  } else {
+    bar.classList.remove('show');
+    if(selectAll) selectAll.checked = false;
+  }
+
+  // Atualiza estado do "selecionar todos"
+  const visiveis = [...document.querySelectorAll('.apr-card:not([style*="none"]) .apr-row-check')];
+  if(selectAll && visiveis.length > 0) {
+    selectAll.indeterminate = ids.length > 0 && ids.length < visiveis.length;
+    selectAll.checked = ids.length === visiveis.length;
+  }
+}
+
+function toggleSelectAll(cb) {
+  const visiveis = [...document.querySelectorAll('.apr-card:not([style*="none"]) .apr-row-check')];
+  visiveis.forEach(c => { c.checked = cb.checked; });
+  onCheckChange();
+}
+
+function limparSelecao() {
+  document.querySelectorAll('.apr-row-check').forEach(c => c.checked = false);
+  const sa = document.getElementById('aprSelectAll');
+  if(sa) { sa.checked = false; sa.indeterminate = false; }
+  onCheckChange();
+}
+
+async function loteAprovar() {
+  const ids = selectedIds();
+  if(!ids.length) return;
+  const ok = await irisConfirm({
+    title: 'Aprovar pagamentos',
+    message: `Aprovar ${ids.length} pagamento(s) selecionado(s)?`,
+    danger: false,
+    btnOk: 'Aprovar',
+  });
+  if(!ok) return;
+  await enviarLote('aprovar', ids, '');
+}
+
+function abrirModalReprovar() {
+  const ids = selectedIds();
+  if(!ids.length) return;
+  document.getElementById('aprModalDesc').textContent =
+    `Informe o motivo da reprovação para ${ids.length} pagamento(s) selecionado(s).`;
+  document.getElementById('aprMotivoLote').value = '';
+  document.getElementById('aprModalReprovar').classList.add('show');
+  setTimeout(() => document.getElementById('aprMotivoLote').focus(), 80);
+}
+
+function fecharModalReprovar() {
+  document.getElementById('aprModalReprovar').classList.remove('show');
+}
+
+async function loteReprovar() {
+  const ids = selectedIds();
+  const motivo = document.getElementById('aprMotivoLote').value.trim();
+  fecharModalReprovar();
+  await enviarLote('reprovar', ids, motivo);
+}
+
+async function enviarLote(acao, ids, motivo) {
+  try {
+    const resp = await fetch('/api/pagamentos/aprovacoes/lote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+      body: JSON.stringify({ ids, acao, motivo }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if(data.ok) {
+      // Remove/atualiza cards na tela sem reload
+      ids.forEach(id => {
+        const card = document.getElementById('apr-' + id);
+        if(!card) return;
+        if(acao === 'aprovar') {
+          const badge = card.querySelector('.apr-aprovado-badge');
+          if(badge) { badge.className = 'apr-aprovado-badge apr-aprovado-sim'; badge.innerHTML = '<i class="bi bi-check-circle-fill"></i> Aprovado'; }
+          card.classList.remove('selected');
+        } else {
+          card.style.animation = '_aprSlideOut .25s ease forwards';
+          setTimeout(() => card.remove(), 260);
+        }
+      });
+      limparSelecao();
+      const msg = acao === 'aprovar'
+        ? `${data.updated} pagamento(s) aprovado(s)`
+        : `${data.updated} pagamento(s) reprovado(s)`;
+      if(typeof showToast === 'function') showToast(msg);
+    } else {
+      if(typeof showToast === 'function') showToast(data.error || 'Erro ao processar.', 'error');
+    }
+  } catch(e) {
+    if(typeof showToast === 'function') showToast('Erro de rede.', 'error');
+  }
+}
+
+function filtrarUrgencia(tab, tipo) {
+  document.querySelectorAll('.apr-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  document.querySelectorAll('.apr-card').forEach(c => {
+    if(!tipo) { c.style.display = ''; return; }
+    const urg = c.dataset.urgencia;
+    c.style.display = (tipo === 'urgente' ? ['vencido','hoje','amanha','semana'].includes(urg) : urg === tipo) ? '' : 'none';
+  });
+  limparSelecao();
+}
+
+function mostrarReprovar(id) {
+  const f = document.getElementById('form-reprovar-' + id);
+  if(f) { f.style.display = 'flex'; f.style.flexDirection = 'column'; f.querySelector('input[name=motivo]').focus(); }
+}
+function esconderReprovar(id) {
+  const f = document.getElementById('form-reprovar-' + id);
+  if(f) f.style.display = 'none';
+}
+
+// Fechar modal clicando fora
+document.getElementById('aprModalReprovar').addEventListener('click', function(e) {
+  if(e.target === this) fecharModalReprovar();
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') fecharModalReprovar();
+});
+</script>
+
+<style>
+@keyframes _aprSlideOut{to{opacity:0;transform:translateX(20px);max-height:0;margin:0;padding:0;border:none}}
+</style>
+{% endblock %}

@@ -1,0 +1,376 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero"><h1>Custos</h1><p>Cadastro em janela e listagem centralizada.</p></section>
+
+<div class="grid-2">
+  <div class="soft-card"><div class="metric">Custos do mês filtrado</div><div class="metric-value">{{ rows|length }}</div></div>
+  <div class="soft-card"><div class="metric">Mês ativo</div><div class="metric-value" style="color:#3f8edb">{{ filtro_mes }}</div></div>
+</div>
+
+<div class="content-card mt-3">
+  <div class="action-strip">
+    {% if can('edit_custos') %}<button class="btn-gg btn-blue" data-bs-toggle="modal" data-bs-target="#custoModal"><i class="bi bi-plus-circle-fill"></i> Novo custo</button>{% endif %}
+    {% if can('edit_custos') %}<button class="btn-gg btn-ghost" id="custoEditBtn"><i class="bi bi-pencil-square"></i> Editar</button>{% endif %}
+    {% if can('delete_custos') %}<button class="btn-gg btn-outline-red" id="custoDeleteBtn"><i class="bi bi-trash-fill"></i> Excluir</button>{% endif %}
+    {% if can('edit_custos') %}
+    <form method="post" action="{{ url_for('custos_import') }}" enctype="multipart/form-data" class="d-inline-flex align-items-center gap-2">
+      <input class="form-control form-control-sm" style="max-width:220px" type="file" name="arquivo_excel" accept=".xlsx,.xlsm,.xltx,.xltm">
+      <button class="btn-gg btn-ghost" type="submit"><i class="bi bi-upload"></i> Importar Excel</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="content-card mt-3">
+  <form class="toolbar-form" method="get">
+    <div class="field-inline"><label>Mês</label><input class="form-control month-picker" name="mes" value="{{ filtro_mes }}" style="width:120px" placeholder="MM/AAAA"></div>
+    <button class="btn-gg btn-ghost"><i class="bi bi-search"></i> Filtrar</button>
+  </form>
+</div>
+
+<div class="content-card">
+  <h3>Custos lançados</h3>
+  <div class="table-shell">
+    <div class="table-responsive">
+      <table class="table-gg" id="custosTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>Sistema</th><th>Equipamento</th><th>O.S.</th><th>Descrição</th><th>Local</th><th>Valor</th><th>Mês</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr data-id="{{ r.id }}">
+            <td>{{ r.id }}</td>
+            <td>{{ r.sistema }}</td>
+            <td>{{ r.equipamento }}</td>
+            <td>
+              {% if r.nr_os %}
+                <span class="custo-link-badge os"><i class="bi bi-tools"></i> {{ r.nr_os }}</span>
+              {% else %}—{% endif %}
+            </td>
+            <td>{{ r.descricao_os }}</td>
+            <td>{{ r.local }}</td>
+            <td>{% if r.valor %}<strong>{{ r.valor }}</strong>{% else %}—{% endif %}</td>
+            <td>{{ r.mes }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="empty">Sem dados neste mês.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL CUSTO ===================== -->
+<div class="modal fade iris-modal" id="custoModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('custos_save') }}">
+        <input type="hidden" name="id"           id="custos_id">
+        <input type="hidden" name="os_id"        id="custos_os_id">
+        <input type="hidden" name="pagamento_id" id="custos_pagamento_id">
+        <input type="hidden" name="valor"        id="custos_valor">
+
+        <div class="modal-header">
+          <div>
+            <div class="modal-title"><i class="bi bi-receipt me-2"></i>Custo</div>
+            <div class="modal-subtitle">Vincule a O.S. e o pagamento para preencher automaticamente</div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+
+          <!-- SEÇÃO 1: Vínculo automático -->
+          <div class="modal-section custo-vinculo-section">
+            <div class="modal-section-title"><i class="bi bi-link-45deg"></i>Vínculo automático</div>
+            <p class="mini mb-3">Selecione a O.S. e o Pagamento relacionados — sistema, local, descrição e valor serão preenchidos automaticamente.</p>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">O.S. relacionada</label>
+                <div class="custo-search-wrap">
+                  <input class="form-control" id="custoOsBusca" placeholder="Buscar por número, sistema ou equipamento..." autocomplete="off">
+                  <div class="custo-dropdown" id="custoOsDropdown"></div>
+                </div>
+                <div class="custo-vinculo-chip" id="custoOsChip" style="display:none"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Pagamento relacionado</label>
+                <div class="custo-search-wrap">
+                  <input class="form-control" id="custoPagBusca" placeholder="Buscar por fornecedor ou descrição..." autocomplete="off">
+                  <div class="custo-dropdown" id="custoPagDropdown"></div>
+                </div>
+                <div class="custo-vinculo-chip" id="custoPagChip" style="display:none"></div>
+              </div>
+            </div>
+
+            <!-- Preview do custo gerado -->
+            <div class="custo-preview" id="custoPreview" style="display:none">
+              <div class="custo-preview-title"><i class="bi bi-magic"></i> Custo gerado automaticamente</div>
+              <div class="custo-preview-grid" id="custoPreviewGrid"></div>
+            </div>
+          </div>
+
+          <!-- SEÇÃO 2: Dados do custo -->
+          <div class="modal-section">
+            <div class="modal-section-title"><i class="bi bi-geo-alt"></i>Dados do custo</div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Sistema</label>
+                <input class="form-control" name="sistema" id="custos_sistema" list="custos_sistema_list" placeholder="Buscar sistema">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Unidade / Equipamento</label>
+                <input class="form-control" name="equipamento" id="custos_equipamento" list="custos_equipamento_list" placeholder="Buscar unidade">
+              </div>
+              <datalist id="custos_sistema_list"></datalist>
+              <datalist id="custos_equipamento_list"></datalist>
+              <div class="col-md-4">
+                <label class="form-label">Nº da O.S.</label>
+                <input class="form-control" name="nr_os" id="custos_nr_os" placeholder="Número da ordem de serviço">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Mês de referência</label>
+                <input class="form-control month-picker" name="mes" id="custos_mes" placeholder="MM/AAAA">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Tipo de manutenção</label>
+                <input class="form-control" name="manutencao" id="custos_manutencao" placeholder="Preventiva, Corretiva...">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Local</label>
+                <input class="form-control" name="local" id="custos_local" placeholder="Local de execução">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Descrição</label>
+                <textarea class="form-control" name="descricao_os" id="custos_descricao_os" rows="3" placeholder="Descreva o serviço executado"></textarea>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /modal-body -->
+
+        <div class="modal-footer">
+          <button class="btn-cancel" data-bs-dismiss="modal" type="button">Cancelar</button>
+          <button class="btn-save" type="submit"><i class="bi bi-floppy-fill me-1"></i>Salvar custo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- ===================== /MODAL ===================== -->
+
+{% endblock %}
+{% block scripts %}
+<script>
+setupSelectableTable('#custosTable','custos');
+const sistemas={{ sistemas_map|tojson }};
+setupSearchableSystemUnit('custos_sistema','custos_equipamento',sistemas);
+document.getElementById('custoEditBtn')?.addEventListener('click',()=>{
+  const id=document.querySelector('#custosTable tr.selected')?.dataset.id;
+  if(id) openEditModal('custos',id);
+});
+document.getElementById('custoDeleteBtn')?.addEventListener('click',()=>document.dispatchEvent(new KeyboardEvent('keydown',{key:'Delete'})));
+window.custosEdit=async(id)=>{
+  const r=await fetch(`/api/custos/${id}`);
+  const d=await r.json();
+  for(const k in d){const el=document.getElementById('custos_'+k); if(el) el.value=d[k]||'';}
+  setupSearchableSystemUnit('custos_sistema','custos_equipamento',sistemas,d.sistema||'',d.equipamento||'');
+  new bootstrap.Modal('#custoModal').show();
+};
+
+/* ── Vínculo automático O.S. + Pagamento ── */
+(function(){
+  let osSelected  = null;
+  let pagSelected = null;
+
+  function setupBusca(inputId, dropdownId, fetchFn, onSelect){
+    const input = document.getElementById(inputId);
+    const drop  = document.getElementById(dropdownId);
+    if(!input || !drop) return;
+    let timer;
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      const q = input.value.trim();
+      if(q.length < 2){ drop.innerHTML=''; drop.style.display='none'; return; }
+      timer = setTimeout(async () => {
+        const items = await fetchFn(q);
+        if(!items.length){
+          drop.innerHTML='<div class="custo-drop-empty">Nenhum resultado encontrado</div>';
+          drop.style.display='block';
+          return;
+        }
+        drop.innerHTML = items.map(item =>
+          `<div class="custo-drop-item" data-id="${item.id}">${item.label}</div>`
+        ).join('');
+        drop.style.display = 'block';
+        drop.querySelectorAll('.custo-drop-item').forEach(el => {
+          el.addEventListener('click', () => {
+            const found = items.find(i => String(i.id) === el.dataset.id);
+            if(found) onSelect(found);
+            drop.style.display = 'none';
+            input.value = '';
+          });
+        });
+      }, 280);
+    });
+    document.addEventListener('click', e => {
+      if(!input.contains(e.target) && !drop.contains(e.target)) drop.style.display='none';
+    });
+  }
+
+  async function fetchOs(q){
+    try {
+      const r = await fetch(`/api/search?module=os&q=${encodeURIComponent(q)}&limit=8`);
+      const d = await r.json();
+      return (d.rows||[]).map(row => ({
+        id: row.id,
+        label: `O.S. ${row.numero_os||row.id} — ${row.sistema||''} / ${row.equipamento||''}`.replace(/ \/ $/,''),
+        sistema:     row.sistema     || '',
+        equipamento: row.equipamento || '',
+        numero_os:   row.numero_os   || row.id,
+        data:        row.data        || '',
+        descricao:   row.descricao   || '',
+      }));
+    } catch(e){ return []; }
+  }
+
+  async function fetchPag(q){
+    try {
+      const r = await fetch(`/api/search?module=pagamentos&q=${encodeURIComponent(q)}&limit=8`);
+      const d = await r.json();
+      return (d.rows||[]).map(row => ({
+        id:        row.id,
+        label:     `#${row.id} — ${row.fornecedor||''}: ${(row.descricao_servico||'').slice(0,50)}`,
+        fornecedor: row.fornecedor       || '',
+        descricao:  row.descricao_servico|| '',
+        valor:      row.valor            || '',
+        mes:        row.pagamento_mes    || '',
+      }));
+    } catch(e){ return []; }
+  }
+
+  function onOsSelect(item){
+    osSelected = item;
+    document.getElementById('custos_os_id').value  = item.id;
+    if(item.sistema)     document.getElementById('custos_sistema').value     = item.sistema;
+    if(item.equipamento) document.getElementById('custos_equipamento').value = item.equipamento;
+    document.getElementById('custos_nr_os').value = item.numero_os || item.id;
+    document.getElementById('custos_local').value =
+      item.sistema + (item.equipamento ? ' — ' + item.equipamento : '');
+
+    const chip = document.getElementById('custoOsChip');
+    chip.innerHTML = `<i class="bi bi-tools"></i> O.S. ${item.numero_os||item.id} — ${item.sistema}
+      <button type="button" class="custo-chip-remove" id="custoOsRemove">×</button>`;
+    chip.style.display = 'flex';
+    document.getElementById('custoOsRemove').addEventListener('click', () => {
+      osSelected = null;
+      document.getElementById('custos_os_id').value = '';
+      chip.style.display = 'none';
+      updatePreview();
+    });
+    updatePreview();
+  }
+
+  function onPagSelect(item){
+    pagSelected = item;
+    document.getElementById('custos_pagamento_id').value = item.id;
+    document.getElementById('custos_valor').value        = item.valor;
+
+    const descEl = document.getElementById('custos_descricao_os');
+    if(!descEl.value) descEl.value = item.descricao;
+
+    const mesEl = document.getElementById('custos_mes');
+    if(!mesEl.value && item.mes) mesEl.value = item.mes;
+
+    const chip = document.getElementById('custoPagChip');
+    chip.innerHTML = `<i class="bi bi-currency-dollar"></i> ${item.fornecedor} — ${item.valor}
+      <button type="button" class="custo-chip-remove" id="custoPagRemove">×</button>`;
+    chip.style.display = 'flex';
+    document.getElementById('custoPagRemove').addEventListener('click', () => {
+      pagSelected = null;
+      document.getElementById('custos_pagamento_id').value = '';
+      document.getElementById('custos_valor').value        = '';
+      chip.style.display = 'none';
+      updatePreview();
+    });
+    updatePreview();
+  }
+
+  function updatePreview(){
+    const preview = document.getElementById('custoPreview');
+    const grid    = document.getElementById('custoPreviewGrid');
+    if(!osSelected && !pagSelected){ preview.style.display='none'; return; }
+
+    const sistema   = document.getElementById('custos_sistema').value    || '—';
+    const equip     = document.getElementById('custos_equipamento').value|| '—';
+    const nr_os     = document.getElementById('custos_nr_os').value      || '—';
+    const descricao = document.getElementById('custos_descricao_os').value || (pagSelected?.descricao||'—');
+    const valor     = pagSelected?.valor     || '—';
+    const fornecedor= pagSelected?.fornecedor|| '—';
+
+    grid.innerHTML = `
+      <div class="custo-preview-item"><span>Sistema</span><strong>${sistema}</strong></div>
+      <div class="custo-preview-item"><span>Equipamento</span><strong>${equip}</strong></div>
+      <div class="custo-preview-item"><span>O.S.</span><strong>${nr_os}</strong></div>
+      <div class="custo-preview-item"><span>Fornecedor</span><strong>${fornecedor}</strong></div>
+      <div class="custo-preview-item"><span>Descrição</span><strong>${descricao}</strong></div>
+      <div class="custo-preview-item"><span>Valor</span><strong class="text-success">${valor}</strong></div>
+    `;
+    preview.style.display = 'block';
+  }
+
+  document.getElementById('custoModal')?.addEventListener('show.bs.modal', e => {
+    if(!e.relatedTarget) return; // edição: não limpa
+    osSelected = null; pagSelected = null;
+    ['custos_os_id','custos_pagamento_id','custos_valor'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value='';
+    });
+    ['custoOsChip','custoPagChip'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el){ el.style.display='none'; el.innerHTML=''; }
+    });
+    document.getElementById('custoPreview').style.display  = 'none';
+    document.getElementById('custoOsBusca').value  = '';
+    document.getElementById('custoPagBusca').value = '';
+  });
+
+  setupBusca('custoOsBusca',  'custoOsDropdown',  fetchOs,  onOsSelect);
+  setupBusca('custoPagBusca', 'custoPagDropdown', fetchPag, onPagSelect);
+})();
+</script>
+
+<style>
+/* ── Busca com dropdown ── */
+.custo-search-wrap{position:relative}
+.custo-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,.14);z-index:1060;max-height:260px;overflow-y:auto;display:none}
+.custo-drop-item{padding:10px 14px;cursor:pointer;font-size:.87rem;border-bottom:1px solid var(--line);transition:.15s;line-height:1.35}
+.custo-drop-item:last-child{border-bottom:none}
+.custo-drop-item:hover{background:rgba(63,142,219,.08);color:var(--blue)}
+.custo-drop-empty{padding:12px 14px;color:var(--muted);font-size:.85rem;text-align:center}
+
+/* ── Chips de vínculo ── */
+.custo-vinculo-chip{display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;border-radius:12px;background:rgba(63,142,219,.08);border:1px solid rgba(63,142,219,.2);font-size:.84rem;font-weight:600;color:var(--blue)}
+.custo-chip-remove{border:none;background:rgba(239,68,68,.12);color:#dc2626;border-radius:8px;width:22px;height:22px;font-size:14px;cursor:pointer;margin-left:auto;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.custo-chip-remove:hover{background:rgba(239,68,68,.22)}
+
+/* ── Preview do custo ── */
+.custo-preview{margin-top:16px;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,rgba(23,163,74,.06),rgba(63,142,219,.06));border:1px solid rgba(23,163,74,.2)}
+.custo-preview-title{display:flex;align-items:center;gap:8px;font-weight:800;font-size:.88rem;color:#166534;margin-bottom:12px}
+.custo-preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.custo-preview-item{display:flex;flex-direction:column;gap:2px}
+.custo-preview-item span{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.custo-preview-item strong{font-size:.87rem;color:var(--text)}
+
+/* ── Badge O.S. na tabela ── */
+.custo-link-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:8px;font-size:.78rem;font-weight:700}
+.custo-link-badge.os{background:rgba(63,142,219,.1);color:#1d4ed8;border:1px solid rgba(63,142,219,.18)}
+
+/* ── Destaque da seção de vínculo ── */
+.custo-vinculo-section{background:rgba(63,142,219,.03);border:1px solid rgba(63,142,219,.12);border-radius:16px;padding:16px}
+
+@media(max-width:768px){.custo-preview-grid{grid-template-columns:1fr 1fr}}
+</style>
+{% endblock %}

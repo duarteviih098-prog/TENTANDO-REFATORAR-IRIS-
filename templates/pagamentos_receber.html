@@ -1,0 +1,601 @@
+{% extends 'base.html' %}
+{% block head %}
+<style>
+/* ── PAGE HEADER ── */
+.erp-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:28px 0 20px;flex-wrap:wrap}
+.erp-page-title h1{margin:0;font-size:1.35rem;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1.2}
+.erp-page-title p{margin:4px 0 0;font-size:.82rem;color:#6b7280;font-weight:400}
+.erp-page-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.erp-btn-group{display:flex;align-items:center;gap:4px;padding:0 8px;border-left:1px solid #e5e7eb}
+.erp-btn-group:first-of-type{padding-left:0;border-left:none}
+.erp-import-form{display:inline-flex;align-items:center;gap:6px;padding-left:8px;border-left:1px solid #e5e7eb}
+.erp-file-input{font-size:.76rem;color:#6b7280;max-width:160px;cursor:pointer}
+
+/* ── BUTTONS ── */
+.erp-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;font-size:.8rem;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:background .12s,border-color .12s,color .12s;white-space:nowrap;-webkit-tap-highlight-color:transparent;line-height:1.4}
+.erp-btn i{font-size:.78rem}
+.erp-btn-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.erp-btn-primary:hover{background:#1e40af;border-color:#1e40af;color:#fff}
+.erp-btn-ghost{background:#fff;color:#333333;border-color:#e5e7eb}
+.erp-btn-ghost:hover{background:#f9fafb;border-color:#d1d5db;color:var(--text)}
+.erp-btn-paid{color:#166534}
+.erp-btn-paid:hover{background:#f0fdf4;border-color:#86efac}
+.erp-btn-danger{color:#991b1b}
+.erp-btn-danger:hover{background:#fef2f2;border-color:#fca5a5}
+.erp-btn-sm{padding:5px 10px;font-size:.76rem}
+
+/* ── KPIs ── */
+.erp-kpi-row{display:flex;align-items:center;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px 28px;margin-bottom:20px;gap:0}
+.erp-kpi{flex:1;display:flex;flex-direction:column;gap:3px;padding:0 20px}
+.erp-kpi:first-child{padding-left:0}
+.erp-kpi:last-child{padding-right:0}
+.erp-kpi-divider{width:1px;height:40px;background:#e5e7eb;flex-shrink:0}
+.erp-kpi-label{font-size:.72rem;font-weight:500;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.erp-kpi-value{font-size:1.3rem;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1.1}
+.erp-kpi-paid{color:#166534}
+.erp-kpi-pending{color:#92400e}
+.erp-kpi-sub{font-size:.72rem;color:#9ca3af}
+
+/* ── FILTER BAR ── */
+.erp-filter-bar{display:flex;align-items:flex-end;gap:12px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px 20px;margin-bottom:16px;flex-wrap:wrap}
+.erp-filter-fields{display:flex;gap:8px;flex-wrap:wrap;flex:1;align-items:flex-end}
+.erp-filter-field{display:flex;flex-direction:column;gap:3px}
+.erp-filter-field--wide{flex:1;min-width:200px}
+.erp-filter-field label{font-size:.68rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.erp-filter-search{position:relative;width:100%}
+.erp-filter-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.78rem;pointer-events:none}
+.erp-filter-input{width:100%;padding:7px 10px 7px 28px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:var(--text);background:#fff;outline:none;transition:border-color .12s,box-shadow .12s}
+.erp-filter-select{padding:7px 28px 7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:var(--text);background:#fff;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer;transition:border-color .12s}
+.erp-filter-select:focus{border-color:#1d4ed8;outline:none}
+.erp-filter-input:focus{border-color:#1d4ed8;box-shadow:0 0 0 3px rgba(29,78,216,.07)}
+.erp-filter-input::placeholder{color:#9ca3af}
+.erp-input{padding:7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:var(--text);background:#fff;outline:none;transition:border-color .12s;min-width:90px}
+.erp-input:focus{border-color:#1d4ed8}
+/* Select — custom arrow via clip-path para funcionar em qualquer tema */
+.erp-select{padding:7px 28px 7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:var(--text);background:#fff;outline:none;transition:border-color .12s;min-width:90px;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.erp-select:focus{border-color:#1d4ed8}
+.erp-filter-actions{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap}
+/* Import customizado */
+#erp-import-form{display:inline-flex;align-items:center;gap:6px}
+.erp-import-filename{font-size:.72rem;color:#6b7280;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── TABLE WRAPPER ── */
+.erp-table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.erp-table{width:100%;border-collapse:collapse;font-size:.82rem}
+
+/* ── TABLE HEAD ── */
+.erp-table thead tr{border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.erp-table thead th{padding:11px 14px;font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;text-align:left;border:none}
+.erp-th-check{width:40px;padding:11px 14px}
+.erp-th-num{text-align:right}
+
+/* ── TABLE BODY ── */
+.erp-table tbody tr{border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .08s}
+.erp-table tbody tr.drw-active{background:#eff6ff !important;outline:2px solid #1d4ed8;outline-offset:-1px}
+html[data-theme="dark"] .erp-table tbody tr.drw-active{background:rgba(29,78,216,.12) !important;outline-color:#3b82f6}
+.erp-table tbody tr:last-child{border-bottom:none}
+.erp-table tbody tr:hover{background:#f9fafb}
+.erp-table tbody tr.selected{background:#eff6ff}
+.erp-table tbody td{padding:13px 14px;color:var(--text);vertical-align:middle;border:none}
+.erp-td-check{width:40px;padding:13px 14px}
+.erp-td-main{min-width:160px}
+.erp-td-desc{max-width:260px;color:#333333}
+.erp-td-num{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.erp-td-mono{font-size:.78rem;color:#6b7280;font-variant-numeric:tabular-nums}
+.erp-cell-primary{display:block;font-weight:500;color:var(--text)}
+.erp-cell-id{display:block;font-size:.72rem;color:#9ca3af;margin-top:1px}
+.erp-empty{padding:40px;text-align:center;color:#9ca3af;font-size:.84rem}
+
+/* ── CHECKBOX ── */
+.erp-checkbox{width:15px;height:15px;accent-color:#1d4ed8;cursor:pointer;border-radius:3px}
+
+/* ── STATUS ── */
+.erp-status{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;font-weight:500;white-space:nowrap}
+.erp-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.erp-status-paid{color:#166534}
+.erp-dot-paid{background:#16a34a}
+.erp-status-open{color:#6b7280}
+.erp-dot-open{background:#d1d5db}
+.erp-status-late{color:#991b1b}
+.erp-dot-late{background:#ef4444}
+
+/* ── BADGES ── */
+.erp-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:500;letter-spacing:.01em}
+.erp-badge-gasto{background:#f3f4f6;color:#333333}
+.erp-badge-invest{background:#dbeafe;color:#1e40af}
+.erp-badge-terceiros{background:#dcfce7;color:#166534}
+html[data-theme="dark"] .erp-badge-terceiros{background:rgba(22,163,74,.15);color:#4ade80}
+
+/* ── VENCIMENTO ── */
+.erp-venc{font-size:.8rem;color:#6b7280}
+.erp-venc-hoje{color:#dc2626;font-weight:600}
+.erp-venc-amanha{color:#d97706;font-weight:500}
+
+/* ── FILE PILLS ── */
+.erp-files{display:flex;gap:4px;flex-wrap:wrap}
+.erp-file-pill{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:5px;text-decoration:none;font-size:.78rem;transition:opacity .12s}
+.erp-file-pill:hover{opacity:.75}
+.erp-file-orcamento{background:#dbeafe;color:#1d4ed8}
+.erp-file-nf{background:#dcfce7;color:#166534}
+.erp-file-boleto{background:#fef9c3;color:#854d0e}
+
+/* ── VENC POPUP (mantido) ── */
+to{opacity:1;transform:none}}
+
+/* ── TOAST NOTIFICAÇÃO ── */
+.gg-toast{position:fixed;bottom:28px;right:28px;z-index:99999;padding:12px 18px;border-radius:8px;font-size:.84rem;font-weight:500;max-width:360px;opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .2s,transform .2s;border:1px solid transparent;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.gg-toast.show{opacity:1;pointer-events:auto;transform:none}
+.gg-toast.show:not(.error):not(.warning){background:var(--text);color:#f9fafb;border-color:#333333}
+.gg-toast.show.error{background:#fef2f2;color:#991b1b;border-color:#fca5a5}
+.gg-toast.show.warning{background:#fffbeb;color:#92400e;border-color:#fde68a}
+html[data-theme="dark"] .gg-toast.show:not(.error):not(.warning){background:#f0f0f0;color:var(--text);border-color:#2e2e2e}
+html[data-theme="dark"] .gg-toast.show.error{background:#450a0a;color:#fca5a5;border-color:#7f1d1d}
+
+/* ── DRAWER LATERAL ── */
+.drw-overlay{position:fixed;inset:0;z-index:1040;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .25s}
+.drw-overlay.open{opacity:1;pointer-events:auto}
+.drw-panel{position:fixed;top:0;right:0;bottom:0;z-index:1041;width:min(460px,95vw);background:#fff;box-shadow:-8px 0 40px rgba(0,0,0,.14);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.drw-panel.open{transform:none}
+html[data-theme="dark"] .drw-panel{background:#1a1a1a;box-shadow:-8px 0 40px rgba(0,0,0,.5)}
+/* Header */
+.drw-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid #e5e7eb;gap:12px;flex-shrink:0}
+html[data-theme="dark"] .drw-header{border-color:#2e2e2e}
+.drw-header-left{display:flex;align-items:center;gap:12px;min-width:0}
+.drw-avatar{width:40px;height:40px;border-radius:10px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:800;flex-shrink:0;letter-spacing:-.02em}
+html[data-theme="dark"] .drw-avatar{background:rgba(29,78,216,.2);color:#60a5fa}
+.drw-fornecedor{font-size:.95rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html[data-theme="dark"] .drw-fornecedor{color:#f0f0f0}
+.drw-id{font-size:.72rem;color:#9ca3af;margin-top:1px}
+.drw-close{width:32px;height:32px;border-radius:8px;border:none;background:#f3f4f6;color:#6b7280;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s}
+.drw-close:hover{background:#e5e7eb;color:var(--text)}
+html[data-theme="dark"] .drw-close{background:#2e2e2e;color:#666666}
+html[data-theme="dark"] .drw-close:hover{background:#444444;color:#f0f0f0}
+/* Valor */
+.drw-valor-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #f3f4f6;flex-shrink:0}
+html[data-theme="dark"] .drw-valor-row{border-color:#2e2e2e}
+.drw-valor{font-size:1.5rem;font-weight:800;color:var(--text);letter-spacing:-.03em}
+html[data-theme="dark"] .drw-valor{color:#f0f0f0}
+.drw-mes{font-size:.76rem;color:#9ca3af;margin-top:2px}
+/* Ações */
+.drw-actions{display:flex;gap:8px;padding:12px 20px;border-bottom:1px solid #f3f4f6;flex-shrink:0;flex-wrap:wrap}
+html[data-theme="dark"] .drw-actions{border-color:#2e2e2e}
+.drw-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:7px;font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid #e5e7eb;background:#fff;color:#333333;transition:background .12s,border-color .12s;text-decoration:none}
+.drw-btn:hover{background:#f9fafb;border-color:#d1d5db}
+.drw-btn-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.drw-btn-primary:hover{background:#1e40af;border-color:#1e40af;color:#fff}
+.drw-btn-green{background:#fff;color:#166534;border-color:#86efac}
+.drw-btn-green:hover{background:#f0fdf4}
+.drw-btn-red{background:#fff;color:#991b1b;border-color:#fca5a5}
+.drw-btn-red:hover{background:#fef2f2}
+html[data-theme="dark"] .drw-btn{background:#1a1a1a;border-color:#2e2e2e;color:#cccccc}
+html[data-theme="dark"] .drw-btn:hover{background:#273549;border-color:#444444}
+html[data-theme="dark"] .drw-btn-primary{background:#2563eb;border-color:#2563eb;color:#fff}
+/* Body */
+.drw-body{flex:1;overflow-y:auto;padding:0}
+.drw-section{padding:16px 20px;border-bottom:1px solid #f3f4f6}
+html[data-theme="dark"] .drw-section{border-color:#2e2e2e}
+.drw-section-title{font-size:.68rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.drw-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.drw-field:last-child{margin-bottom:0}
+.drw-field-label{font-size:.7rem;color:#9ca3af;font-weight:500}
+.drw-field-value{font-size:.86rem;color:var(--text);font-weight:500}
+html[data-theme="dark"] .drw-field-value{color:#e2e8f0}
+.drw-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+/* Badges no drawer */
+.drw-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:.74rem;font-weight:600}
+.drw-badge-pago{background:#dcfce7;color:#166534}
+.drw-badge-aberto{background:#f3f4f6;color:#333333}
+.drw-badge-vencido{background:#fef2f2;color:#991b1b}
+.drw-badge-gasto{background:#f3f4f6;color:#333333}
+.drw-badge-invest{background:#dbeafe;color:#1e40af}
+.drw-badge-terceiros{background:#dcfce7;color:#166534}
+html[data-theme="dark"] .drw-badge-pago{background:rgba(22,163,74,.15);color:#4ade80}
+html[data-theme="dark"] .drw-badge-aberto{background:#2e2e2e;color:#aaaaaa}
+html[data-theme="dark"] .drw-badge-gasto{background:#2e2e2e;color:#aaaaaa}
+html[data-theme="dark"] .drw-badge-invest{background:rgba(29,78,216,.15);color:#93c5fd}
+html[data-theme="dark"] .drw-badge-terceiros{background:rgba(22,163,74,.15);color:#4ade80}
+/* Anexos no drawer */
+.drw-files{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.drw-file-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;text-decoration:none;font-size:.78rem;font-weight:500;transition:opacity .12s;border:1px solid}
+.drw-file-pill:hover{opacity:.8}
+.drw-file-orcamento{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+.drw-file-nf{background:#f0fdf4;color:#166534;border-color:#bbf7d0}
+.drw-file-boleto{background:#fffbeb;color:#92400e;border-color:#fde68a}
+/* Loading */
+.drw-loading{padding:48px;text-align:center;color:#9ca3af;font-size:.84rem}
+.drw-spin{display:inline-block;animation:drwSpin 1s linear infinite;margin-right:6px}
+@keyframes drwSpin{to{transform:rotate(360deg)}}
+/* Status no header do valor */
+.drw-status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
+.drw-status-pago .drw-status-dot{background:#16a34a}
+.drw-status-aberto .drw-status-dot{background:#d1d5db}
+.drw-status-vencido .drw-status-dot{background:#ef4444;animation:drwPulse 1.2s ease-in-out infinite}
+@keyframes drwPulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){.drw-panel{width:100vw}}
+
+@media(max-width:1100px){.erp-filter-fields{gap:6px}.erp-filter-search{flex:0 0 200px}}
+@media(max-width:768px){.erp-page-header{flex-direction:column}.erp-kpi-row{flex-wrap:wrap;gap:16px}.erp-kpi-divider{display:none}.erp-kpi{flex:1 1 40%}.erp-filter-bar{flex-direction:column;align-items:stretch}.erp-filter-search{flex:none}.erp-table thead{display:none}.erp-table tbody td{display:block;text-align:left}.erp-table tbody tr{border-bottom:2px solid #e5e7eb;margin-bottom:8px}}
+
+/* ══ DARK MODE ══════════════════════════════════════════════ */
+html[data-theme="dark"] .erp-page-title h1{color:#f0f0f0}
+html[data-theme="dark"] .erp-page-title p{color:#aaaaaa}
+
+/* Botões */
+html[data-theme="dark"] .erp-btn-primary{background:#2563eb;border-color:#2563eb;color:#fff}
+html[data-theme="dark"] .erp-btn-primary:hover{background:#1d4ed8;border-color:#1d4ed8}
+html[data-theme="dark"] .erp-btn-ghost{background:#1a1a1a;color:#cccccc;border-color:#2e2e2e}
+html[data-theme="dark"] .erp-btn-ghost:hover{background:#273549;border-color:#444444;color:#f0f0f0}
+html[data-theme="dark"] .erp-btn-paid{color:#4ade80}
+html[data-theme="dark"] .erp-btn-paid:hover{background:rgba(74,222,128,.08);border-color:#166534}
+html[data-theme="dark"] .erp-btn-danger{color:#f87171}
+html[data-theme="dark"] .erp-btn-danger:hover{background:rgba(248,113,113,.08);border-color:#7f1d1d}
+html[data-theme="dark"] .erp-btn-group{border-left-color:#2e2e2e}
+html[data-theme="dark"] .erp-import-form{border-left-color:#2e2e2e}
+html[data-theme="dark"] .erp-file-input{color:#666666}
+
+/* KPIs */
+html[data-theme="dark"] .erp-kpi-row{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .erp-kpi-label{color:#666666}
+html[data-theme="dark"] .erp-kpi-value{color:#f0f0f0}
+html[data-theme="dark"] .erp-kpi-paid{color:#4ade80}
+html[data-theme="dark"] .erp-kpi-pending{color:#fbbf24}
+html[data-theme="dark"] .erp-kpi-sub{color:#444444}
+html[data-theme="dark"] .erp-kpi-divider{background:#2e2e2e}
+
+/* Filtros */
+html[data-theme="dark"] .erp-filter-bar{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .erp-filter-field label{color:#444444}
+html[data-theme="dark"] .erp-filter-input,
+html[data-theme="dark"] .erp-input{background:#111111;border-color:#2e2e2e;color:#f0f0f0}
+html[data-theme="dark"] .erp-filter-input::placeholder{color:#2e2e2e}
+html[data-theme="dark"] .erp-filter-input:focus,
+html[data-theme="dark"] .erp-input:focus{border-color:#3b82f6;background:#1a1a1a}
+html[data-theme="dark"] .erp-filter-icon{color:#2e2e2e}
+/* Select dark — seta clara */
+html[data-theme="dark"] .erp-select{background-color:#111111;border-color:#2e2e2e;color:#f0f0f0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+html[data-theme="dark"] .erp-select:focus{border-color:#3b82f6;background-color:#1a1a1a}
+html[data-theme="dark"] .erp-select option{background:#1a1a1a;color:#f0f0f0}
+html[data-theme="dark"] .erp-import-filename{color:#444444}
+
+/* Tabela */
+html[data-theme="dark"] .erp-table-wrap{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .erp-table thead tr{background:#111111;border-bottom-color:#2e2e2e}
+html[data-theme="dark"] .erp-table thead th{color:#444444}
+html[data-theme="dark"] .erp-table tbody tr{border-bottom-color:#1a1a1a}
+html[data-theme="dark"] .erp-table tbody tr:hover{background:#273549}
+html[data-theme="dark"] .erp-table tbody tr.selected{background:rgba(59,130,246,.12)}
+html[data-theme="dark"] .erp-table tbody td{color:#cccccc}
+html[data-theme="dark"] .erp-cell-primary{color:#f0f0f0}
+html[data-theme="dark"] .erp-cell-id{color:#444444}
+html[data-theme="dark"] .erp-td-desc{color:#aaaaaa}
+html[data-theme="dark"] .erp-td-mono{color:#666666}
+html[data-theme="dark"] .erp-empty{color:#444444}
+
+/* Status */
+html[data-theme="dark"] .erp-status-paid{color:#4ade80}
+html[data-theme="dark"] .erp-dot-paid{background:#22c55e}
+html[data-theme="dark"] .erp-status-open{color:#666666}
+html[data-theme="dark"] .erp-dot-open{background:#444444}
+
+/* Badges */
+html[data-theme="dark"] .erp-badge-gasto{background:#1a1a1a;color:#aaaaaa;border:1px solid #2e2e2e}
+html[data-theme="dark"] .erp-badge-invest{background:rgba(59,130,246,.15);color:#93c5fd}
+
+/* Vencimento */
+html[data-theme="dark"] .erp-venc{color:#666666}
+html[data-theme="dark"] .erp-venc-hoje{color:#f87171}
+html[data-theme="dark"] .erp-venc-amanha{color:#fbbf24}
+
+/* File pills */
+html[data-theme="dark"] .erp-file-orcamento{background:rgba(59,130,246,.18);color:#93c5fd}
+html[data-theme="dark"] .erp-file-nf{background:rgba(74,222,128,.12);color:#4ade80}
+html[data-theme="dark"] .erp-file-boleto{background:rgba(251,191,36,.12);color:#fbbf24}
+
+/* Venc popup */
+
+
+</style>
+{% endblock %}
+{% block content %}
+{% set rows = rows|default([], true) %}
+
+<!-- PAGE HEADER -->
+<div class="erp-page-header">
+  <div class="erp-page-title">
+    <h1>A Receber</h1>
+    <p>Controle de valores a receber de clientes e contratos</p>
+  </div>
+  <div class="erp-page-actions">
+    {% if can('edit_pagamentos') %}
+    <button class="erp-btn erp-btn-primary" data-bs-toggle="modal" data-bs-target="#recModal">
+      <i class="bi bi-plus"></i> Novo recebimento
+    </button>
+    {% endif %}
+    <div class="erp-btn-group">
+      {% if can('edit_pagamentos') %}<button class="erp-btn erp-btn-ghost" id="recEditBtn"><i class="bi bi-pencil"></i> Editar</button>{% endif %}
+      {% if can('edit_pagamentos') %}<button class="erp-btn erp-btn-ghost erp-btn-paid" id="recMarkBtn"><i class="bi bi-check"></i> Marcar recebido</button>{% endif %}
+      {% if can('delete_pagamentos') %}<button class="erp-btn erp-btn-ghost erp-btn-danger" id="recDeleteBtn"><i class="bi bi-trash"></i> Excluir</button>{% endif %}
+    </div>
+    <a href="{{ url_for('pagamentos') }}" class="erp-btn erp-btn-ghost">
+      <i class="bi bi-arrow-left"></i> Pagamentos
+    </a>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="erp-kpi-row">
+  <div class="erp-kpi">
+    <span class="erp-kpi-label">Total geral</span>
+    <span class="erp-kpi-value">{{ total_geral|br_money }}</span>
+    <span class="erp-kpi-sub">Todos os lançamentos</span>
+  </div>
+  <div class="erp-kpi-divider"></div>
+  <div class="erp-kpi">
+    <span class="erp-kpi-label">A receber</span>
+    <span class="erp-kpi-value erp-kpi-pending">{{ total_pendente|br_money }}</span>
+    <span class="erp-kpi-sub">Pendente</span>
+  </div>
+  <div class="erp-kpi-divider"></div>
+  <div class="erp-kpi">
+    <span class="erp-kpi-label">Recebido</span>
+    <span class="erp-kpi-value" style="color:#16a34a">{{ total_recebido|br_money }}</span>
+    <span class="erp-kpi-sub">Confirmado</span>
+  </div>
+</div>
+
+<!-- FILTROS -->
+<div class="erp-filter-bar">
+  <div class="erp-filter-fields">
+    <div class="erp-filter-field erp-filter-field--wide">
+      <label>Buscar</label>
+      <div class="erp-filter-search">
+        <i class="bi bi-search erp-filter-icon"></i>
+        <input class="erp-filter-input" id="recSearch" placeholder="Cliente, descrição, documento...">
+      </div>
+    </div>
+    <div class="erp-filter-field">
+      <label>Status</label>
+      <select class="erp-filter-select" id="recStatus" style="min-width:140px">
+        <option value="">Todos</option>
+        <option value="Pendente">Pendente</option>
+        <option value="Recebido">Recebido</option>
+        <option value="Vencido">Vencido</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- TABELA -->
+<div class="erp-table-wrap">
+  <table class="erp-table" id="recTable">
+    <thead>
+      <tr>
+        <th style="width:36px"><input type="checkbox" id="recSelectAll"></th>
+        <th>ID</th>
+        <th>CLIENTE</th>
+        <th>DESCRIÇÃO</th>
+        <th>VALOR</th>
+        <th>VENCIMENTO</th>
+        <th>MÊS REF.</th>
+        <th>STATUS</th>
+        <th>DOC.</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr data-id="{{ r.id }}" data-status="{{ r.status }}" class="{% if r.status == 'Recebido' %}row-paid{% endif %}">
+        <td><input type="checkbox" class="rec-cb" value="{{ r.id }}"></td>
+        <td class="text-muted">#{{ r.id }}</td>
+        <td><strong>{{ r.cliente }}</strong></td>
+        <td>{{ r.descricao }}</td>
+        <td><strong>{{ r.valor|br_money }}</strong></td>
+        <td>{{ r.data_vencimento or '—' }}</td>
+        <td>{{ r.mes_referencia or '—' }}</td>
+        <td>
+          {% if r.status == 'Recebido' %}
+            <span class="erp-badge erp-badge-pago">Recebido</span>
+          {% elif r.status == 'Vencido' %}
+            <span class="erp-badge erp-badge-atrasado">Vencido</span>
+          {% else %}
+            <span class="erp-badge erp-badge-pendente">Pendente</span>
+          {% endif %}
+        </td>
+        <td class="text-muted">{{ r.numero_documento or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" class="text-center text-muted py-4">Nenhum lançamento encontrado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- MODAL NOVO/EDITAR RECEBIMENTO -->
+<div class="modal fade iris-modal modal-lg" id="recModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('pagamentos_receber_save') }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" id="rec_id">
+
+        <div class="modal-header">
+          <div>
+            <div class="modal-title"><i class="bi bi-arrow-down-circle me-2"></i>Recebimento</div>
+            <div class="modal-subtitle">Preencha os dados do valor a receber</div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-section">
+            <div class="modal-section-title"><i class="bi bi-person"></i>Cliente e valor</div>
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label class="form-label">Cliente</label>
+                <input class="form-control" name="cliente" id="rec_cliente" placeholder="Nome do cliente ou contratante">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Valor</label>
+                <input class="form-control" name="valor" id="rec_valor" placeholder="R$ 0,00">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Descrição</label>
+                <input class="form-control" name="descricao" id="rec_descricao" placeholder="Serviço, contrato ou referência">
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-section">
+            <div class="modal-section-title"><i class="bi bi-calendar3"></i>Datas e status</div>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status" id="rec_status">
+                  <option value="Pendente">Pendente</option>
+                  <option value="Recebido">Recebido</option>
+                  <option value="Vencido">Vencido</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Vencimento</label>
+                <input class="form-control date-picker" name="data_vencimento" id="rec_data_vencimento" placeholder="dd/mm/aaaa">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Data de recebimento</label>
+                <input class="form-control date-picker" name="data_recebimento" id="rec_data_recebimento" placeholder="dd/mm/aaaa">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Mês de referência</label>
+                <input class="form-control month-picker" name="mes_referencia" id="rec_mes_referencia" placeholder="MM/AAAA">
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-section">
+            <div class="modal-section-title"><i class="bi bi-file-text"></i>Documentação</div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Número do documento / NF</label>
+                <input class="form-control" name="numero_documento" id="rec_numero_documento" placeholder="Número do documento">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Observações</label>
+                <input class="form-control" name="observacoes" id="rec_observacoes" placeholder="Observações adicionais">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="erp-btn erp-btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="erp-btn erp-btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- FORM DELETE -->
+<form method="post" action="{{ url_for('pagamentos_receber_delete') }}" id="recDeleteForm" style="display:none">
+  <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="id" id="recDeleteId">
+</form>
+
+<!-- FORM MARCAR RECEBIDO -->
+<form method="post" action="{{ url_for('pagamentos_receber_save') }}" id="recMarkForm" style="display:none">
+  <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="id" id="recMarkId">
+  <input type="hidden" name="status" value="Recebido">
+  <input type="hidden" name="cliente" id="recMarkCliente">
+  <input type="hidden" name="descricao" id="recMarkDescricao">
+  <input type="hidden" name="valor" id="recMarkValor">
+  <input type="hidden" name="mes_referencia" id="recMarkMes">
+  <input type="hidden" name="numero_documento" id="recMarkDoc">
+  <input type="hidden" name="data_vencimento" id="recMarkVenc">
+  <input type="hidden" name="data_recebimento" id="recMarkReceb">
+</form>
+
+<script>
+const recTable = document.getElementById('recTable');
+let selId = null;
+
+// Seleção de linha
+recTable?.addEventListener('click', e => {
+  const row = e.target.closest('tbody tr[data-id]');
+  if(!row || e.target.type === 'checkbox') return;
+  recTable.querySelectorAll('tr.selected').forEach(r => r.classList.remove('selected'));
+  row.classList.add('selected');
+  selId = row.dataset.id;
+  // sync checkbox
+  row.querySelector('.rec-cb').checked = true;
+});
+
+// Select all
+document.getElementById('recSelectAll')?.addEventListener('change', function(){
+  document.querySelectorAll('.rec-cb').forEach(cb => cb.checked = this.checked);
+});
+
+function getSel(){ return recTable?.querySelector('tr.selected')?.dataset.id; }
+
+// Editar
+document.getElementById('recEditBtn')?.addEventListener('click', async () => {
+  const id = getSel(); if(!id){ showToast?.('Selecione um lançamento','error'); return; }
+  const r = await fetch(`/api/pagamentos/receber/${id}`);
+  if(!r.ok) return;
+  const d = await r.json();
+  ['id','cliente','descricao','valor','status','data_vencimento','data_recebimento','mes_referencia','numero_documento','observacoes'].forEach(f => {
+    const el = document.getElementById('rec_'+f);
+    if(el) el.value = d[f] || '';
+  });
+  bootstrap.Modal.getInstance(document.getElementById('recModal'))?.dispose();
+  setTimeout(() => new bootstrap.Modal(document.getElementById('recModal')).show(), 50);
+});
+
+// Marcar recebido
+document.getElementById('recMarkBtn')?.addEventListener('click', () => {
+  const id = getSel(); if(!id){ showToast?.('Selecione um lançamento','error'); return; }
+  const row = recTable.querySelector(`tr[data-id="${id}"]`);
+  document.getElementById('recMarkId').value = id;
+  document.getElementById('recMarkCliente').value = row?.cells[2]?.textContent.trim() || '';
+  document.getElementById('recMarkDescricao').value = row?.cells[3]?.textContent.trim() || '';
+  document.getElementById('recMarkValor').value = row?.cells[4]?.textContent.trim() || '';
+  document.getElementById('recMarkMes').value = row?.cells[6]?.textContent.trim() || '';
+  if(confirm('Marcar como Recebido?')) document.getElementById('recMarkForm').submit();
+});
+
+// Excluir
+document.getElementById('recDeleteBtn')?.addEventListener('click', () => {
+  const id = getSel(); if(!id){ showToast?.('Selecione um lançamento','error'); return; }
+  if(confirm('Excluir este lançamento?')){
+    document.getElementById('recDeleteId').value = id;
+    document.getElementById('recDeleteForm').submit();
+  }
+});
+
+// Busca + filtro status
+const search = document.getElementById('recSearch');
+const statusSel = document.getElementById('recStatus');
+function filterTable(){
+  const q = (search?.value||'').toLowerCase();
+  const st = statusSel?.value || '';
+  recTable?.querySelectorAll('tbody tr[data-id]').forEach(row => {
+    const txt = row.textContent.toLowerCase();
+    const rowSt = row.dataset.status || '';
+    row.style.display = (txt.includes(q) && (!st || rowSt === st)) ? '' : 'none';
+  });
+}
+search?.addEventListener('input', filterTable);
+statusSel?.addEventListener('change', filterTable);
+
+// Limpar modal ao abrir para novo
+document.getElementById('recModal')?.addEventListener('show.bs.modal', e => {
+  if(!e.relatedTarget) return; // vindo do botão editar, não limpar
+  ['id','cliente','descricao','valor','data_vencimento','data_recebimento','mes_referencia','numero_documento','observacoes'].forEach(f => {
+    const el = document.getElementById('rec_'+f);
+    if(el) el.value = '';
+  });
+  document.getElementById('rec_status').value = 'Pendente';
+});
+</script>
+{% endblock %}

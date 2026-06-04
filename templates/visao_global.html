@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="hero">
+  <h1>Visão global das empresas</h1>
+  <p>Somente os dois Administradores Supremos veem este painel. Clique em uma unidade para abrir todos os módulos filtrados por ela.</p>
+</div>
+
+<div class="content-card">
+  <div class="table-shell">
+    <div class="table-responsive">
+      <table class="table-gg align-middle">
+        <thead>
+          <tr>
+            <th>Empresa</th>
+            <th>Cidade</th>
+            <th>Domínio</th>
+            <th>Usuários</th>
+            <th>Bombas</th>
+            <th>Combustível</th>
+            <th>Pagamentos</th>
+            <th>Custos</th>
+            <th>O.S.</th>
+            <th>Acessar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in resumo %}
+          <tr>
+            <td class="fw-bold">{{ e.nome }}</td>
+            <td>{{ e.cidade or '-' }}</td>
+            <td>{{ e.dominio_email or '-' }}</td>
+            <td>{{ e.users_total or 0 }}</td>
+            <td>{{ e.bombas_total or 0 }}</td>
+            <td>{{ e.combustivel_total or 0 }}</td>
+            <td>{{ e.pagamentos_total or 0 }}</td>
+            <td>{{ e.custos_total or 0 }}</td>
+            <td>{{ e.os_ordens_total or 0 }}</td>
+            <td>
+              {% if e.ativo %}
+              <a class="btn-gg btn-sm btn-blue" href="{{ url_for('empresa_contexto', empresa_id=e.id) }}">
+                <i class="bi bi-box-arrow-in-right"></i> Entrar
+              </a>
+              {% else %}
+              <span class="mini">Inativa</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="10" class="empty">Nenhuma empresa cadastrada.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

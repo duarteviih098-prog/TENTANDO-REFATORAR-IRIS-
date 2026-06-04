@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero">
+  <h1>Ativos / Equipamentos</h1>
+  <p>Cadastro de sistemas e equipamentos monitorados nas ordens de serviço.</p>
+</section>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}
+    <div class="alert alert-{{ 'success' if cat == 'success' else 'danger' }} alert-dismissible fade show">
+      {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+{% endwith %}
+
+<div class="content-card">
+  <div class="action-strip">
+    {% if can('edit_os') %}
+    <button class="btn-gg btn-blue" data-bs-toggle="modal" data-bs-target="#ativoModal" id="ativoNovoBtn">
+      <i class="bi bi-plus-circle-fill"></i> Novo ativo
+    </button>
+    <button class="btn-gg btn-ghost" id="ativoEditBtn">
+      <i class="bi bi-pencil-square"></i> Editar
+    </button>
+    <button class="btn-gg btn-red" id="ativoDeleteBtn">
+      <i class="bi bi-trash-fill"></i> Excluir
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="content-card">
+  <div class="table-shell">
+    <div class="table-responsive">
+      <table class="table-gg" id="ativosTable">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Tipo</th>
+            <th>Sistema</th>
+            <th>Equipamento</th>
+            <th>Local</th>
+            <th>Status</th>
+            <th>Descrição</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr data-id="{{ r.id }}"
+              data-nome="{{ r.nome or '' }}"
+              data-tipo="{{ r.tipo or '' }}"
+              data-sistema="{{ r.sistema or '' }}"
+              data-equipamento="{{ r.equipamento or '' }}"
+              data-local="{{ r.local or '' }}"
+              data-status="{{ r.status or 'Não' }}"
+              data-descricao="{{ r.descricao or '' }}">
+            <td><strong>{{ r.nome or '—' }}</strong></td>
+            <td>{{ r.tipo or '—' }}</td>
+            <td>{{ r.sistema or '—' }}</td>
+            <td>{{ r.equipamento or '—' }}</td>
+            <td>{{ r.local or '—' }}</td>
+            <td>
+              {% if (r.status or '')|lower in ('sim','ativo','ativa','yes','true','1') %}
+                <span class="badge text-bg-success">Ativo</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Inativo</span>
+              {% endif %}
+            </td>
+            <td class="mini text-muted">{{ (r.descricao or '')[:60] }}{% if r.descricao and r.descricao|length > 60 %}…{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="empty">Nenhum ativo cadastrado ainda.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% if can('edit_os') %}
+<!-- Modal novo/editar ativo -->
+<div class="modal fade iris-modal" id="ativoModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('os_ativos_save') }}">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" id="ativoModalTitulo">Novo ativo</div>
+            <div class="modal-subtitle">Equipamento ou sistema monitorado</div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id" id="ativo_id">
+          <div class="modal-section">
+            <div class="modal-section-title"><i class="bi bi-gear-fill"></i> Identificação</div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Nome do ativo *</label>
+                <input class="form-control" name="nome" id="ativo_nome" required placeholder="Ex: Bomba de recalque 01">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Tipo</label>
+                <input class="form-control" name="tipo" id="ativo_tipo" list="ativo_tipos_list" placeholder="Ex: Bomba, Compressor, Painel...">
+                <datalist id="ativo_tipos_list">
+                  <option value="Bomba"><option value="Compressor"><option value="Painel Elétrico">
+                  <option value="Reservatório"><option value="Motor"><option value="Válvula">
+                  <option value="Sensor"><option value="Medidor"><option value="Veículo">
+                </datalist>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Sistema</label>
+                <input class="form-control" name="sistema" id="ativo_sistema" list="ativo_sistemas_list" placeholder="Sistema ao qual pertence">
+                <datalist id="ativo_sistemas_list">
+                  {% for s in sistemas_map.keys() %}<option value="{{ s }}">{% endfor %}
+                </datalist>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Equipamento / Unidade</label>
+                <input class="form-control" name="equipamento" id="ativo_equipamento" placeholder="Unidade ou equipamento específico">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Localização</label>
+                <input class="form-control" name="local" id="ativo_local" placeholder="Ex: ETA 01, Almoxarifado...">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status" id="ativo_status">
+                  <option value="Sim">Ativo</option>
+                  <option value="Não">Inativo</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Descrição / Observações</label>
+                <textarea class="form-control" name="descricao" id="ativo_descricao" rows="3" placeholder="Detalhes, especificações técnicas..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" data-bs-dismiss="modal" type="button">Cancelar</button>
+          <button class="btn-save" type="submit"><i class="bi bi-floppy-fill me-1"></i>Salvar ativo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const sistemas = {{ sistemas_map|tojson }};
+setupSelectableTable('#ativosTable', 'ativo');
+
+document.getElementById('ativoNovoBtn')?.addEventListener('click', () => {
+  document.getElementById('ativoModal').querySelector('form').reset();
+  document.getElementById('ativo_id').value = '';
+  document.getElementById('ativoModalTitulo').textContent = 'Novo ativo';
+});
+
+document.getElementById('ativoEditBtn')?.addEventListener('click', () => {
+  const row = document.querySelector('#ativosTable tr.selected');
+  if (!row) { alert('Selecione um ativo para editar.'); return; }
+  const d = row.dataset;
+  document.getElementById('ativo_id').value = d.id;
+  document.getElementById('ativo_nome').value = d.nome || '';
+  document.getElementById('ativo_tipo').value = d.tipo || '';
+  document.getElementById('ativo_sistema').value = d.sistema || '';
+  document.getElementById('ativo_equipamento').value = d.equipamento || '';
+  document.getElementById('ativo_local').value = d.local || '';
+  document.getElementById('ativo_status').value = d.status || 'Não';
+  document.getElementById('ativo_descricao').value = d.descricao || '';
+  document.getElementById('ativoModalTitulo').textContent = 'Editar ativo';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('ativoModal')).show();
+});
+
+document.getElementById('ativoDeleteBtn')?.addEventListener('click', async () => {
+  const row = document.querySelector('#ativosTable tr.selected');
+  if (!row) { alert('Selecione um ativo para excluir.'); return; }
+  if (!confirm('Excluir este ativo?')) return;
+  const resp = await fetch('/api/delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({table: 'os_ativos', id: Number(row.dataset.id)})
+  });
+  const d = await resp.json().catch(() => ({}));
+  if (d.ok) row.remove();
+  else alert('Erro ao excluir.');
+});
+
+document.querySelector('#ativosTable')?.addEventListener('dblclick', e => {
+  const row = e.target.closest('tbody tr[data-id]');
+  if (row) {
+    document.getElementById('ativoEditBtn').click();
+  }
+});
+</script>
+{% endblock %}

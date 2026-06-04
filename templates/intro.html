@@ -1,0 +1,420 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<section class="hero">
+  <h1>Inventário geral</h1>
+  <p>Materiais, peças, itens de escritório e tudo mais que precisa de controle.</p>
+</section>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}
+    <div class="alert alert-{{ 'success' if cat == 'success' else 'danger' }} alert-dismissible fade show">
+      {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+{% endwith %}
+
+<div class="content-card">
+  <div class="action-strip">
+    {% if can('edit_inventario') %}
+    <button class="btn-gg btn-blue" data-bs-toggle="modal" data-bs-target="#invModal"><i class="bi bi-plus-circle-fill"></i> Novo item</button>
+    <button class="btn-gg btn-amber" data-bs-toggle="modal" data-bs-target="#modalPedido"><i class="bi bi-cart-plus-fill"></i> Registrar pedido</button>
+    <button class="btn-gg btn-red" id="btnRetirada" style="display:none"><i class="bi bi-arrow-up-right-circle-fill"></i> Retirar selecionados</button>
+    <form method="post" action="/inventario/mover-para-pedido" id="formMoverPedido" style="display:inline">
+      <button class="btn-gg btn-ghost" type="submit" id="btnMoverPedido" style="display:none" onclick="return confirm('Mover itens selecionados para Aguardando recebimento? A quantidade será zerada até você confirmar o recebimento.')">
+        <i class="bi bi-arrow-right-circle-fill"></i> Mover para aguardando
+      </button>
+    </form>
+    {% endif %}
+    {% if can('edit_inventario') %}<button class="btn-gg btn-ghost" id="invEditBtn"><i class="bi bi-pencil-square"></i> Editar</button>{% endif %}
+    {% if can('delete_inventario') %}<button class="btn-gg btn-red" id="invDeleteBtn"><i class="bi bi-trash-fill"></i> Excluir</button>{% endif %}
+    <form class="toolbar-form" method="get">
+      <div class="field-inline"><label>Buscar</label><input class="form-control iris-live-search" name="q" data-module="inventario" value="{{ q }}" style="width:220px" placeholder="nome, categoria, fornecedor..."></div>
+      <div class="field-inline"><label>Categoria</label>
+        <select class="form-select" name="categoria" style="width:150px">
+          <option value="">Todas</option>
+          {% for c in categorias %}<option value="{{ c }}" {% if categoria == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <button class="btn-gg btn-ghost"><i class="bi bi-search"></i> Filtrar</button>
+      <a class="btn-gg btn-ghost" href="{{ url_for('inventario_page') }}">Limpar</a>
+    </form>
+  </div>
+</div>
+
+<div class="grid-3 mb-3">
+  <div class="soft-card"><div class="metric">Total de itens</div><div class="metric-value">{{ total_itens }}</div><div class="mini">itens cadastrados</div></div>
+  <div class="soft-card"><div class="metric">Valor em estoque</div><div class="metric-value" style="color:#059669">{{ valor_total|br_money }}</div><div class="mini">valor total</div></div>
+  <div class="soft-card"><div class="metric">Pedidos pendentes</div><div class="metric-value" style="color:#d97706">{{ pedidos|length }}</div><div class="mini">aguardando recebimento</div></div>
+</div>
+
+{% if pedidos %}
+<div class="content-card mb-3" style="border-left:4px solid #d97706">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h3 class="mb-0" style="color:#d97706"><i class="bi bi-clock-history"></i> Pedidos aguardando recebimento</h3>
+    {% if can('edit_inventario') %}
+    <form method="post" action="{{ url_for('inventario_pedido_receber_lote') }}" id="formRecebeLote">
+      <button class="btn-gg btn-green" type="submit" id="btnRecebeLote" style="display:none" onclick="return confirm('Confirmar recebimento dos pedidos selecionados?')">
+        <i class="bi bi-check-all"></i> Receber selecionados
+      </button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="table-shell">
+    <table class="table-gg" id="pedidosTable">
+      <thead><tr>
+        {% if can('edit_inventario') %}<th><input type="checkbox" id="checkAllPedidos" title="Selecionar todos"></th>{% endif %}
+        <th>Item</th><th>Qtd pedida</th><th>Fornecedor</th><th>Solicitado por</th><th>Data</th><th>Obs</th><th>Ações</th>
+      </tr></thead>
+      <tbody>
+        {% for p in pedidos %}
+        <tr data-pid="{{ p.id }}">
+          {% if can('edit_inventario') %}
+          <td><input type="checkbox" class="pedido-check" name="pedido_ids" value="{{ p.id }}" form="formRecebeLote"></td>
+          {% endif %}
+          <td><strong>{{ p.item_nome or '—' }}</strong><div class="mini text-muted">{{ p.unidade or '' }}</div></td>
+          <td>{{ p.quantidade|int }}</td>
+          <td>{{ p.fornecedor or '—' }}</td>
+          <td>{{ p.solicitado_por or '—' }}</td>
+          <td>{{ p.solicitado_em or '—' }}</td>
+          <td class="mini">{{ p.observacoes or '—' }}</td>
+          <td>
+            <div class="d-flex gap-2 flex-wrap">
+              {% if can('edit_inventario') %}
+              <form method="post" action="{{ url_for('inventario_pedido_receber', pid=p.id) }}" style="display:inline">
+                <input type="hidden" name="quantidade" value="{{ p.quantidade }}">
+                <button class="btn-gg btn-green btn-sm" type="submit" onclick="return confirm('Confirmar recebimento?')">
+                  <i class="bi bi-check-circle-fill"></i> Recebido
+                </button>
+              </form>
+              <form method="post" action="{{ url_for('inventario_pedido_cancelar', pid=p.id) }}" style="display:inline">
+                <button class="btn-gg btn-ghost btn-sm" type="submit" onclick="return confirm('Cancelar este pedido?')">
+                  <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="content-card">
+  <h3>Itens do inventário</h3>
+  <div class="table-shell">
+    <div class="table-responsive">
+      <table class="table-gg" id="inventarioTable">
+        <thead><tr>
+          {% if can('edit_inventario') %}<th><input type="checkbox" id="checkAllItens" title="Selecionar todos"></th>{% endif %}
+          <th>ID</th><th>Nome</th><th>Categoria</th><th>Status</th><th>Qtd</th><th>Un</th><th>Valor unit.</th><th>Fornecedor</th><th>Localização</th><th>Observações</th>
+        </tr></thead>
+        <tbody>
+          {% for r in rows %}
+          {% set qtd = r.quantidade|float %}
+          {% set min_qtd = r.quantidade_minima|float if r.quantidade_minima else 0 %}
+          {% set status = 'critico' if qtd == 0 else ('baixo' if min_qtd > 0 and qtd <= min_qtd else 'ok') %}
+          <tr data-id="{{ r.id }}" class="{{ 'os-overdue-row' if status == 'critico' else '' }}">
+            {% if can('edit_inventario') %}
+            <td><input type="checkbox" class="item-check" value="{{ r.id }}"></td>
+            {% endif %}
+            <td>{{ r.id }}</td>
+            <td>
+              <strong>{{ r.nome }}</strong>
+              {% if can('edit_inventario') %}
+              <div class="mt-1 d-flex gap-1 flex-wrap">
+                <button class="btn btn-sm btn-outline-danger" style="font-size:.72rem;padding:2px 7px" 
+                  onclick="abrirRetirada('{{ r.id }}','{{ r.nome|e }}')">
+                  <i class="bi bi-arrow-up-right-circle-fill"></i> Baixa
+                </button>
+              </div>
+              {% endif %}
+            </td>
+            <td><span class="badge rounded-pill text-bg-secondary">{{ r.categoria or '—' }}</span></td>
+            <td>
+              {% if status == 'critico' %}
+                <span class="badge text-bg-danger"><i class="bi bi-exclamation-triangle-fill"></i> Sem estoque</span>
+              {% elif status == 'baixo' %}
+                <span class="badge text-bg-warning">⚠ Estoque baixo</span>
+              {% else %}
+                <span class="badge text-bg-success">Em estoque</span>
+              {% endif %}
+            </td>
+            <td><strong style="color:{{ '#dc2626' if status == 'critico' else ('#d97706' if status == 'baixo' else '#059669') }}">{{ qtd|int }}</strong></td>
+            <td>{{ r.unidade or '—' }}</td>
+            <td>{{ r.valor_unitario or '—' }}</td>
+            <td>{{ r.fornecedor or '—' }}</td>
+            <td>{{ r.localizacao or '—' }}</td>
+            <td class="mini">{{ (r.observacoes or '')[:50] }}{% if r.observacoes and r.observacoes|length > 50 %}...{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="11" class="empty">Nenhum item cadastrado ainda.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Histórico separado: Entradas e Saídas -->
+<div class="grid-2 mt-3">
+  <div class="content-card">
+    <h3 class="mb-3" style="color:#059669"><i class="bi bi-arrow-down-circle-fill"></i> Entradas</h3>
+    <div class="table-shell">
+      <table class="table-gg">
+        <thead><tr><th>Quando</th><th>Item</th><th>Qtd</th><th>Motivo</th><th>Usuário</th></tr></thead>
+        <tbody>
+          {% for m in movimentos if m.tipo == 'entrada' %}
+          <tr>
+            <td>{{ m.quando }}</td>
+            <td>{{ m.item_nome or '—' }}</td>
+            <td><span class="badge text-bg-success">+{{ m.quantidade|int }} {{ m.unidade or '' }}</span></td>
+            <td>{{ m.motivo or '—' }}</td>
+            <td>{{ m.usuario or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="empty">Nenhuma entrada registrada.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="content-card">
+    <h3 class="mb-3" style="color:#dc2626"><i class="bi bi-arrow-up-circle-fill"></i> Retiradas / Saídas</h3>
+    <div class="table-shell">
+      <table class="table-gg">
+        <thead><tr><th>Quando</th><th>Item</th><th>Qtd</th><th>Destino / Motivo</th><th>Usuário</th></tr></thead>
+        <tbody>
+          {% for m in movimentos if m.tipo == 'saida' %}
+          <tr>
+            <td>{{ m.quando }}</td>
+            <td>{{ m.item_nome or '—' }}</td>
+            <td><span class="badge text-bg-danger">-{{ m.quantidade|int }} {{ m.unidade or '' }}</span></td>
+            <td>
+              {{ m.motivo or '—' }}
+              {% if m.destino %}<div class="mini text-muted"><i class="bi bi-geo-alt-fill"></i> {{ m.destino }}</div>{% endif %}
+              {% if m.os_id %}<div class="mini"><a href="/os?q={{ m.os_id }}">O.S. #{{ m.os_id }}</a></div>{% endif %}
+            </td>
+            <td>{{ m.usuario or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="empty">Nenhuma retirada registrada.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% if can('edit_inventario') %}
+<!-- Modal novo/editar item -->
+<div class="modal fade iris-modal" id="invModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('inventario_save') }}" enctype="multipart/form-data">
+        <div class="modal-header">
+          <div><div class="modal-title" id="invModalTitulo">Item do inventário</div><div class="modal-subtitle">Materiais, peças, EPI, escritório e outros</div></div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id" id="inv_id">
+          <div class="modal-section">
+            <div class="modal-section-title"><i class="bi bi-box"></i>Identificação</div>
+            <div class="row g-3">
+              <div class="col-md-6"><label class="form-label">Nome do item *</label><input class="form-control" name="nome" id="inv_nome" required placeholder="Ex: Papel A4, Filtro de óleo..."></div>
+              <div class="col-md-6"><label class="form-label">Categoria</label><input class="form-control" name="categoria" id="inv_categoria" list="inv_categorias_list" placeholder="Material, Peça, Escritório..."><datalist id="inv_categorias_list">{% for c in categorias %}<option value="{{ c }}">{% endfor %}<option value="Material"><option value="Peça"><option value="Escritório"><option value="Ferramenta"><option value="EPI"><option value="Hidráulico"><option value="Elétrico"></datalist></div>
+              <div class="col-md-3"><label class="form-label">Quantidade</label><input class="form-control" name="quantidade" id="inv_quantidade" type="number" step="0.01" min="0" placeholder="0"></div>
+              <div class="col-md-3"><label class="form-label">Qtd mínima</label><input class="form-control" name="quantidade_minima" id="inv_quantidade_minima" type="number" step="0.01" min="0" placeholder="0"><div class="form-text">Alerta abaixo deste valor</div></div>
+              <div class="col-md-3"><label class="form-label">Unidade</label><input class="form-control" name="unidade" id="inv_unidade" list="inv_unidades_list" placeholder="un, kg, m..."><datalist id="inv_unidades_list"><option value="un"><option value="kg"><option value="g"><option value="m"><option value="m²"><option value="L"><option value="cx"><option value="pc"></datalist></div>
+              <div class="col-md-3"><label class="form-label">Valor unitário</label><input class="form-control" name="valor_unitario" id="inv_valor_unitario" placeholder="R$ 0,00"></div>
+              <div class="col-md-6"><label class="form-label">Fornecedor</label><input class="form-control" name="fornecedor" id="inv_fornecedor" placeholder="Fornecedor"></div>
+              <div class="col-md-6"><label class="form-label">Localização</label><input class="form-control" name="localizacao" id="inv_localizacao" placeholder="Ex: Almoxarifado, Sala 01..."></div>
+              <div class="col-12"><label class="form-label">Observações</label><textarea class="form-control" name="observacoes" id="inv_observacoes" rows="3" placeholder="Notas sobre o item..."></textarea></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" data-bs-dismiss="modal" type="button">Cancelar</button>
+          <button class="btn-save" type="submit"><i class="bi bi-floppy-fill me-1"></i>Salvar item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal registrar pedido -->
+<div class="modal fade" id="modalPedido" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('inventario_pedido_save') }}">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-cart-plus-fill text-warning me-2"></i>Registrar pedido de compra</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info py-2 mb-3">O item só entra no estoque quando você confirmar o recebimento.</div>
+          <div class="row g-3">
+            <div class="col-12"><label class="form-label fw-bold">Item *</label>
+              <select class="form-select" name="item_id" required>
+                <option value="">Selecione o item</option>
+                {% for i in itens_todos %}<option value="{{ i.id }}">{{ i.nome }} ({{ i.unidade or 'un' }})</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6"><label class="form-label fw-bold">Quantidade pedida *</label><input class="form-control" name="quantidade" type="number" step="0.01" min="0.01" required placeholder="0"></div>
+            <div class="col-md-6"><label class="form-label fw-bold">Fornecedor</label><input class="form-control" name="fornecedor" placeholder="Nome do fornecedor"></div>
+            <div class="col-12"><label class="form-label fw-bold">Observações</label><input class="form-control" name="observacoes" placeholder="NF, número do pedido, prazo..."></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-warning"><i class="bi bi-cart-check-fill"></i> Registrar pedido</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal retirada -->
+<div class="modal fade" id="modalRetirada" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('inventario_retirada') }}">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-arrow-up-right-circle-fill text-danger me-2"></i>Registrar retirada</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="item_id" id="ret_item_id">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-bold">Item</label>
+              <input class="form-control" id="ret_item_nome" readonly style="background:#f8f9fa">
+            </div>
+            <div class="col-md-6"><label class="form-label fw-bold">Quantidade *</label><input class="form-control" name="quantidade" type="number" step="0.01" min="0.01" required></div>
+            <div class="col-md-6"><label class="form-label fw-bold">Destino / Local de uso</label><input class="form-control" name="destino" placeholder="Ex: ETA 01, Almoxarifado Sul..."></div>
+            <div class="col-md-6"><label class="form-label fw-bold">Nº da O.S. (opcional)</label><input class="form-control" name="os_id" placeholder="Ex: 87"></div>
+            <div class="col-md-6"><label class="form-label fw-bold">Motivo</label><input class="form-control" name="motivo" placeholder="Ex: Manutenção bomba, reparo..."></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger"><i class="bi bi-arrow-up-right-circle-fill"></i> Confirmar retirada</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+setupSelectableTable('#inventarioTable','inventario');
+
+// ── Checkbox de pedidos ──────────────────────────────────────
+const checkAllPedidos = document.getElementById('checkAllPedidos');
+const btnRecebeLote = document.getElementById('btnRecebeLote');
+
+function atualizarBtnLote(){
+  const checados = document.querySelectorAll('.pedido-check:checked');
+  if(btnRecebeLote) btnRecebeLote.style.display = checados.length > 0 ? '' : 'none';
+}
+checkAllPedidos?.addEventListener('change', () => {
+  document.querySelectorAll('.pedido-check').forEach(cb => cb.checked = checkAllPedidos.checked);
+  atualizarBtnLote();
+});
+document.querySelectorAll('.pedido-check').forEach(cb => cb.addEventListener('change', atualizarBtnLote));
+
+// ── Checkbox de itens para retirada ─────────────────────────
+const checkAllItens = document.getElementById('checkAllItens');
+const btnRetirada = document.getElementById('btnRetirada');
+
+function atualizarBtnRetirada(){
+  const checados = document.querySelectorAll('.item-check:checked');
+  // Botão retirar
+  if(btnRetirada) btnRetirada.style.display = checados.length > 0 ? '' : 'none';
+  // Botão mover para aguardando
+  const btnMover = document.getElementById('btnMoverPedido');
+  if(btnMover) btnMover.style.display = checados.length > 0 ? '' : 'none';
+  // Sincroniza itens com o form
+  const formMover = document.getElementById('formMoverPedido');
+  if(formMover){
+    formMover.querySelectorAll('input[name="item_ids"]').forEach(e => e.remove());
+    checados.forEach(cb => {
+      const inp = document.createElement('input');
+      inp.type = 'hidden'; inp.name = 'item_ids'; inp.value = cb.value;
+      formMover.appendChild(inp);
+    });
+  }
+}
+checkAllItens?.addEventListener('change', () => {
+  document.querySelectorAll('.item-check').forEach(cb => cb.checked = checkAllItens.checked);
+  atualizarBtnRetirada();
+});
+document.querySelectorAll('.item-check').forEach(cb => cb.addEventListener('change', atualizarBtnRetirada));
+
+// Botão retirar selecionados — abre modal do primeiro item selecionado
+btnRetirada?.addEventListener('click', () => {
+  const checados = [...document.querySelectorAll('.item-check:checked')];
+  if(!checados.length){ alert('Selecione um item.'); return; }
+  const row = checados[0].closest('tr');
+  const id = row?.dataset.id;
+  const nome = row?.querySelector('strong')?.textContent || '';
+  if(id) abrirRetirada(id, nome);
+});
+
+// ── Editar / Excluir ─────────────────────────────────────────
+document.getElementById('invEditBtn')?.addEventListener('click', () => {
+  const row = document.querySelector('#inventarioTable tr.selected');
+  if(!row){ alert('Selecione um item.'); return; }
+  invEdit(row.dataset.id);
+});
+document.getElementById('invDeleteBtn')?.addEventListener('click', async () => {
+  const rows = [...document.querySelectorAll('#inventarioTable tr.selected')].filter(r => r.dataset.id);
+  if(!rows.length){ alert('Selecione itens.'); return; }
+  if(!confirm(`Excluir ${rows.length} item(s)?`)) return;
+  const ids = rows.map(r => Number(r.dataset.id));
+  const resp = await fetch('/inventario/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ids})});
+  const d = await resp.json().catch(() => ({}));
+  if(d.ok){ rows.forEach(r => r.remove()); }
+});
+document.getElementById('inventarioTable')?.addEventListener('dblclick', e => {
+  const row = e.target.closest('tbody tr[data-id]');
+  if(row) invEdit(row.dataset.id);
+});
+
+async function invEdit(id){
+  const resp = await fetch(`/api/inventario/${id}`);
+  const d = await resp.json().catch(() => ({}));
+  if(!d.id){ alert('Erro ao carregar.'); return; }
+  ['id','nome','categoria','quantidade','quantidade_minima','unidade','valor_unitario','fornecedor','localizacao','observacoes'].forEach(k => {
+    const el = document.getElementById('inv_'+k); if(el) el.value = d[k] ?? '';
+  });
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('invModal')).show();
+}
+document.getElementById('invModal')?.addEventListener('show.bs.modal', e => {
+  if(e.relatedTarget){
+    document.getElementById('invModal').querySelector('form').reset();
+    document.getElementById('inv_id').value = '';
+  }
+});
+
+function abrirRetirada(id, nome){
+  document.getElementById('ret_item_id').value = id;
+  document.getElementById('ret_item_nome').value = nome;
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('modalRetirada')).show();
+}
+</script>
+<style>
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+@media(max-width:1100px){.grid-2{grid-template-columns:1fr}}
+@media(max-width:900px){.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.grid-3{grid-template-columns:1fr}}
+</style>
+{% endblock %}

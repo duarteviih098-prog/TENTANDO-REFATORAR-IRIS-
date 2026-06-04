@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+.hub-header{padding:28px 0 8px}
+.hub-header h1{margin:0;font-size:1.35rem;font-weight:700;color:#111827;letter-spacing:-.02em}
+.hub-header p{margin:4px 0 0;font-size:.84rem;color:#6b7280}
+html[data-theme="dark"] .hub-header h1{color:#f0f0f0}
+html[data-theme="dark"] .hub-header p{color:#666666}
+
+/* KPI strip */
+.hub-kpis{display:flex;gap:0;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:20px 28px;margin:20px 0;overflow:hidden}
+.hub-kpi{flex:1;display:flex;flex-direction:column;gap:3px;padding:0 20px}
+.hub-kpi:first-child{padding-left:0}
+.hub-kpi:last-child{padding-right:0}
+.hub-kpi-div{width:1px;background:#e5e7eb;flex-shrink:0}
+.hub-kpi-label{font-size:.7rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.hub-kpi-value{font-size:1.3rem;font-weight:700;color:#111827;letter-spacing:-.02em}
+.hub-kpi-sub{font-size:.72rem;color:#9ca3af}
+.hub-kpi-value.green{color:#166534}
+.hub-kpi-value.amber{color:#92400e}
+html[data-theme="dark"] .hub-kpis{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .hub-kpi-label{color:#666666}
+html[data-theme="dark"] .hub-kpi-value{color:#f0f0f0}
+html[data-theme="dark"] .hub-kpi-div{background:#2e2e2e}
+
+/* Cards do hub */
+.hub-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:8px}
+.hub-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:12px;transition:box-shadow .15s,border-color .15s,transform .15s;position:relative;overflow:hidden}
+.hub-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+.hub-card-blue::before{background:linear-gradient(90deg,#1d4ed8,#3b82f6)}
+.hub-card-green::before{background:linear-gradient(90deg,#166534,#22c55e)}
+.hub-card-amber::before{background:linear-gradient(90deg,#92400e,#f59e0b)}
+.hub-card-purple::before{background:linear-gradient(90deg,#6b21a8,#a855f7)}
+.hub-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.1);border-color:#d1d5db;transform:translateY(-2px)}
+.hub-card-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.hub-card-icon-blue{background:#dbeafe;color:#1d4ed8}
+.hub-card-icon-green{background:#dcfce7;color:#166534}
+.hub-card-icon-amber{background:#fef3c7;color:#92400e}
+.hub-card-icon-purple{background:#f3e8ff;color:#7c3aed}
+.hub-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.hub-card-info{flex:1}
+.hub-card-title{font-size:1rem;font-weight:700;color:#111827;margin:0 0 4px}
+.hub-card-desc{font-size:.8rem;color:#6b7280;line-height:1.45;margin:0}
+.hub-card-stat{display:flex;align-items:center;gap:8px;padding-top:12px;border-top:1px solid #f3f4f6}
+.hub-card-stat-num{font-size:1.4rem;font-weight:700;color:#111827}
+.hub-card-stat-label{font-size:.76rem;color:#6b7280}
+.hub-card-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:.72rem;font-weight:600}
+.badge-alert{background:#fef2f2;color:#991b1b}
+.badge-ok{background:#dcfce7;color:#166534}
+.badge-warn{background:#fef3c7;color:#92400e}
+.hub-card-arrow{color:#9ca3af;font-size:.9rem;flex-shrink:0;margin-top:2px;transition:transform .15s}
+.hub-card:hover .hub-card-arrow{transform:translateX(3px);color:#6b7280}
+html[data-theme="dark"] .hub-card{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .hub-card:hover{border-color:#444444;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+html[data-theme="dark"] .hub-card-title{color:#f0f0f0}
+html[data-theme="dark"] .hub-card-desc{color:#666666}
+html[data-theme="dark"] .hub-card-stat{border-top-color:#2e2e2e}
+html[data-theme="dark"] .hub-card-stat-num{color:#f0f0f0}
+html[data-theme="dark"] .hub-card-stat-label{color:#666666}
+html[data-theme="dark"] .hub-card-icon-blue{background:rgba(29,78,216,.15);color:#60a5fa}
+html[data-theme="dark"] .hub-card-icon-green{background:rgba(22,101,52,.2);color:#4ade80}
+html[data-theme="dark"] .hub-card-icon-amber{background:rgba(146,64,14,.2);color:#fbbf24}
+html[data-theme="dark"] .hub-card-icon-purple{background:rgba(124,58,237,.15);color:#c084fc}
+html[data-theme="dark"] .badge-alert{background:rgba(153,27,27,.2);color:#fca5a5}
+html[data-theme="dark"] .badge-ok{background:rgba(22,101,52,.2);color:#4ade80}
+html[data-theme="dark"] .badge-warn{background:rgba(146,64,14,.2);color:#fbbf24}
+
+/* Link lancamentos */
+.hub-launch{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:16px 20px;text-decoration:none;color:inherit;transition:background .12s,border-color .12s;margin-bottom:20px}
+.hub-launch:hover{background:#f0f0f0;border-color:#d1d5db}
+.hub-launch-left{display:flex;align-items:center;gap:14px}
+.hub-launch-icon{width:40px;height:40px;border-radius:9px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.hub-launch-title{font-size:.95rem;font-weight:700;color:#111827;margin:0 0 2px}
+.hub-launch-sub{font-size:.78rem;color:#6b7280;margin:0}
+html[data-theme="dark"] .hub-launch{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .hub-launch:hover{background:#1a1a1a}
+html[data-theme="dark"] .hub-launch-title{color:#f0f0f0}
+html[data-theme="dark"] .hub-launch-sub{color:#666666}
+html[data-theme="dark"] .hub-launch-icon{background:rgba(29,78,216,.15);color:#60a5fa}
+
+@media(max-width:768px){.hub-grid{grid-template-columns:1fr}.hub-kpis{flex-wrap:wrap;gap:16px}.hub-kpi-div{display:none}.hub-kpi{flex:1 1 40%}}
+</style>
+
+<div class="hub-header">
+  <h1>Pagamentos</h1>
+  <p>Gestão financeira de fornecedores e serviços — {{ mes_atual }}</p>
+</div>
+
+<!-- KPIs -->
+<div class="hub-kpis">
+  <div class="hub-kpi">
+    <span class="hub-kpi-label">Total no mês</span>
+    <span class="hub-kpi-value">{{ total_mes|br_money }}</span>
+    <span class="hub-kpi-sub">{{ mes_atual }}</span>
+  </div>
+  <div class="hub-kpi-div"></div>
+  <div class="hub-kpi">
+    <span class="hub-kpi-label">Pendente</span>
+    <span class="hub-kpi-value amber">{{ pendente_mes|br_money }}</span>
+    <span class="hub-kpi-sub">Em aberto</span>
+  </div>
+  <div class="hub-kpi-div"></div>
+  <div class="hub-kpi">
+    <span class="hub-kpi-label">Vencendo em 7 dias</span>
+    <span class="hub-kpi-value {% if vencimentos_proximos > 0 %}amber{% endif %}">{{ vencimentos_proximos }}</span>
+    <span class="hub-kpi-sub">lançamentos</span>
+  </div>
+  <div class="hub-kpi-div"></div>
+  <div class="hub-kpi">
+    <span class="hub-kpi-label">Fornecedores</span>
+    <span class="hub-kpi-value">{{ total_fornecedores }}</span>
+    <span class="hub-kpi-sub">ativos no sistema</span>
+  </div>
+</div>
+
+<!-- Atalho lançamentos -->
+<a class="hub-launch" href="{{ url_for('pagamentos') }}">
+  <div class="hub-launch-left">
+    <div class="hub-launch-icon"><i class="bi bi-list-ul"></i></div>
+    <div>
+      <div class="hub-launch-title">Lançamentos</div>
+      <div class="hub-launch-sub">Registrar, editar e gerenciar pagamentos do mês</div>
+    </div>
+  </div>
+  <i class="bi bi-arrow-right" style="color:#9ca3af"></i>
+</a>
+
+<!-- 4 cards -->
+<div class="hub-grid">
+
+  <!-- Vencimentos -->
+  <a class="hub-card hub-card-blue" href="{{ url_for('pagamentos_vencimentos') }}">
+    <div class="hub-card-top">
+      <div class="hub-card-icon hub-card-icon-blue"><i class="bi bi-calendar3"></i></div>
+      <div class="hub-card-info">
+        <div class="hub-card-title">Vencimentos</div>
+        <div class="hub-card-desc">Calendário visual com boletos e NFs por dia. Veja o que vence essa semana.</div>
+      </div>
+      <i class="bi bi-arrow-right hub-card-arrow"></i>
+    </div>
+    <div class="hub-card-stat">
+      <span class="hub-card-stat-num">{{ vencimentos_proximos }}</span>
+      <span class="hub-card-stat-label">vencendo nos próximos 7 dias</span>
+      {% if vencimentos_proximos > 0 %}
+      <span class="hub-card-badge badge-alert" style="margin-left:auto"><i class="bi bi-exclamation-circle-fill"></i> Atenção</span>
+      {% else %}
+      <span class="hub-card-badge badge-ok" style="margin-left:auto"><i class="bi bi-check-circle-fill"></i> Em dia</span>
+      {% endif %}
+    </div>
+  </a>
+
+  <!-- Fornecedores -->
+  <a class="hub-card hub-card-green" href="{{ url_for('pagamentos_fornecedores') }}">
+    <div class="hub-card-top">
+      <div class="hub-card-icon hub-card-icon-green"><i class="bi bi-building"></i></div>
+      <div class="hub-card-info">
+        <div class="hub-card-title">Fornecedores</div>
+        <div class="hub-card-desc">Perfil automático de cada fornecedor com histórico, total pago e documentos.</div>
+      </div>
+      <i class="bi bi-arrow-right hub-card-arrow"></i>
+    </div>
+    <div class="hub-card-stat">
+      <span class="hub-card-stat-num">{{ total_fornecedores }}</span>
+      <span class="hub-card-stat-label">fornecedores cadastrados</span>
+    </div>
+  </a>
+
+  <!-- Aprovações -->
+  <a class="hub-card hub-card-amber" href="{{ url_for('pagamentos_aprovacoes') }}">
+    <div class="hub-card-top">
+      <div class="hub-card-icon hub-card-icon-amber"><i class="bi bi-check2-circle"></i></div>
+      <div class="hub-card-info">
+        <div class="hub-card-title">Aprovações</div>
+        <div class="hub-card-desc">Fila de pagamentos pendentes de aprovação ordenados por urgência e vencimento.</div>
+      </div>
+      <i class="bi bi-arrow-right hub-card-arrow"></i>
+    </div>
+    <div class="hub-card-stat">
+      <span class="hub-card-stat-num">{{ pendentes_aprovacao }}</span>
+      <span class="hub-card-stat-label">aguardando aprovação</span>
+      {% if pendentes_aprovacao > 0 %}
+      <span class="hub-card-badge badge-warn" style="margin-left:auto"><i class="bi bi-clock-fill"></i> Pendente</span>
+      {% endif %}
+    </div>
+  </a>
+
+  <!-- Relatórios -->
+  <a class="hub-card hub-card-purple" href="{{ url_for('pagamentos_relatorios') }}">
+    <div class="hub-card-top">
+      <div class="hub-card-icon hub-card-icon-purple"><i class="bi bi-bar-chart-line"></i></div>
+      <div class="hub-card-info">
+        <div class="hub-card-title">Relatórios</div>
+        <div class="hub-card-desc">Aging de contas a pagar, concentração por fornecedor e anomalias de valor.</div>
+      </div>
+      <i class="bi bi-arrow-right hub-card-arrow"></i>
+    </div>
+    <div class="hub-card-stat">
+      <span class="hub-card-stat-num">6</span>
+      <span class="hub-card-stat-label">meses de análise disponíveis</span>
+    </div>
+  </a>
+
+</div>
+{% endblock %}

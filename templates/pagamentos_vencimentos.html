@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+.venc-header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 16px;flex-wrap:wrap;gap:12px}
+.venc-header-left h1{margin:0;font-size:1.25rem;font-weight:700;color:#111827}
+.venc-header-left p{margin:3px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .venc-header-left h1{color:#f1f5f9}
+html[data-theme="dark"] .venc-header-left p{color:#64748b}
+
+/* Nav mês */
+.venc-nav{display:flex;align-items:center;gap:8px}
+.venc-nav-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:7px;border:1px solid #e5e7eb;background:#fff;color:#374151;text-decoration:none;font-size:.9rem;transition:background .12s,border-color .12s}
+.venc-nav-btn:hover{background:#f9fafb;border-color:#d1d5db}
+.venc-nav-title{font-size:.92rem;font-weight:700;color:#111827;min-width:140px;text-align:center}
+html[data-theme="dark"] .venc-nav-btn{background:#1e293b;border-color:#334155;color:#cbd5e1}
+html[data-theme="dark"] .venc-nav-btn:hover{background:#273549}
+html[data-theme="dark"] .venc-nav-title{color:#f1f5f9}
+
+/* KPIs */
+.venc-kpis{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.venc-kpi{flex:1;min-width:140px;background:#fff;border:1px solid #e5e7eb;border-radius:9px;padding:14px 18px}
+.venc-kpi-label{font-size:.7rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px}
+.venc-kpi-value{font-size:1.2rem;font-weight:700;color:#111827}
+.venc-kpi-value.amber{color:#92400e}
+.venc-kpi-value.green{color:#166534}
+html[data-theme="dark"] .venc-kpi{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .venc-kpi-label{color:#64748b}
+html[data-theme="dark"] .venc-kpi-value{color:#f1f5f9}
+
+/* Calendário */
+.venc-cal{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden}
+.venc-cal-head{display:grid;grid-template-columns:repeat(7,1fr);background:#f9fafb;border-bottom:1px solid #e5e7eb}
+.venc-cal-dow{padding:10px 0;text-align:center;font-size:.7rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.venc-cal-body{display:grid;grid-template-columns:repeat(7,1fr)}
+.venc-day{border-right:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6;min-height:90px;padding:8px;display:flex;flex-direction:column;gap:4px;cursor:pointer;transition:background .1s}
+.venc-day:hover{background:#f9fafb}
+.venc-day.empty{background:#fafafa;cursor:default}
+.venc-day.hoje{background:#eff6ff}
+.venc-day.tem-venc{background:#fffbeb}
+.venc-day-num{font-size:.78rem;font-weight:700;color:#374151;line-height:1}
+.venc-day.hoje .venc-day-num{background:#1d4ed8;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem}
+.venc-day-total{font-size:.7rem;font-weight:700;color:#92400e;background:#fef3c7;border-radius:4px;padding:2px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.venc-day-count{font-size:.68rem;color:#6b7280}
+.venc-day-pago{font-size:.68rem;color:#166534;font-weight:500}
+html[data-theme="dark"] .venc-cal{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .venc-cal-head{background:#0f172a;border-color:#334155}
+html[data-theme="dark"] .venc-cal-dow{color:#475569}
+/* ── Urgência nos dias ── */
+.venc-day.urg-vencido{background:#fef2f2 !important;border-left:3px solid #ef4444}
+.venc-day.urg-hoje{background:#fff7ed !important;border-left:3px solid #f59e0b}
+.venc-day.urg-proximo{background:#fffbeb !important;border-left:3px solid #fbbf24}
+.venc-day.urg-pago{background:#f0fdf4 !important}
+.venc-day.urg-vencido .venc-day-total{background:#fecaca;color:#991b1b;animation:_vencPulse 1.2s ease-in-out infinite}
+.venc-day.urg-hoje .venc-day-total{background:#fed7aa;color:#92400e}
+.venc-day.urg-proximo .venc-day-total{background:#fef3c7;color:#92400e}
+.venc-day.urg-pago .venc-day-total{background:#bbf7d0;color:#166534}
+@keyframes _vencPulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.7;transform:scale(.97)}
+}
+/* Itens do painel lateral por urgência */
+.venc-item.urg-vencido{border-left:3px solid #ef4444;background:#fef2f2}
+.venc-item.urg-hoje{border-left:3px solid #f59e0b;background:#fffbeb}
+.venc-item.urg-proximo{border-left:3px solid #fbbf24;background:#fefce8}
+.venc-item.urg-pago{border-left:3px solid #22c55e;background:#f0fdf4}
+.venc-item.urg-vencido .venc-item-valor{color:#991b1b}
+.venc-item.urg-hoje .venc-item-valor{color:#92400e}
+.venc-item.urg-pago .venc-item-valor{color:#166534}
+.venc-urg-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:.68rem;font-weight:700}
+.venc-urg-badge.vencido{background:#fecaca;color:#991b1b}
+.venc-urg-badge.hoje{background:#fed7aa;color:#92400e}
+.venc-urg-badge.proximo{background:#fef3c7;color:#b45309}
+.venc-urg-badge.pago{background:#bbf7d0;color:#166534}
+.venc-urg-badge.ok{background:#f3f4f6;color:#6b7280}
+html[data-theme="dark"] .venc-day.urg-vencido{background:rgba(239,68,68,.12) !important;border-left-color:#ef4444}
+html[data-theme="dark"] .venc-day.urg-hoje{background:rgba(245,158,11,.1) !important;border-left-color:#f59e0b}
+html[data-theme="dark"] .venc-day.urg-proximo{background:rgba(251,191,36,.08) !important;border-left-color:#fbbf24}
+html[data-theme="dark"] .venc-day.urg-pago{background:rgba(34,197,94,.07) !important}
+html[data-theme="dark"] .venc-item.urg-vencido{background:rgba(239,68,68,.08);border-left-color:#ef4444}
+html[data-theme="dark"] .venc-item.urg-hoje{background:rgba(245,158,11,.08);border-left-color:#f59e0b}
+html[data-theme="dark"] .venc-item.urg-pago{background:rgba(34,197,94,.08);border-left-color:#22c55e}
+html[data-theme="dark"] .venc-day-num{color:#cbd5e1}
+html[data-theme="dark"] .venc-day-total{background:rgba(146,64,14,.2);color:#fbbf24}
+html[data-theme="dark"] .venc-day-count{color:#475569}
+html[data-theme="dark"] .venc-day-pago{color:#4ade80}
+
+/* Painel lateral */
+.venc-layout{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
+.venc-detail{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;position:sticky;top:20px}
+.venc-detail-header{padding:16px 18px;border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.venc-detail-title{font-size:.88rem;font-weight:700;color:#111827;margin:0}
+.venc-detail-sub{font-size:.76rem;color:#6b7280;margin:2px 0 0}
+.venc-detail-body{padding:12px;max-height:480px;overflow-y:auto}
+.venc-item{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:8px;margin-bottom:6px;border:1px solid #f3f4f6;background:#fafafa;cursor:pointer;transition:border-color .12s,background .12s}
+.venc-item:hover{border-color:#dbeafe;background:#eff6ff}
+.venc-item-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.venc-item-nome{font-size:.82rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.venc-item-valor{font-size:.82rem;font-weight:700;color:#111827;white-space:nowrap}
+.venc-item-desc{font-size:.74rem;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.venc-item-status{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:500}
+.venc-item-status.pago{color:#166534}
+.venc-item-status.aberto{color:#6b7280}
+.venc-empty-detail{padding:32px;text-align:center;color:#9ca3af;font-size:.82rem}
+html[data-theme="dark"] .venc-detail{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .venc-detail-header{background:#0f172a;border-color:#334155}
+html[data-theme="dark"] .venc-detail-title{color:#f1f5f9}
+html[data-theme="dark"] .venc-detail-sub{color:#475569}
+html[data-theme="dark"] .venc-item{background:#162032;border-color:#334155}
+html[data-theme="dark"] .venc-item:hover{background:#1e293b;border-color:#3b82f6}
+html[data-theme="dark"] .venc-item-nome{color:#f1f5f9}
+html[data-theme="dark"] .venc-item-valor{color:#f1f5f9}
+html[data-theme="dark"] .venc-item-desc{color:#475569}
+
+@media(max-width:900px){.venc-layout{grid-template-columns:1fr}.venc-detail{position:static}}
+@media(max-width:600px){.venc-day{min-height:60px;padding:5px}}
+</style>
+
+<div class="venc-header">
+  <div class="venc-header-left">
+    <h1>Vencimentos</h1>
+    <p>Calendário de boletos e NFs por data de vencimento</p>
+  </div>
+  <nav class="venc-nav">
+    <a class="venc-nav-btn" href="{{ url_for('pagamentos_vencimentos', mes=mes_ant) }}"><i class="bi bi-chevron-left"></i></a>
+    <span class="venc-nav-title">{{ mes_nome }} {{ ano_num }}</span>
+    <a class="venc-nav-btn" href="{{ url_for('pagamentos_vencimentos', mes=mes_prox) }}"><i class="bi bi-chevron-right"></i></a>
+    <a class="venc-nav-btn" href="{{ url_for('pagamentos_hub') }}" title="Voltar ao hub"><i class="bi bi-grid-3x3-gap"></i></a>
+  </nav>
+</div>
+
+<!-- KPIs -->
+<div class="venc-kpis">
+  <div class="venc-kpi">
+    <span class="venc-kpi-label">Total do mês</span>
+    <span class="venc-kpi-value">{{ total_mes|br_money }}</span>
+  </div>
+  <div class="venc-kpi">
+    <span class="venc-kpi-label">Já pago</span>
+    <span class="venc-kpi-value green">{{ total_pago|br_money }}</span>
+  </div>
+  <div class="venc-kpi">
+    <span class="venc-kpi-label">Pendente</span>
+    <span class="venc-kpi-value amber">{{ total_pendente|br_money }}</span>
+  </div>
+  <div class="venc-kpi">
+    <span class="venc-kpi-label">Dias com vencimento</span>
+    <span class="venc-kpi-value">{{ dias|length }}</span>
+  </div>
+</div>
+
+<div class="venc-layout">
+  <!-- Calendário -->
+  <div>
+    <div class="venc-cal">
+      <div class="venc-cal-head">
+        {% for dow in ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'] %}
+        <div class="venc-cal-dow">{{ dow }}</div>
+        {% endfor %}
+      </div>
+      <div class="venc-cal-body" id="calBody">
+        {% for semana in cal %}
+          {% for dia in semana %}
+            {% if dia == 0 %}
+            <div class="venc-day empty"></div>
+            {% else %}
+            {% set urg = urgencia_dia.get(dia, '') %}
+            <div class="venc-day {% if dia == hoje_dia %}hoje{% endif %} {% if dias[dia] %}tem-venc urg-{{ urg }}{% endif %}"
+                 onclick="mostrarDia({{ dia }})"
+                 data-dia="{{ dia }}">
+              <span class="venc-day-num">{{ dia }}</span>
+              {% if totais_dia[dia] %}
+              <span class="venc-day-total">
+                {% if urg == 'vencido' %}⚠ {% elif urg == 'hoje' %}🔴 {% endif %}{{ totais_dia[dia]|br_money }}
+              </span>
+              <span class="venc-day-count">{{ dias[dia]|length }} lançamento(s)</span>
+              {% if pagos_dia[dia] %}
+              <span class="venc-day-pago">✓ {{ pagos_dia[dia]|br_money }} pago</span>
+              {% endif %}
+              {% endif %}
+            </div>
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Painel lateral -->
+  <div class="venc-detail" id="vencDetail">
+    <div class="venc-detail-header">
+      <div class="venc-detail-title" id="detailTitle">Selecione um dia</div>
+      <div class="venc-detail-sub" id="detailSub">Clique em um dia do calendário para ver os vencimentos</div>
+    </div>
+    <div class="venc-detail-body" id="detailBody">
+      <div class="venc-empty-detail"><i class="bi bi-calendar3" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.3"></i>Nenhum dia selecionado</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const diasData = {{ dias|tojson }};
+const totaisDia = {{ totais_dia|tojson }};
+
+function brMoney(v) {
+  // Aceita número ou string no formato BR "R$ 52.516,00"
+  if(typeof v === 'string') {
+    v = v.replace(/[R$\s]/g,'').replace(/\./g,'').replace(',','.');
+  }
+  return 'R$ ' + parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function mostrarDia(dia) {
+  // Destaca o dia selecionado
+  document.querySelectorAll('.venc-day').forEach(d => d.style.outline = '');
+  const dayEl = document.querySelector(`.venc-day[data-dia="${dia}"]`);
+  if(dayEl) dayEl.style.outline = '2px solid #1d4ed8';
+
+  const itens = diasData[dia] || [];
+  const total = totaisDia[dia] || 0;
+
+  document.getElementById('detailTitle').textContent = `Dia ${dia} — ${itens.length} vencimento(s)`;
+  document.getElementById('detailSub').textContent = `Total: ${brMoney(total)}`;
+
+  const body = document.getElementById('detailBody');
+  if(!itens.length) {
+    body.innerHTML = '<div class="venc-empty-detail">Nenhum vencimento neste dia</div>';
+    return;
+  }
+
+  body.innerHTML = itens.map(r => {
+    const pago = (r.status||'').toLowerCase() === 'sim';
+    const urg = r.urgencia || (pago ? 'pago' : 'ok');
+    const urgLabels = {vencido:'⚠ Vencido',hoje:'🔴 Vence hoje',proximo:'🟡 Vence em breve',pago:'✓ Pago',ok:'Em dia'};
+    const urgLabel = urgLabels[urg] || '';
+    return `
+      <div class="venc-item urg-${urg}" style="cursor:pointer" onclick="window.location.href='/pagamentos/lancamentos?todos=1&highlight=${r.id}'">
+        <div class="venc-item-top">
+          <span class="venc-item-nome">${r.fornecedor||'Sem fornecedor'}</span>
+          <span class="venc-item-valor">${brMoney(r.valor_num !== undefined ? r.valor_num : r.valor)}</span>
+        </div>
+        <div class="venc-item-desc">${r.descricao_servico||'—'}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap">
+          <span class="venc-item-status ${pago?'pago':'aberto'}">
+            <span style="width:6px;height:6px;border-radius:50%;background:${pago?'#16a34a':'#d1d5db'};display:inline-block"></span>
+            ${pago?'Pago':'Em aberto'}
+          </span>
+          ${urgLabel ? `<span class="venc-urg-badge ${urg}">${urgLabel}</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+</script>
+{% endblock %}

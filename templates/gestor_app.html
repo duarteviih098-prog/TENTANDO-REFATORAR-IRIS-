@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>IRIS Gestor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f6f9ff;--bg2:#edf4fb;--card:#ffffff;--text:#07142d;--muted:#7a859c;--line:#e4eaf4;
+      --blue:#0d86f7;--purple:#8b35f6;--pink:#ef426f;--amber:#f6a400;--green:#28ce7a;--red:#ef4444;
+      --shadow:0 14px 34px rgba(25,45,80,.075);--safe-bottom:env(safe-area-inset-bottom,0px);
+    }
+    html[data-theme="dark"]{--bg:#080f1f;--bg2:#111827;--card:#141e31;--text:#f1f6ff;--muted:#9aa9c1;--line:#263449;}
+    *{box-sizing:border-box} html,body{min-height:100%;margin:0}
+    body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--text);padding-bottom:calc(80px + var(--safe-bottom));overflow-x:hidden;font-weight:600;}
+
+    .app{width:min(100%,540px);margin:0 auto;padding:16px 20px 0}
+
+    /* Topbar */
+    .topbar{height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .wordmark{font-size:1.28rem;letter-spacing:.3em;font-weight:500}
+    .user-chip{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.82rem;font-weight:750;color:var(--muted)}
+
+    /* Cards de resumo */
+    .cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+    .summary-card{background:var(--card);border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:20px;box-shadow:var(--shadow);padding:14px;cursor:pointer;transition:transform .15s ease}
+    .summary-card:active{transform:scale(.97)}
+    .summary-card.full{grid-column:span 2}
+    .sc-label{font-size:.76rem;font-weight:750;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+    .sc-value{font-size:2rem;font-weight:800;letter-spacing:-.04em;line-height:1}
+    .sc-sub{font-size:.75rem;color:var(--muted);margin-top:3px}
+    .c-blue .sc-value{color:var(--blue)}
+    .c-amber .sc-value{color:var(--amber)}
+    .c-red .sc-value{color:var(--red)}
+    .c-green .sc-value{color:var(--green)}
+    .c-purple .sc-value{color:var(--purple)}
+
+    /* Financeiro */
+    .fin-row{display:flex;gap:10px;margin-bottom:10px}
+    .fin-card{flex:1;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:var(--shadow)}
+    .fin-label{font-size:.72rem;font-weight:750;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+    .fin-value{font-size:1.18rem;font-weight:800;margin-top:3px}
+
+    /* Painéis */
+    .panel{display:none}
+    .panel.active{display:block;animation:panelIn .22s ease both}
+    @keyframes panelIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+    /* Lista O.S. */
+    .os-list{display:grid;gap:10px;margin-bottom:20px}
+    .os-card{background:var(--card);border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:20px;box-shadow:var(--shadow);padding:14px}
+    .os-card.atrasada{border-color:color-mix(in srgb,var(--red) 40%,var(--line))}
+    .os-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+    .os-num{font-weight:800;font-size:.95rem}
+    .os-date{font-size:.74rem;color:var(--muted);margin-top:2px}
+    .badge{border-radius:999px;padding:5px 9px;font-size:.68rem;font-weight:800}
+    .b-blue{background:rgba(13,134,247,.12);color:var(--blue)}
+    .b-amber{background:rgba(246,164,0,.14);color:var(--amber)}
+    .b-red{background:rgba(239,68,68,.12);color:var(--red)}
+    .b-green{background:rgba(40,206,122,.14);color:var(--green)}
+    .os-sistema{font-weight:800;font-size:.9rem;margin-bottom:2px}
+    .os-equip{font-size:.78rem;color:var(--muted)}
+    .os-resp{font-size:.78rem;color:var(--muted);margin-top:6px}
+    .os-motivo{font-size:.76rem;color:var(--amber);margin-top:4px;background:rgba(246,164,0,.08);border-radius:10px;padding:5px 8px}
+    .os-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .btn-act{border:0;border-radius:12px;padding:8px 14px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px}
+    .btn-wpp{background:#25d366;color:#fff}
+    .btn-blue{background:var(--blue);color:#fff}
+    .btn-ghost{background:var(--bg2);color:var(--text);border:1px solid var(--line)}
+
+    .empty{background:var(--card);border:1px dashed var(--line);color:var(--muted);border-radius:18px;padding:20px;text-align:center;font-weight:750}
+    .empty i{display:block;font-size:1.6rem;margin-bottom:6px;color:var(--blue)}
+
+    /* Bottom nav */
+    .bottom-nav{position:fixed;left:50%;bottom:calc(0px + var(--safe-bottom));transform:translateX(-50%);width:min(540px,100vw);height:72px;z-index:40;display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:6px 16px calc(6px + var(--safe-bottom));background:color-mix(in srgb,var(--card) 94%,transparent);border-top:1px solid var(--line);box-shadow:0 -10px 30px rgba(25,45,80,.08);backdrop-filter:blur(18px)}
+    .nav-btn{border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.62rem;font-weight:750;cursor:pointer;padding:0;font-family:inherit}
+    .nav-btn i{font-size:1.25rem}
+    .nav-btn.active{color:var(--blue)}
+
+    /* Modal criar O.S. */
+    .modal-sheet{position:fixed;inset:auto 0 0;z-index:90;background:var(--card);border-radius:26px 26px 0 0;border-top:1px solid var(--line);box-shadow:0 -20px 60px rgba(0,0,0,.18);padding:20px 20px calc(24px + var(--safe-bottom));transform:translateY(110%);transition:.26s cubic-bezier(.32,1,.32,1);max-height:92vh;overflow-y:auto}
+    .modal-sheet.open{transform:translateY(0)}
+    .sheet-backdrop{position:fixed;inset:0;z-index:88;background:rgba(7,20,45,.4);opacity:0;pointer-events:none;transition:.22s ease;backdrop-filter:blur(3px)}
+    .sheet-backdrop.open{opacity:1;pointer-events:all}
+    .sheet-handle{width:44px;height:5px;border-radius:999px;background:var(--line);margin:0 auto 16px}
+    .sheet-title{font-size:1.1rem;font-weight:900;margin:0 0 16px}
+    .form-field{margin-bottom:14px}
+    .form-field label{display:block;font-size:.76rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+    .form-field input,.form-field select,.form-field textarea{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:14px;padding:11px 13px;font:inherit;font-size:.9rem;font-weight:700;outline:none}
+    .form-field textarea{min-height:80px;resize:vertical}
+    .form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(13,134,247,.12)}
+    .btn-primary{width:100%;border:0;border-radius:16px;padding:14px;background:linear-gradient(90deg,var(--blue),var(--purple));color:#fff;font:inherit;font-weight:900;font-size:.95rem;cursor:pointer;margin-top:8px}
+
+    /* Toast */
+    .toast{position:fixed;left:50%;bottom:calc(88px + var(--safe-bottom));transform:translateX(-50%) translateY(8px);background:rgba(7,20,45,.92);color:#fff;border-radius:16px;padding:11px 14px;font-weight:750;opacity:0;pointer-events:none;transition:.2s ease;z-index:99;white-space:nowrap}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    @media(max-width:380px){.cards-grid{grid-template-columns:1fr}.summary-card.full{grid-column:span 1}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="wordmark">IRIS</div>
+    </div>
+    <div class="user-chip">
+      <i class="bi bi-person-fill"></i>
+      {{ user.nome.split(' ')[0] if user else 'Gestor' }}
+    </div>
+  </header>
+
+  <!-- DASHBOARD -->
+  <div id="panel-home" class="panel active">
+    <div style="margin-bottom:12px">
+      <div style="font-size:.8rem;color:var(--muted);font-weight:750">{{ mes_ref }}</div>
+      <div style="font-size:1.1rem;font-weight:900">Bom dia, {{ user.nome.split(' ')[0] if user else 'Gestor' }} 👋</div>
+    </div>
+
+    <div class="cards-grid">
+      {% if can('view_os') %}
+      <div class="summary-card c-blue" onclick="showPanel('panel-abertas')">
+        <div class="sc-label">Abertas</div>
+        <div class="sc-value">{{ cards.abertas }}</div>
+        <div class="sc-sub">aguardando início</div>
+      </div>
+      <div class="summary-card c-amber" onclick="showPanel('panel-andamento')">
+        <div class="sc-label">Em andamento</div>
+        <div class="sc-value">{{ cards.andamento }}</div>
+        <div class="sc-sub">em execução</div>
+      </div>
+      <div class="summary-card c-red" onclick="showPanel('panel-atrasadas')">
+        <div class="sc-label">Atrasadas</div>
+        <div class="sc-value">{{ cards.atrasadas }}</div>
+        <div class="sc-sub">passaram do prazo</div>
+      </div>
+      <div class="summary-card c-amber" onclick="showPanel('panel-pausadas')">
+        <div class="sc-label">Pausadas</div>
+        <div class="sc-value">{{ cards.pausadas }}</div>
+        <div class="sc-sub">aguardando retomada</div>
+      </div>
+      <div class="summary-card c-green" onclick="showPanel('panel-finalizadas')">
+        <div class="sc-label">Finalizadas hoje</div>
+        <div class="sc-value">{{ cards.finalizadas_hoje }}</div>
+        <div class="sc-sub">concluídas hoje</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if can('view_pagamentos') %}
+    <div style="font-size:.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Financeiro — {{ mes_ref }}</div>
+    <div class="fin-row">
+      <div class="fin-card">
+        <div class="fin-label">Gasto</div>
+        <div class="fin-value" style="color:var(--amber)">{{ cards.gasto_mes|br_money }}</div>
+      </div>
+      <div class="fin-card">
+        <div class="fin-label">Investimento</div>
+        <div class="fin-value" style="color:var(--purple)">{{ cards.investimento_mes|br_money }}</div>
+      </div>
+      <div class="fin-card">
+        <div class="fin-label">Combustível</div>
+        <div class="fin-value" style="color:var(--blue)">{{ cards.combustivel_mes|br_money }}</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ABERTAS -->
+  <div id="panel-abertas" class="panel">
+    <div style="font-size:1.05rem;font-weight:900;margin-bottom:14px">📋 O.S. Abertas</div>
+    <div class="os-list">
+      {% for r in abertas %}{% include 'gestor_os_card.html' %}
+      {% else %}<div class="empty"><i class="bi bi-emoji-sunglasses"></i>Nenhuma O.S. aberta.</div>{% endfor %}
+    </div>
+  </div>
+
+  <!-- ANDAMENTO -->
+  <div id="panel-andamento" class="panel">
+    <div style="font-size:1.05rem;font-weight:900;margin-bottom:14px">⚡ Em andamento</div>
+    <div class="os-list">
+      {% for r in andamento %}{% include 'gestor_os_card.html' %}
+      {% else %}<div class="empty"><i class="bi bi-activity"></i>Nenhuma O.S. em andamento.</div>{% endfor %}
+    </div>
+  </div>
+
+  <!-- ATRASADAS -->
+  <div id="panel-atrasadas" class="panel">
+    <div style="font-size:1.05rem;font-weight:900;margin-bottom:14px">⚠️ Atrasadas</div>
+    <div class="os-list">
+      {% for r in atrasadas %}{% include 'gestor_os_card.html' %}
+      {% else %}<div class="empty"><i class="bi bi-check-circle"></i>Nenhuma O.S. atrasada.</div>{% endfor %}
+    </div>
+  </div>
+
+  <!-- PAUSADAS -->
+  <div id="panel-pausadas" class="panel">
+    <div style="font-size:1.05rem;font-weight:900;margin-bottom:14px">⏸️ Pausadas</div>
+    <div class="os-list">
+      {% for r in pausadas %}{% include 'gestor_os_card.html' %}
+      {% else %}<div class="empty"><i class="bi bi-pause-circle"></i>Nenhuma O.S. pausada.</div>{% endfor %}
+    </div>
+  </div>
+
+  <!-- FINALIZADAS HOJE -->
+  <div id="panel-finalizadas" class="panel">
+    <div style="font-size:1.05rem;font-weight:900;margin-bottom:14px">✅ Finalizadas hoje</div>
+    <div class="os-list">
+      {% for r in finalizadas_hoje %}{% include 'gestor_os_card.html' %}
+      {% else %}<div class="empty"><i class="bi bi-archive"></i>Nenhuma O.S. finalizada hoje.</div>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" type="button" onclick="showPanel('panel-home')"><i class="bi bi-house-door"></i><span>Início</span></button>
+  <button class="nav-btn" type="button" onclick="showPanel('panel-abertas')"><i class="bi bi-clipboard"></i><span>O.S.</span></button>
+  {% if can('create_os') %}
+  <button class="nav-btn" type="button" onclick="abrirCriarOS()"><i class="bi bi-plus-circle-fill" style="font-size:1.6rem;color:var(--blue)"></i><span>Nova O.S.</span></button>
+  {% endif %}
+  <button class="nav-btn" type="button" onclick="window.location.href='/home'"><i class="bi bi-display"></i><span>Desktop</span></button>
+</nav>
+
+<!-- Sheet criar O.S. -->
+{% if can('create_os') %}
+<div class="sheet-backdrop" id="backdrop" onclick="fecharCriarOS()"></div>
+<div class="modal-sheet" id="sheet-os">
+  <div class="sheet-handle"></div>
+  <h3 class="sheet-title">Nova O.S.</h3>
+  <form method="post" action="{{ url_for('os_save') }}">
+    <input type="hidden" name="status" value="Aberta">
+    <div class="form-field">
+      <label>Data</label>
+      <input type="text" name="data" id="gs-data" placeholder="dd/mm/aaaa">
+    </div>
+    <div class="form-field">
+      <label>Sistema</label>
+      <select name="sistema" id="gs-sistema">
+        <option value="">Selecione...</option>
+        {% for s in sistemas_map.keys() %}
+        <option value="{{ s }}">{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Equipamento</label>
+      <select name="equipamento" id="gs-equipamento">
+        <option value="">Selecione o sistema primeiro</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Responsável</label>
+      <select name="responsavel">
+        <option value="">Disponível para equipe</option>
+        {% for t in tecnicos_campo %}
+        <option value="{{ t.nome }}">{{ t.nome }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Criticidade</label>
+      <select name="criticidade">
+        <option value="">Não definida</option>
+        <option value="Baixa">Baixa</option>
+        <option value="Média">Média</option>
+        <option value="Alta">Alta</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Descrição</label>
+      <textarea name="descricao" placeholder="Descreva o problema..."></textarea>
+    </div>
+    <button type="submit" class="btn-primary"><i class="bi bi-plus-circle-fill"></i> Criar O.S.</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SISTEMAS_MAP = {{ sistemas_map|tojson }};
+
+function showPanel(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function abrirCriarOS(){
+  const hoje = new Date();
+  document.getElementById('gs-data').value =
+    `${String(hoje.getDate()).padStart(2,'0')}/${String(hoje.getMonth()+1).padStart(2,'0')}/${hoje.getFullYear()}`;
+  document.getElementById('backdrop').classList.add('open');
+  document.getElementById('sheet-os').classList.add('open');
+}
+
+function fecharCriarOS(){
+  document.getElementById('backdrop').classList.remove('open');
+  document.getElementById('sheet-os').classList.remove('open');
+}
+
+// Sistema → Equipamento
+document.getElementById('gs-sistema')?.addEventListener('change', function(){
+  const equips = SISTEMAS_MAP[this.value] || [];
+  const sel = document.getElementById('gs-equipamento');
+  sel.innerHTML = '<option value="">Selecione...</option>' +
+    equips.map(e=>`<option value="${e}">${e}</option>`).join('');
+});
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// Tema
+const savedTheme = localStorage.getItem('iris-gestor-theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+</script>
+</body>
+</html>

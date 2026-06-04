@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IRIS — Login</title>
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="IRIS">
+<link rel="manifest" href="/static/campo_manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+/* ── Reset & tokens ───────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue:    #1a8fff;
+  --indigo:  #4f6fff;
+  --purple:  #8b4fff;
+  --text:    #0f1d2e;
+  --sub:     #6b7a93;
+  --line:    #dde4ef;
+  --card-bg: rgba(255,255,255,0.92);
+  --safe-b:  env(safe-area-inset-bottom, 0px);
+}
+
+/* ── Base ─────────────────────────────────────────────────── */
+html {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--text);
+
+  /* background */
+  background:
+    radial-gradient(ellipse 70% 40% at 100% 0%,   rgba(99,150,255,.13) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 0%   100%,  rgba(21,140,255,.10) 0%, transparent 65%),
+    #f5f8ff;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px calc(24px + var(--safe-b));
+}
+
+/* ── Decorative blobs (fixed, pointer-none) ───────────────── */
+body::before, body::after {
+  content: "";
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+body::before {
+  width: 240px; height: 240px;
+  top: -80px; right: -80px;
+  background: radial-gradient(circle, rgba(79,111,255,.12), transparent 70%);
+}
+body::after {
+  width: 200px; height: 200px;
+  bottom: -60px; left: -60px;
+  background: radial-gradient(circle, rgba(21,140,255,.10), transparent 70%);
+}
+
+/* ── Page wrapper ─────────────────────────────────────────── */
+.page {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* ── Brand header ─────────────────────────────────────────── */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+/* SVG iris symbol */
+.iris-wrap {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+}
+
+.iris-svg {
+  width: 56px;
+  height: 56px;
+  display: block;
+  filter: drop-shadow(0 6px 14px rgba(26,143,255,.18));
+}
+
+.outer-ring {
+  fill: none;
+  stroke: url(#irisGrad);
+  stroke-width: 3;
+}
+
+.ticks {
+  transform-origin: 50px 50px;
+  animation: spin 16s linear infinite, breathe 7s ease-in-out infinite;
+}
+.ticks line {
+  stroke: #4e9dff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: .82;
+}
+.ticks line:nth-child(3n) { stroke: #6c7cff; opacity: .65; }
+.ticks line:nth-child(4n) { stroke: #8f4cff; opacity: .50; }
+
+@keyframes spin    { to { transform: rotate(360deg) } }
+@keyframes breathe { 0%,100% { scale: .93 } 50% { scale: 1.07 } }
+
+/* wordmark + tagline */
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wordmark {
+  font-family: 'DM Mono', monospace;
+  font-size: 1.75rem;
+  font-weight: 500;
+  letter-spacing: .22em;
+  color: var(--text);
+  line-height: 1;
+}
+
+.tagline {
+  font-size: .72rem;
+  font-weight: 500;
+  color: var(--sub);
+  letter-spacing: .01em;
+}
+
+/* ── Card ─────────────────────────────────────────────────── */
+.card {
+  width: 100%;
+  background: var(--card-bg);
+  border: 1px solid rgba(160,180,220,.25);
+  border-radius: 20px;
+  padding: 24px 20px 20px;
+  box-shadow:
+    0 2px  4px rgba(15,40,80,.04),
+    0 8px 24px rgba(15,40,80,.08),
+    0 24px 48px rgba(15,40,80,.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.card-title {
+  font-size: 1.18rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  margin-bottom: 2px;
+}
+
+.card-sub {
+  font-size: .75rem;
+  color: var(--sub);
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+/* ── Alert ────────────────────────────────────────────────── */
+.alert {
+  border: 1px solid rgba(220,50,90,.22);
+  background: rgba(220,50,90,.07);
+  color: #c42b56;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: .74rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ── Fields ───────────────────────────────────────────────── */
+.field { margin-bottom: 14px; }
+
+.field label {
+  display: block;
+  font-size: .70rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: #3a4a62;
+  margin-bottom: 6px;
+}
+
+.input-wrap { position: relative; }
+
+.input-wrap .ico {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: .85rem;
+  color: #9aaabf;
+  pointer-events: none;
+}
+
+.input-wrap input {
+  display: block;
+  width: 100%;
+  height: 44px;
+  border: 1.5px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 500;
+  padding: 0 40px 0 38px;
+  outline: none;
+  transition: border-color .18s, box-shadow .18s;
+  -webkit-appearance: none;
+}
+
+.input-wrap input::placeholder { color: #b0bdd0; }
+
+.input-wrap input:focus {
+  border-color: rgba(26,143,255,.55);
+  box-shadow: 0 0 0 3px rgba(26,143,255,.10);
+}
+
+.eye-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9aaabf;
+  cursor: pointer;
+  font-size: .88rem;
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Options row ──────────────────────────────────────────── */
+.options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 8px;
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .72rem;
+  font-weight: 600;
+  color: #3a4a62;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.remember input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--blue);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.forgot {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--blue);
+  text-decoration: none;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.forgot:hover { text-decoration: underline; }
+
+/* ── Submit ───────────────────────────────────────────────── */
+.btn-submit {
+  display: block;
+  width: 100%;
+  height: 46px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(100deg, var(--blue) 0%, var(--indigo) 50%, var(--purple) 100%);
+  color: #fff;
+  font: inherit;
+  font-size: .88rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(26,143,255,.22), 0 2px 6px rgba(26,143,255,.14);
+  transition: opacity .18s, transform .14s, box-shadow .18s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-submit:active {
+  opacity: .9;
+  transform: scale(.985);
+  box-shadow: 0 4px 12px rgba(26,143,255,.18);
+}
+
+/* ── Support ──────────────────────────────────────────────── */
+.support {
+  text-align: center;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e5ecf5;
+}
+
+.support a {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--blue);
+  text-decoration: none;
+}
+
+/* ── Footer copy ──────────────────────────────────────────── */
+.copy {
+  font-size: .60rem;
+  font-weight: 500;
+  color: #a0afc4;
+  letter-spacing: .02em;
+}
+
+/* ── Responsive: very small screens ──────────────────────── */
+@media (max-height: 680px) {
+  body { padding: 16px 20px calc(16px + var(--safe-b)); justify-content: flex-start; }
+  .page { gap: 14px; }
+  .iris-wrap, .iris-svg { width: 46px; height: 46px; }
+  .wordmark { font-size: 1.5rem; }
+  .card { padding: 18px 16px 16px; }
+  .card-sub { margin-bottom: 14px; }
+  .field { margin-bottom: 10px; }
+  .input-wrap input { height: 40px; }
+  .btn-submit { height: 42px; }
+}
+</style>
+</head>
+
+<body>
+<main class="page">
+
+  <!-- ── Brand ── -->
+  <header class="brand">
+    <div class="iris-wrap" aria-hidden="true">
+      <svg class="iris-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="irisGrad" x1="18" y1="18" x2="82" y2="82" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stop-color="#1a8fff"/>
+            <stop offset="55%"  stop-color="#4f6fff"/>
+            <stop offset="100%" stop-color="#8b4fff"/>
+          </linearGradient>
+        </defs>
+        <circle class="outer-ring" cx="50" cy="50" r="35.5"/>
+        <g class="ticks">
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(0   50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(15  50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(30  50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(45  50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(60  50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(75  50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(90  50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(105 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(120 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(135 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(150 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(165 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(180 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(195 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(210 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(225 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(240 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(255 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(270 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(285 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(300 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(315 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(330 50 50)"/>
+          <line x1="50" y1="24" x2="50" y2="32" transform="rotate(345 50 50)"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="brand-text">
+      <div class="wordmark">IRIS</div>
+      <div class="tagline">Gestão técnica com clareza, campo e controle.</div>
+    </div>
+  </header>
+
+  <!-- ── Card ── -->
+  <section class="card">
+
+    <div class="card-title">Bem-vindo de volta</div>
+    <div class="card-sub">Faça login para continuar</div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert"><i class="bi bi-exclamation-circle-fill"></i>{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="field">
+        <label for="email">E-mail</label>
+        <div class="input-wrap">
+          <i class="bi bi-envelope ico"></i>
+          <input id="email" name="email" type="email"
+                 autocomplete="email" required
+                 placeholder="voce@empresa.com"
+                 value="{{ request.form.get('email','') }}">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="senha">Senha</label>
+        <div class="input-wrap">
+          <i class="bi bi-lock ico"></i>
+          <input id="senha" name="senha" type="password"
+                 autocomplete="current-password" required
+                 placeholder="Sua senha">
+          <button type="button" class="eye-btn" id="togglePwd" aria-label="Mostrar senha">
+            <i class="bi bi-eye" id="eyeIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="options">
+        <label class="remember">
+          <input type="checkbox" name="lembrar" value="1">
+          Lembrar de mim
+        </label>
+        <a class="forgot" href="#">Esqueci minha senha</a>
+      </div>
+
+      <button class="btn-submit" type="submit">Entrar</button>
+
+    </form>
+
+    <div class="support">
+      <a href="#">Falar com o suporte</a>
+    </div>
+
+  </section>
+
+  <p class="copy">© 2026 IRIS · Todos os direitos reservados.</p>
+
+</main>
+
+<script>
+(function () {
+  var btn  = document.getElementById('togglePwd');
+  var inp  = document.getElementById('senha');
+  var icon = document.getElementById('eyeIcon');
+  if (!btn || !inp) return;
+  btn.addEventListener('click', function () {
+    var show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+  });
+})();
+</script>
+
+</body>
+</html>

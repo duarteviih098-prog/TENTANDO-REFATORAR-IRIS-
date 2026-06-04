@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+{% block content %}
+<style>
+.ebm-header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 20px;flex-wrap:wrap;gap:12px}
+.ebm-header h1{margin:0;font-size:1.25rem;font-weight:700;color:#111827}
+.ebm-header p{margin:3px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .ebm-header h1{color:#f0f0f0}
+html[data-theme="dark"] .ebm-header p{color:#666666}
+.ebm-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:.8rem;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#374151;text-decoration:none;cursor:pointer;transition:background .12s}
+.ebm-btn:hover{background:#f9fafb}
+.ebm-btn-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.ebm-btn-primary:hover{background:#1e40af;color:#fff}
+html[data-theme="dark"] .ebm-btn{background:#1a1a1a;border-color:#2e2e2e;color:#cccccc}
+.ebm-layout{display:grid;grid-template-columns:1fr 320px;gap:16px;height:calc(100vh - 200px);min-height:500px}
+.ebm-map-wrap{position:relative;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb}
+html[data-theme="dark"] .ebm-map-wrap{border-color:#2e2e2e}
+#ebmMap{width:100%;height:100%}
+.ebm-map-ui{position:absolute;top:12px;left:12px;z-index:800;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.ebm-search-wrap{pointer-events:auto;position:relative}
+.ebm-search-input{width:240px;padding:8px 12px 8px 30px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;font-size:.82rem;color:#111827;outline:none;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+.ebm-search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.78rem;pointer-events:none}
+.ebm-sidebar{display:flex;flex-direction:column;gap:0;background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden}
+html[data-theme="dark"] .ebm-sidebar{background:#1a1a1a;border-color:#2e2e2e}
+.ebm-sidebar-header{padding:14px 16px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between}
+html[data-theme="dark"] .ebm-sidebar-header{border-color:#2e2e2e}
+.ebm-sidebar-title{font-size:.82rem;font-weight:700;color:#111827}
+html[data-theme="dark"] .ebm-sidebar-title{color:#f0f0f0}
+.ebm-local-list{flex:1;overflow-y:auto}
+.ebm-local-item{padding:12px 16px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:10px}
+.ebm-local-item:hover{background:#f9fafb}
+html[data-theme="dark"] .ebm-local-item{border-color:#2e2e2e}
+html[data-theme="dark"] .ebm-local-item:hover{background:#222222}
+.ebm-local-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ebm-local-nome{font-size:.82rem;font-weight:600;color:#111827;margin-bottom:2px}
+html[data-theme="dark"] .ebm-local-nome{color:#f0f0f0}
+.ebm-local-info{font-size:.72rem;color:#6b7280}
+.ebm-local-bombas{font-size:.7rem;color:#1d4ed8;font-weight:600;margin-top:2px}
+.ebm-local-actions{display:flex;gap:4px;margin-left:auto;flex-shrink:0}
+.ebm-icon-btn{width:26px;height:26px;border-radius:6px;border:1px solid #e5e7eb;background:#fff;color:#6b7280;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.72rem}
+.ebm-icon-btn:hover{background:#f9fafb;color:#111827}
+html[data-theme="dark"] .ebm-icon-btn{background:#1a1a1a;border-color:#2e2e2e;color:#666666}
+.ebm-empty{padding:24px;text-align:center;color:#9ca3af;font-size:.78rem}
+.ebm-popup{min-width:160px}
+.ebm-popup-nome{font-weight:700;font-size:.88rem;color:#111827;margin-bottom:4px}
+.ebm-popup-info{font-size:.76rem;color:#6b7280}
+.ebm-popup-bombas{margin-top:6px}
+.ebm-popup-bomba{font-size:.74rem;padding:2px 0;color:#374151}
+@media(max-width:768px){.ebm-layout{grid-template-columns:1fr;height:auto}.ebm-map-wrap{height:400px}}
+</style>
+
+<div class="ebm-header">
+  <div>
+    <h1>Mapa de Localização</h1>
+    <p>Onde cada bomba está instalada</p>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="ebm-btn ebm-btn-primary" onclick="abrirNovoLocal()"><i class="bi bi-plus"></i> Novo local</button>
+    <a href="{{ url_for('controle_hub') }}" class="ebm-btn"><i class="bi bi-list-ul"></i> Bombas</a>
+  </div>
+</div>
+
+<div class="ebm-layout">
+  <div class="ebm-map-wrap">
+    <div class="ebm-map-ui">
+      <div class="ebm-search-wrap">
+        <i class="bi bi-search ebm-search-icon"></i>
+        <input class="ebm-search-input" id="ebmBusca" placeholder="Buscar endereço…">
+      </div>
+    </div>
+    <div id="ebmMap"></div>
+  </div>
+  <div class="ebm-sidebar">
+    <div class="ebm-sidebar-header">
+      <span class="ebm-sidebar-title">Locais cadastrados</span>
+      <span style="font-size:.72rem;color:#9ca3af" id="ebmLocalCount">0 locais</span>
+    </div>
+    <div class="ebm-local-list" id="ebmLocalList">
+      <div class="ebm-empty">Nenhum local cadastrado.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal local -->
+<div class="modal fade" id="ebmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="ebmModalTitle">Novo local</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label">Nome *</label><input class="form-control" id="ebmNome" placeholder="Ex: Poço Batistela, ETA 02"></div>
+        <div class="mb-3"><label class="form-label">Tipo</label>
+          <select class="form-select" id="ebmTipo">
+            <option value="poco">Poço</option>
+            <option value="eta">ETA</option>
+            <option value="sistema">Sistema</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-6"><label class="form-label">Latitude</label><input class="form-control" id="ebmLat" placeholder="-22.9000" type="number" step="any"></div>
+          <div class="col-6"><label class="form-label">Longitude</label><input class="form-control" id="ebmLng" placeholder="-47.1000" type="number" step="any"></div>
+        </div>
+        <div class="mb-2"><small class="text-muted">Ou clique no mapa para definir a posição automaticamente.</small></div>
+        <div class="mb-3"><label class="form-label">Endereço</label><input class="form-control" id="ebmEndereco" placeholder="Endereço completo"></div>
+        <div class="mb-3"><label class="form-label">Observações</label><textarea class="form-control" id="ebmObs" rows="2"></textarea></div>
+        <input type="hidden" id="ebmLocalId">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarLocal()">Salvar local</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const BOMBAS_DATA = {{ bombas|tojson }};
+const LOCAIS_DATA = {{ locais|tojson }};
+const CSRF_TOKEN = '{{ csrf_token() }}';
+
+let _map = null, _markers = {}, _locais = [...LOCAIS_DATA];
+let _selecionandoPonto = false;
+
+// Cor por tipo
+function corLocal(tipo){
+  return tipo==='poco'?'#1d4ed8':tipo==='eta'?'#166534':tipo==='sistema'?'#7c3aed':'#6b7280';
+}
+
+// Ícone do marcador
+function iconeLocal(local){
+  const cor = corLocal(local.tipo);
+  const bombas = BOMBAS_DATA.filter(b=>b.local_id && String(b.local_id)===String(local.id));
+  const html = `<div style="
+    width:36px;height:36px;border-radius:50%;background:${cor};border:3px solid #fff;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;
+    justify-content:center;color:#fff;font-size:.65rem;font-weight:800;
+    position:relative;cursor:pointer">
+    ${bombas.length?`<div style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:#ef4444;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:800">${bombas.length}</div>`:''}
+    <i class="bi bi-${local.tipo==='poco'?'droplet-fill':local.tipo==='eta'?'water':'geo-alt-fill'}" style="font-size:.7rem"></i>
+  </div>`;
+  return L.divIcon({html, className:'', iconSize:[36,36], iconAnchor:[18,18], popupAnchor:[0,-20]});
+}
+
+function iniciarMapa(){
+  if(_map) return;
+  _map = L.map('ebmMap', {zoomControl:false, attributionControl:false}).setView([-22.9,-47.1], 12);
+  var _isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  var _tileUrl = _isDark
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  var _tileLayer = L.tileLayer(_tileUrl, {maxZoom:19, subdomains:'abcd'}).addTo(_map);
+  // Trocar tiles quando tema muda
+  window.addEventListener('iris-theme-change', function(e){
+    var dark = e.detail.theme === 'dark';
+    _map.removeLayer(_tileLayer);
+    _tileLayer = L.tileLayer(
+      dark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+           : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      {maxZoom:19, subdomains:'abcd'}
+    ).addTo(_map);
+  });
+  L.control.zoom({position:'bottomright'}).addTo(_map);
+
+  // Click no mapa para definir coordenadas do modal aberto
+  _map.on('click', e=>{
+    if(_selecionandoPonto){
+      document.getElementById('ebmLat').value = e.latlng.lat.toFixed(6);
+      document.getElementById('ebmLng').value = e.latlng.lng.toFixed(6);
+      _selecionandoPonto = false;
+    }
+  });
+
+  renderMarkers();
+}
+
+function renderMarkers(){
+  if(!_map) return;
+  Object.values(_markers).forEach(m=>_map.removeLayer(m));
+  _markers = {};
+  _locais.forEach(local=>{
+    if(!local.lat || !local.lng) return;
+    const bombas = BOMBAS_DATA.filter(b=>b.local_id && String(b.local_id)===String(local.id));
+    const popupHtml = `<div class="ebm-popup">
+      <div class="ebm-popup-nome">${local.nome}</div>
+      <div class="ebm-popup-info">${local.tipo||''} ${local.endereco?'· '+local.endereco:''}</div>
+      ${bombas.length?`<div class="ebm-popup-bombas">${bombas.map(b=>`<div class="ebm-popup-bomba"><i class="bi bi-circle-fill" style="color:#ef4444;font-size:.5rem"></i> ${b.equipamento||b.nome}</div>`).join('')}</div>`:'<div style="font-size:.74rem;color:#9ca3af;margin-top:4px">Nenhuma bomba instalada</div>'}
+    </div>`;
+    const m = L.marker([local.lat, local.lng], {icon: iconeLocal(local)}).addTo(_map);
+    m.bindPopup(popupHtml, {maxWidth:220});
+    m.on('click', ()=>focarLocal(local));
+    _markers[local.id] = m;
+  });
+  renderSidebar();
+}
+
+function renderSidebar(){
+  const list = document.getElementById('ebmLocalList');
+  document.getElementById('ebmLocalCount').textContent = `${_locais.length} local${_locais.length!==1?'is':''}`;
+  if(!_locais.length){list.innerHTML='<div class="ebm-empty">Nenhum local cadastrado.<br>Clique em "Novo local" para começar.</div>';return;}
+  list.innerHTML = _locais.map(local=>{
+    const cor = corLocal(local.tipo);
+    const bombas = BOMBAS_DATA.filter(b=>b.local_id && String(b.local_id)===String(local.id));
+    return `<div class="ebm-local-item" onclick="focarLocal(${JSON.stringify(local).replace(/"/g,'&quot;')})">
+      <div class="ebm-local-dot" style="background:${cor}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="ebm-local-nome">${local.nome}</div>
+        <div class="ebm-local-info">${local.tipo||''} ${local.endereco?'· '+local.endereco.slice(0,30):''}${!local.lat?'· <span style="color:#f59e0b">Sem coordenadas</span>':''}</div>
+        ${bombas.length?`<div class="ebm-local-bombas">${bombas.length} bomba${bombas.length!==1?'s':''} instalada${bombas.length!==1?'s':''}</div>`:''}
+      </div>
+      <div class="ebm-local-actions">
+        <button class="ebm-icon-btn" onclick="event.stopPropagation();editarLocal(${local.id})" title="Editar"><i class="bi bi-pencil"></i></button>
+        <button class="ebm-icon-btn" onclick="event.stopPropagation();excluirLocal(${local.id})" title="Excluir" style="color:#991b1b"><i class="bi bi-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function focarLocal(local){
+  if(local.lat && local.lng && _map){
+    _map.setView([local.lat, local.lng], 15);
+    _markers[local.id]?.openPopup();
+  }
+}
+
+// ── CRUD locais ───────────────────────────────────────────────
+function abrirNovoLocal(){
+  ['ebmLocalId','ebmNome','ebmLat','ebmLng','ebmEndereco','ebmObs'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('ebmTipo').value='poco';
+  document.getElementById('ebmModalTitle').textContent='Novo local';
+  _selecionandoPonto = true; // próximo click no mapa define coords
+  const m=document.getElementById('ebmModal');
+  try{bootstrap.Modal.getInstance(m)?.dispose();}catch(e){}
+  new bootstrap.Modal(m).show();
+}
+
+function editarLocal(id){
+  const local=_locais.find(l=>l.id===id); if(!local) return;
+  document.getElementById('ebmLocalId').value=local.id;
+  document.getElementById('ebmNome').value=local.nome||'';
+  document.getElementById('ebmTipo').value=local.tipo||'outro';
+  document.getElementById('ebmLat').value=local.lat||'';
+  document.getElementById('ebmLng').value=local.lng||'';
+  document.getElementById('ebmEndereco').value=local.endereco||'';
+  document.getElementById('ebmObs').value=local.observacoes||'';
+  document.getElementById('ebmModalTitle').textContent='Editar local';
+  _selecionandoPonto = true;
+  const m=document.getElementById('ebmModal');
+  try{bootstrap.Modal.getInstance(m)?.dispose();}catch(e){}
+  new bootstrap.Modal(m).show();
+}
+
+async function salvarLocal(){
+  const nome=document.getElementById('ebmNome').value.trim();
+  if(!nome){alert('Informe o nome do local.');return;}
+  const payload={
+    id:document.getElementById('ebmLocalId').value||null,
+    nome, tipo:document.getElementById('ebmTipo').value,
+    lat:parseFloat(document.getElementById('ebmLat').value)||null,
+    lng:parseFloat(document.getElementById('ebmLng').value)||null,
+    endereco:document.getElementById('ebmEndereco').value,
+    observacoes:document.getElementById('ebmObs').value,
+  };
+  const r=await fetch('/controle/locais',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF_TOKEN},body:JSON.stringify(payload)});
+  const d=await r.json().catch(()=>({}));
+  if(d.ok){
+    bootstrap.Modal.getInstance(document.getElementById('ebmModal'))?.hide();
+    _selecionandoPonto=false;
+    // Recarrega locais
+    const res=await fetch('/controle/locais');
+    const data=await res.json().catch(()=>({}));
+    if(data.locais){_locais=[...data.locais]; renderMarkers();}
+  } else{alert(d.error||'Erro ao salvar.');}
+}
+
+async function excluirLocal(id){
+  if(!confirm('Remover este local?')) return;
+  const r=await fetch(`/controle/locais/${id}`,{method:'DELETE',headers:{'X-CSRF-Token':CSRF_TOKEN}});
+  if(r.ok){
+    _locais=_locais.filter(l=>l.id!==id);
+    if(_markers[id]){_map?.removeLayer(_markers[id]);delete _markers[id];}
+    renderSidebar();
+  }
+}
+
+// ── Busca endereço ───────────────────────────────────────────
+let _buscaTimer=null;
+document.getElementById('ebmBusca')?.addEventListener('input',function(){
+  clearTimeout(_buscaTimer);
+  const q=this.value.trim();
+  if(q.length<3) return;
+  _buscaTimer=setTimeout(async()=>{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q+' Brasil')}&format=json&limit=1`,{headers:{'Accept-Language':'pt-BR'}});
+    const data=await r.json().catch(()=>[]);
+    if(data[0] && _map){
+      _map.setView([data[0].lat, data[0].lon], 15);
+    }
+  },500);
+});
+
+// ── Init ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  iniciarMapa();
+  setTimeout(()=>_map?.invalidateSize(),300);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero">
+  <h1>Nova senha</h1>
+  <p>Escolha uma senha segura com pelo menos 6 caracteres.</p>
+</section>
+<div class="content-card" style="max-width:480px;margin:0 auto">
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label fw-bold">Nova senha</label>
+      <input class="form-control" type="password" name="nova_senha" placeholder="Mínimo 6 caracteres" required autofocus minlength="6">
+    </div>
+    <div class="mb-3">
+      <label class="form-label fw-bold">Confirmar nova senha</label>
+      <input class="form-control" type="password" name="confirmar_senha" placeholder="Repita a senha" required minlength="6">
+    </div>
+    <button class="btn-gg btn-blue w-100" type="submit"><i class="bi bi-shield-lock-fill"></i> Redefinir senha</button>
+  </form>
+</div>
+{% endblock %}

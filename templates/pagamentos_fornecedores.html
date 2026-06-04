@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+.forn-header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 16px;flex-wrap:wrap;gap:12px}
+.forn-header h1{margin:0;font-size:1.25rem;font-weight:700;color:#111827}
+.forn-header p{margin:3px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .forn-header h1{color:#f1f5f9}
+html[data-theme="dark"] .forn-header p{color:#64748b}
+
+/* Busca */
+.forn-search{display:flex;gap:10px;margin-bottom:20px;align-items:center}
+.forn-search-wrap{position:relative;flex:1;max-width:360px}
+.forn-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem}
+.forn-search-input{width:100%;padding:8px 12px 8px 30px;border:1px solid #e5e7eb;border-radius:8px;font-size:.84rem;color:#111827;background:#fff;outline:none;transition:border-color .12s}
+.forn-search-input:focus{border-color:#1d4ed8}
+html[data-theme="dark"] .forn-search-input{background:#1e293b;border-color:#334155;color:#f1f5f9}
+html[data-theme="dark"] .forn-search-input::placeholder{color:#475569}
+
+/* Lista */
+.forn-layout{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
+.forn-list{display:flex;flex-direction:column;gap:8px}
+.forn-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px 18px;cursor:pointer;transition:border-color .12s,box-shadow .12s;display:flex;align-items:center;gap:14px}
+.forn-card:hover,.forn-card.active{border-color:#1d4ed8;box-shadow:0 0 0 3px rgba(29,78,216,.07)}
+.forn-avatar{width:42px;height:42px;border-radius:9px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:800;flex-shrink:0;letter-spacing:-.02em}
+.forn-card-info{flex:1;min-width:0}
+.forn-card-nome{font-size:.9rem;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0 0 3px}
+.forn-card-sub{font-size:.76rem;color:#6b7280;display:flex;gap:12px}
+.forn-card-right{text-align:right;flex-shrink:0}
+.forn-card-total{font-size:.95rem;font-weight:700;color:#111827}
+.forn-card-pendente{font-size:.72rem;color:#92400e;font-weight:500}
+.forn-card-bar{margin-top:8px;height:3px;background:#f3f4f6;border-radius:2px;overflow:hidden}
+.forn-card-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#1d4ed8,#3b82f6);transition:width .4s ease}
+html[data-theme="dark"] .forn-card{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .forn-card:hover,.forn-card.active{border-color:#3b82f6}
+html[data-theme="dark"] .forn-card-nome{color:#f1f5f9}
+html[data-theme="dark"] .forn-card-sub{color:#475569}
+html[data-theme="dark"] .forn-card-total{color:#f1f5f9}
+html[data-theme="dark"] .forn-card-bar{background:#334155}
+html[data-theme="dark"] .forn-avatar{background:rgba(29,78,216,.15);color:#60a5fa}
+
+/* Painel detalhe */
+.forn-detail{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;position:sticky;top:20px}
+.forn-detail-top{padding:20px;border-bottom:1px solid #e5e7eb}
+.forn-detail-avatar{width:52px;height:52px;border-radius:12px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;margin-bottom:12px}
+.forn-detail-nome{font-size:1rem;font-weight:700;color:#111827;margin:0 0 4px}
+.forn-detail-meta{font-size:.76rem;color:#6b7280;display:flex;gap:14px;flex-wrap:wrap}
+.forn-detail-kpis{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#e5e7eb}
+.forn-detail-kpi{background:#fff;padding:14px 16px}
+.forn-detail-kpi-label{font-size:.68rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px}
+.forn-detail-kpi-value{font-size:1rem;font-weight:700;color:#111827}
+.forn-detail-kpi-value.green{color:#166534}
+.forn-detail-kpi-value.amber{color:#92400e}
+.forn-detail-body{padding:16px}
+.forn-detail-section{margin-bottom:16px}
+.forn-detail-section-title{font-size:.7rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px}
+.forn-desc-pill{display:inline-block;padding:3px 9px;border-radius:20px;background:#f3f4f6;color:#374151;font-size:.75rem;margin:2px;white-space:nowrap}
+.forn-tipo-pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:.75rem;margin:2px}
+.forn-tipo-gasto{background:#f3f4f6;color:#374151}
+.forn-tipo-invest{background:#dbeafe;color:#1e40af}
+.forn-empty{padding:48px 24px;text-align:center;color:#9ca3af}
+html[data-theme="dark"] .forn-detail{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .forn-detail-top{border-color:#334155}
+html[data-theme="dark"] .forn-detail-nome{color:#f1f5f9}
+html[data-theme="dark"] .forn-detail-meta{color:#475569}
+html[data-theme="dark"] .forn-detail-kpis{background:#334155}
+html[data-theme="dark"] .forn-detail-kpi{background:#1e293b}
+html[data-theme="dark"] .forn-detail-kpi-label{color:#475569}
+html[data-theme="dark"] .forn-detail-kpi-value{color:#f1f5f9}
+html[data-theme="dark"] .forn-detail-avatar{background:rgba(29,78,216,.15);color:#60a5fa}
+html[data-theme="dark"] .forn-desc-pill{background:#334155;color:#94a3b8}
+html[data-theme="dark"] .forn-tipo-gasto{background:#334155;color:#94a3b8}
+html[data-theme="dark"] .forn-tipo-invest{background:rgba(29,78,216,.15);color:#93c5fd}
+
+@media(max-width:900px){.forn-layout{grid-template-columns:1fr}.forn-detail{position:static}}
+</style>
+
+<div class="forn-header">
+  <div>
+    <h1>Fornecedores</h1>
+    <p>{{ fornecedores|length }} fornecedor(es) — perfis gerados automaticamente dos lançamentos</p>
+  </div>
+  <a class="erp-btn erp-btn-ghost erp-btn-sm" href="{{ url_for('pagamentos_hub') }}">
+    <i class="bi bi-grid-3x3-gap"></i> Hub
+  </a>
+</div>
+
+<div class="forn-search">
+  <div class="forn-search-wrap">
+    <i class="bi bi-search forn-search-icon"></i>
+    <input class="forn-search-input" id="fornBusca" placeholder="Buscar fornecedor…" value="{{ q }}">
+  </div>
+  <span style="font-size:.8rem;color:#9ca3af">Total geral: <strong>{{ total_geral|br_money }}</strong></span>
+</div>
+
+<div class="forn-layout">
+  <!-- Lista -->
+  <div class="forn-list" id="fornList">
+    {% for f in fornecedores %}
+    {% set perc = ((f.total / total_geral * 100) if total_geral else 0)|round(1) %}
+    <div class="forn-card" onclick="selecionarForn(this, {{ f|tojson|e }})" data-nome="{{ f.nome|lower }}">
+      <div class="forn-avatar">{{ f.iniciais }}</div>
+      <div class="forn-card-info">
+        <div class="forn-card-nome">{{ f.nome }}</div>
+        <div class="forn-card-sub">
+          <span>{{ f.count }} lançamento(s)</span>
+          <span>{{ f.meses }} mês(es)</span>
+          {% if f.ultimo_mes %}<span>Último: {{ f.ultimo_mes }}</span>{% endif %}
+        </div>
+        <div class="forn-card-bar"><div class="forn-card-bar-fill" style="width:{{ perc }}%"></div></div>
+      </div>
+      <div class="forn-card-right">
+        <div class="forn-card-total">{{ f.total|br_money }}</div>
+        {% if f.pendente > 0 %}
+        <div class="forn-card-pendente">{{ f.pendente|br_money }} pendente</div>
+        {% endif %}
+        <div style="font-size:.7rem;color:#9ca3af">{{ perc }}% do total</div>
+      </div>
+    </div>
+    {% else %}
+    <div style="padding:48px;text-align:center;color:#9ca3af">Nenhum fornecedor encontrado.</div>
+    {% endfor %}
+  </div>
+
+  <!-- Detalhe -->
+  <div class="forn-detail" id="fornDetail">
+    <div class="forn-empty">
+      <i class="bi bi-building" style="font-size:2.5rem;display:block;margin-bottom:10px;opacity:.2"></i>
+      Selecione um fornecedor para ver o perfil completo
+    </div>
+  </div>
+</div>
+
+<script>
+function brMoney(v){
+  return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function selecionarForn(el, f) {
+  document.querySelectorAll('.forn-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+
+  const det = document.getElementById('fornDetail');
+  const perc = {{ total_geral }} > 0 ? (f.total / {{ total_geral }} * 100).toFixed(1) : 0;
+  const descricoes = (f.descricoes || []).map(d => `<span class="forn-desc-pill">${d}</span>`).join('') || '<span style="color:#9ca3af;font-size:.78rem">Não informado</span>';
+  const tipos = (f.tipos || []).map(t => `<span class="forn-tipo-pill forn-tipo-${t.toLowerCase()==='investimento'?'invest':'gasto'}">${t}</span>`).join('') || '';
+
+  det.innerHTML = `
+    <div class="forn-detail-top">
+      <div class="forn-detail-avatar">${f.iniciais}</div>
+      <div class="forn-detail-nome">${f.nome}</div>
+      <div class="forn-detail-meta">
+        <span><i class="bi bi-receipt"></i> ${f.count} lançamentos</span>
+        <span><i class="bi bi-calendar3"></i> ${f.meses} mês(es)</span>
+        ${f.ultimo_mes ? `<span><i class="bi bi-clock"></i> Último: ${f.ultimo_mes}</span>` : ''}
+      </div>
+    </div>
+    <div class="forn-detail-kpis">
+      <div class="forn-detail-kpi">
+        <span class="forn-detail-kpi-label">Total pago</span>
+        <span class="forn-detail-kpi-value green">${brMoney(f.pago)}</span>
+      </div>
+      <div class="forn-detail-kpi">
+        <span class="forn-detail-kpi-label">Pendente</span>
+        <span class="forn-detail-kpi-value amber">${brMoney(f.pendente)}</span>
+      </div>
+      <div class="forn-detail-kpi">
+        <span class="forn-detail-kpi-label">Total geral</span>
+        <span class="forn-detail-kpi-value">${brMoney(f.total)}</span>
+      </div>
+      <div class="forn-detail-kpi">
+        <span class="forn-detail-kpi-label">% do total</span>
+        <span class="forn-detail-kpi-value">${perc}%</span>
+      </div>
+    </div>
+    <div class="forn-detail-body">
+      <div class="forn-detail-section">
+        <div class="forn-detail-section-title">Serviços prestados</div>
+        ${descricoes}
+      </div>
+      ${tipos ? `<div class="forn-detail-section">
+        <div class="forn-detail-section-title">Tipos de lançamento</div>
+        ${tipos}
+      </div>` : ''}
+      <div class="forn-detail-section" style="margin-top:16px">
+        <a href="/pagamentos?todos=1" onclick="sessionStorage.setItem('forn_filter','${encodeURIComponent(f.nome)}')"
+           style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:7px;background:#eff6ff;color:#1d4ed8;font-size:.8rem;font-weight:600;text-decoration:none;border:1px solid #dbeafe">
+          <i class="bi bi-list-ul"></i> Ver todos os lançamentos
+        </a>
+      </div>
+    </div>`;
+}
+
+// Busca live
+document.getElementById('fornBusca').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.forn-card').forEach(c => {
+    c.style.display = c.dataset.nome.includes(q) ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}

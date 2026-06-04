@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.eb-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:28px 0 20px;flex-wrap:wrap}
+.eb-page-title h1{margin:0;font-size:1.35rem;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.eb-page-title p{margin:4px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .eb-page-title h1{color:#f0f0f0}
+html[data-theme="dark"] .eb-page-title p{color:#666666}
+.eb-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:background .12s;white-space:nowrap;line-height:1.4}
+.eb-btn-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.eb-btn-primary:hover{background:#1e40af;color:#fff}
+.eb-btn-ghost{background:#fff;color:#333333;border-color:#e5e7eb}
+.eb-btn-ghost:hover{background:#f9fafb;border-color:#d1d5db;color:var(--text)}
+.eb-btn-red{background:#fff;color:#991b1b;border-color:#fca5a5}
+.eb-btn-red:hover{background:#fef2f2}
+html[data-theme="dark"] .eb-btn-ghost{background:#1a1a1a;color:#cccccc;border-color:#2e2e2e}
+html[data-theme="dark"] .eb-btn-ghost:hover{background:#273549;border-color:#444444;color:#f0f0f0}
+.eb-kpi-row{display:flex;gap:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px 24px;margin-bottom:20px}
+.eb-kpi{flex:1;display:flex;flex-direction:column;gap:2px;padding:0 16px}
+.eb-kpi:first-child{padding-left:0}
+.eb-kpi:last-child{padding-right:0}
+.eb-kpi-div{width:1px;height:36px;background:#e5e7eb;flex-shrink:0}
+.eb-kpi-label{font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+.eb-kpi-value{font-size:1.2rem;font-weight:700;color:var(--text)}
+.eb-kpi-value.green{color:#166534}
+.eb-kpi-value.amber{color:#92400e}
+.eb-kpi-value.red{color:#991b1b}
+html[data-theme="dark"] .eb-kpi-row{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .eb-kpi-label{color:#666666}
+html[data-theme="dark"] .eb-kpi-value{color:#f0f0f0}
+html[data-theme="dark"] .eb-kpi-div{background:#2e2e2e}
+.eb-filter-bar{display:flex;align-items:flex-end;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;margin-bottom:16px;flex-wrap:wrap}
+.eb-filter-field{display:flex;flex-direction:column;gap:3px}
+.eb-filter-field label{font-size:.68rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.eb-filter-input,.eb-filter-select{padding:7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:var(--text);background:#fff;outline:none;transition:border-color .12s}
+.eb-filter-input:focus,.eb-filter-select:focus{border-color:#1d4ed8}
+.eb-search-wrap{position:relative}
+.eb-search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.78rem;pointer-events:none}
+.eb-search-input{padding-left:28px !important}
+html[data-theme="dark"] .eb-filter-bar{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .eb-filter-field label{color:#444444}
+html[data-theme="dark"] .eb-filter-input,html[data-theme="dark"] .eb-filter-select{background:#111111;border-color:#2e2e2e;color:#f0f0f0}
+.eb-table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.eb-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.eb-table thead tr{border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.eb-table thead th{padding:10px 14px;font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;text-align:left}
+.eb-table tbody tr{border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .08s}
+.eb-table tbody tr:last-child{border-bottom:none}
+.eb-table tbody tr:hover{background:#f9fafb}
+.eb-table tbody tr.selected{background:#eff6ff;outline:2px solid #1d4ed8;outline-offset:-1px}
+.eb-table tbody td{padding:12px 14px;color:var(--text);vertical-align:middle}
+html[data-theme="dark"] .eb-table-wrap{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .eb-table thead tr{background:#111111;border-color:#2e2e2e}
+html[data-theme="dark"] .eb-table thead th{color:#444444}
+html[data-theme="dark"] .eb-table tbody tr{border-color:#1a1a1a}
+html[data-theme="dark"] .eb-table tbody tr:hover{background:#273549}
+html[data-theme="dark"] .eb-table tbody td{color:#cccccc}
+.eb-loc-pill{display:inline-flex;align-items:center;gap:5px;font-size:.76rem;font-weight:600;padding:3px 9px;border-radius:20px}
+.eb-loc-estoque{background:#dcfce7;color:#166534}
+.eb-loc-conserto{background:#fef3c7;color:#92400e}
+.eb-loc-retirada{background:#fef2f2;color:#991b1b}
+.eb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+html[data-theme="dark"] .eb-loc-estoque{background:rgba(22,163,74,.15);color:#4ade80}
+html[data-theme="dark"] .eb-loc-conserto{background:rgba(245,158,11,.12);color:#fbbf24}
+html[data-theme="dark"] .eb-loc-retirada{background:rgba(239,68,68,.12);color:#f87171}
+.eb-empty{padding:40px;text-align:center;color:#9ca3af;font-size:.84rem}
+</style>
+
+<!-- Header -->
+<div class="eb-page-header">
+  <div class="eb-page-title">
+    <h1>Estoque de Bombas</h1>
+    <p>Cadastro e movimentação de equipamentos</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    {% if can('edit_controle') %}
+    <button class="eb-btn eb-btn-primary" data-bs-toggle="modal" data-bs-target="#ebModal" id="ebNewBtn">
+      <i class="bi bi-plus"></i> Nova bomba
+    </button>
+    {% endif %}
+    <button class="eb-btn eb-btn-ghost" id="ebEditBtn"><i class="bi bi-pencil"></i> Editar</button>
+    {% if can('delete_controle') %}
+    <button class="eb-btn eb-btn-red" id="ebDeleteBtn"><i class="bi bi-trash"></i> Excluir</button>
+    {% endif %}
+    {% if can('generate_excel') %}
+    <a class="eb-btn eb-btn-ghost" href="{{ url_for('controle_excel', q=q, localizacao=localizacao, mes=filtro_mes) }}" download><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    {% endif %}
+    <a class="eb-btn eb-btn-ghost" href="{{ url_for('controle_hub') }}"><i class="bi bi-grid-3x3-gap"></i> Hub</a>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="eb-kpi-row">
+  <div class="eb-kpi">
+    <span class="eb-kpi-label">Total</span>
+    <span class="eb-kpi-value">{{ rows|length }}</span>
+  </div>
+  <div class="eb-kpi-div"></div>
+  <div class="eb-kpi">
+    <span class="eb-kpi-label">Em estoque</span>
+    <span class="eb-kpi-value green">{{ counts.em_estoque or 0 }}</span>
+  </div>
+  <div class="eb-kpi-div"></div>
+  <div class="eb-kpi">
+    <span class="eb-kpi-label">Em conserto</span>
+    <span class="eb-kpi-value amber">{{ counts.em_conserto or 0 }}</span>
+  </div>
+  <div class="eb-kpi-div"></div>
+  <div class="eb-kpi">
+    <span class="eb-kpi-label">Retiradas</span>
+    <span class="eb-kpi-value red">{{ counts.retiradas or 0 }}</span>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="eb-filter-bar">
+  <div class="eb-filter-field" style="flex:1;min-width:200px">
+    <label>Buscar</label>
+    <div class="eb-search-wrap">
+      <i class="bi bi-search eb-search-icon"></i>
+      <input class="eb-filter-input eb-search-input" id="ebBusca" placeholder="Equipamento, modelo, marca, nº série…" value="{{ q }}">
+    </div>
+  </div>
+  <div class="eb-filter-field">
+    <label>Localização</label>
+    <select class="eb-filter-select" id="ebFiltroLocal" style="min-width:150px">
+      <option value="">Todas</option>
+      <option value="estoque" {{ 'selected' if localizacao=='estoque' else '' }}>Em estoque</option>
+      <option value="conserto" {{ 'selected' if localizacao=='conserto' else '' }}>Em conserto</option>
+      <option value="retirada" {{ 'selected' if localizacao=='retirada' else '' }}>Retirada</option>
+    </select>
+  </div>
+</div>
+
+<!-- Tabela -->
+<div class="eb-table-wrap">
+  <table class="eb-table" id="ebTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Equipamento</th>
+        <th>Modelo / Marca</th>
+        <th>Nº Série</th>
+        <th>Localização</th>
+        <th>Destino</th>
+        <th>Fornecedor</th>
+        <th>Entrada</th>
+        <th>Garantia até</th>
+        <th>Valor</th>
+        <th>Observações</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+    {% set loc = (r.localizacao or 'estoque')|lower %}
+    <tr data-id="{{ r.id }}">
+      <td style="color:#9ca3af;font-size:.76rem">#{{ r.id }}</td>
+      <td style="font-weight:600;color:var(--text);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.equipamento or r.nome or '—' }}</td>
+      <td style="font-size:.8rem;color:#333333">
+        {{ r.modelo or '—' }}
+        {% if r.marca %}<div style="font-size:.72rem;color:#9ca3af">{{ r.marca }}</div>{% endif %}
+      </td>
+      <td style="font-size:.78rem;color:#6b7280;font-variant-numeric:tabular-nums">{{ r.numero_serie or '—' }}</td>
+      <td>
+        {% if loc == 'estoque' %}
+        <span class="eb-loc-pill eb-loc-estoque"><span class="eb-dot" style="background:#22c55e"></span>Estoque</span>
+        {% elif loc == 'conserto' %}
+        <span class="eb-loc-pill eb-loc-conserto"><span class="eb-dot" style="background:#f59e0b"></span>Conserto</span>
+        {% else %}
+        <span class="eb-loc-pill eb-loc-retirada"><span class="eb-dot" style="background:#ef4444"></span>Retirada</span>
+        {% endif %}
+      </td>
+      <td style="font-size:.8rem;color:#6b7280">{{ r.destino_retirada or '—' }}</td>
+      <td style="font-size:.8rem;color:#333333">{{ r.fornecedor or '—' }}</td>
+      <td style="font-size:.78rem;color:#6b7280">{{ r.data_abertura or r.data_entrada or '—' }}</td>
+      <td style="font-size:.78rem;color:#6b7280">{{ r.garantia_ate or '—' }}</td>
+      <td style="font-size:.8rem;color:#333333">{{ r.valor or '—' }}</td>
+      <td style="font-size:.78rem;color:#6b7280;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.observacoes or r.obs or '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="11" class="eb-empty">Nenhum registro encontrado.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal cadastro/edição -->
+<div class="modal fade" id="ebModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable" style="height:calc(100vh - 60px)">
+    <div class="modal-content" style="max-height:calc(100vh - 60px);display:flex;flex-direction:column;overflow:hidden">
+      <form method="post" action="{{ url_for('controle_save') }}" id="ebForm">
+        <div class="modal-header">
+          <div><h5 class="modal-title" id="ebModalTitle">Nova Bomba</h5><small class="text-muted">Preencha os dados do equipamento</small></div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" style="overflow-y:auto;flex:1 1 auto;min-height:0">
+          <input type="hidden" name="id" id="eb_id">
+          <!-- Identificação -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Equipamento <span class="text-danger">*</span></label><input class="form-control" name="equipamento" id="eb_equipamento" placeholder="Ex: Bomba Submersa, Bomba de Recalque"></div>
+            <div class="col-md-4"><label class="form-label">Modelo</label><input class="form-control" name="modelo" id="eb_modelo" placeholder="Modelo do equipamento"></div>
+            <div class="col-md-4"><label class="form-label">Marca</label><input class="form-control" name="marca" id="eb_marca" placeholder="Ex: WEG, KSB, Schneider"></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Número de série</label><input class="form-control" name="numero_serie" id="eb_numero_serie" placeholder="Nº série do fabricante"></div>
+            <div class="col-md-4"><label class="form-label">Potência</label><input class="form-control" name="potencia" id="eb_potencia" placeholder="Ex: 5cv, 7,5kW"></div>
+            <div class="col-md-4"><label class="form-label">Vazão</label><input class="form-control" name="vazao" id="eb_vazao" placeholder="Ex: 10 m³/h"></div>
+          </div>
+          <!-- Situação -->
+          <hr class="my-3"><div class="fw-semibold mb-3 text-muted" style="font-size:.82rem;text-transform:uppercase;letter-spacing:.05em">Situação</div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Localização atual</label>
+              <select class="form-select" name="localizacao" id="eb_localizacao" onchange="ebOnLocChange(this)">
+                <option value="estoque">Em estoque</option>
+                <option value="conserto">Em conserto</option>
+                <option value="retirada">Retirada de estoque</option>
+              </select>
+            </div>
+            <div class="col-md-4" id="ebLocalCadDiv"><label class="form-label">Local no mapa <small class="text-muted">(onde está guardada)</small></label>
+              <select class="form-select" name="local_id" id="eb_local_id">
+                <option value="">— Nenhum —</option>
+                {% for loc in locais %}
+                <option value="{{ loc.id }}">{{ loc.nome }}{% if loc.tipo %} ({{ loc.tipo }}){% endif %}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4" id="ebDestDiv"><label class="form-label">Destino / local de instalação</label><input class="form-control" name="destino_retirada" id="eb_destino_retirada" placeholder="Ex: Poço Batistela, ETA 02"></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Sistema</label><input class="form-control" name="sistema" id="eb_sistema" placeholder="Ex: Sistema Castellani"></div>
+          </div>
+          <!-- Fornecedor e datas -->
+          <hr class="my-3"><div class="fw-semibold mb-3 text-muted" style="font-size:.82rem;text-transform:uppercase;letter-spacing:.05em">Fornecedor e datas</div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Fornecedor</label><input class="form-control" name="fornecedor" id="eb_fornecedor" placeholder="Nome do fornecedor"></div>
+            <div class="col-md-4"><label class="form-label">Valor</label><input class="form-control" name="valor" id="eb_valor" placeholder="R$"></div>
+            <div class="col-md-4"><label class="form-label">Custo de manutenção</label><input class="form-control" name="custo_manutencao" id="eb_custo_manutencao" placeholder="R$"></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-3"><label class="form-label">Data de entrada</label><input class="form-control date-picker" name="data_abertura" id="eb_data_abertura" placeholder="dd/mm/aaaa"></div>
+            <div class="col-md-3"><label class="form-label">Previsão de entrega</label><input class="form-control date-picker" name="previsao_entrega" id="eb_previsao_entrega" placeholder="dd/mm/aaaa"></div>
+            <div class="col-md-3"><label class="form-label">Recebido em</label><input class="form-control date-picker" name="recebido_em" id="eb_recebido_em" placeholder="dd/mm/aaaa"></div>
+            <div class="col-md-3"><label class="form-label">Garantia até</label><input class="form-control date-picker" name="garantia_ate" id="eb_garantia_ate" placeholder="dd/mm/aaaa"></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6"><label class="form-label">Pedido / SC</label><input class="form-control" name="pedido_aberto" id="eb_pedido_aberto" placeholder="Número do pedido"></div>
+            <div class="col-md-6"><label class="form-label">Orçamento</label><input class="form-control" name="orcamento" id="eb_orcamento" placeholder="Referência do orçamento"></div>
+          </div>
+          <div class="row g-3">
+            <div class="col-12"><label class="form-label">Observações</label><textarea class="form-control" name="observacoes" id="eb_observacoes" rows="2" placeholder="Informações adicionais sobre o equipamento"></textarea></div>
+          </div>
+        </div>
+        <div class="modal-footer" style="flex-shrink:0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar bomba</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+// Seleção
+const table = document.getElementById('ebTable');
+table?.addEventListener('click', e => {
+  if(e.target.closest('a,button')) return;
+  const row = e.target.closest('tbody tr[data-id]');
+  if(!row) return;
+  const was = row.classList.contains('selected');
+  table.querySelectorAll('tr.selected').forEach(r => r.classList.remove('selected'));
+  if(!was) row.classList.add('selected');
+});
+table?.addEventListener('dblclick', e => {
+  const row = e.target.closest('tbody tr[data-id]');
+  if(row) ebEdit(row.dataset.id);
+});
+function getSel(){ return table?.querySelector('tr.selected')?.dataset.id; }
+
+// Editar
+async function ebEdit(id){
+  const r = await fetch(`/controle/api/${id}`);
+  if(!r.ok) return;
+  const d = await r.json();
+  const fields = ['id','equipamento','modelo','marca','numero_serie','potencia','vazao','localizacao','local_id','destino_retirada','sistema','fornecedor','valor','custo_manutencao','data_abertura','previsao_entrega','recebido_em','garantia_ate','pedido_aberto','orcamento','observacoes'];
+  fields.forEach(f => { const el = document.getElementById('eb_'+f); if(el) el.value = d[f]||''; });
+  document.getElementById('ebModalTitle').textContent = 'Editar Bomba';
+  ebOnLocChange(document.getElementById('eb_localizacao'));
+  new bootstrap.Modal('#ebModal').show();
+}
+document.getElementById('ebEditBtn')?.addEventListener('click', () => {
+  const id = getSel();
+  if(id) ebEdit(id);
+  else showToast?.('Selecione uma bomba para editar.', 'error');
+});
+document.getElementById('ebNewBtn')?.addEventListener('click', () => {
+  document.getElementById('ebForm').reset();
+  document.getElementById('eb_id').value = '';
+  document.getElementById('ebModalTitle').textContent = 'Nova Bomba';
+  ebOnLocChange(document.getElementById('eb_localizacao'));
+});
+
+// Excluir
+document.getElementById('ebDeleteBtn')?.addEventListener('click', async () => {
+  const id = getSel();
+  if(!id){ showToast?.('Selecione uma bomba para excluir.', 'error'); return; }
+  if(!await irisConfirm?.({title:'Excluir bomba',message:'Remover este registro permanentemente?',danger:true,btnOk:'Excluir'})) return;
+  const r = await fetch('/controle/delete', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+  if(r.ok) location.reload();
+});
+
+// Localização
+function ebOnLocChange(sel){
+  const show = (sel?.value||'') === 'retirada';
+  const div = document.getElementById('ebDestDiv');
+  if(div) div.style.display = show ? '' : 'none';
+}
+ebOnLocChange(document.getElementById('eb_localizacao'));
+
+// Filtros
+document.getElementById('ebBusca')?.addEventListener('input', () => {
+  const q = document.getElementById('ebBusca').value.toLowerCase();
+  table?.querySelectorAll('tbody tr[data-id]').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+document.getElementById('ebFiltroLocal')?.addEventListener('change', () => {
+  const loc = document.getElementById('ebFiltroLocal').value;
+  window.location.href = `{{ url_for('controle_lista') }}?localizacao=${loc}`;
+});
+</script>
+{% endblock %}

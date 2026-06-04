@@ -1,0 +1,493 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.eb-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:28px 0 20px;flex-wrap:wrap}
+.eb-title h1{margin:0;font-size:1.35rem;font-weight:700;color:#111827;letter-spacing:-.02em}
+.eb-title p{margin:4px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .eb-title h1{color:#f1f5f9}
+html[data-theme="dark"] .eb-title p{color:#64748b}
+.eb-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:background .12s;white-space:nowrap;line-height:1.4}
+.eb-btn-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.eb-btn-primary:hover{background:#1e40af;color:#fff}
+.eb-btn-ghost{background:#fff;color:#374151;border-color:#e5e7eb}
+.eb-btn-ghost:hover{background:#f9fafb;border-color:#d1d5db}
+.eb-btn-red{background:#fff;color:#991b1b;border-color:#fca5a5}
+.eb-btn-red:hover{background:#fef2f2}
+html[data-theme="dark"] .eb-btn-ghost{background:#1e293b;color:#cbd5e1;border-color:#334155}
+html[data-theme="dark"] .eb-btn-ghost:hover{background:#273549}
+.eb-kpi-row{display:flex;gap:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px 24px;margin-bottom:20px}
+.eb-kpi{flex:1;display:flex;flex-direction:column;gap:2px;padding:0 16px}
+.eb-kpi:first-child{padding-left:0}
+.eb-kpi:last-child{padding-right:0}
+.eb-kpi-div{width:1px;height:36px;background:#e5e7eb;flex-shrink:0}
+.eb-kpi-label{font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+.eb-kpi-value{font-size:1.2rem;font-weight:700;color:#111827}
+.eb-kpi-value.green{color:#166534}
+.eb-kpi-value.amber{color:#92400e}
+.eb-kpi-value.red{color:#991b1b}
+html[data-theme="dark"] .eb-kpi-row{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .eb-kpi-label{color:#64748b}
+html[data-theme="dark"] .eb-kpi-value{color:#f1f5f9}
+html[data-theme="dark"] .eb-kpi-div{background:#334155}
+.eb-filter-bar{display:flex;align-items:flex-end;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px 18px;margin-bottom:16px;flex-wrap:wrap}
+.eb-search-wrap{position:relative;flex:1;min-width:200px}
+.eb-search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.78rem;pointer-events:none}
+.eb-search-input{width:100%;padding:7px 10px 7px 28px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:#111827;background:#fff;outline:none;transition:border-color .12s}
+.eb-search-input:focus{border-color:#1d4ed8}
+.eb-filter-select{padding:7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:#111827;background:#fff;outline:none;min-width:140px}
+html[data-theme="dark"] .eb-filter-bar{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .eb-search-input,.eb-filter-select{background:#0f172a;border-color:#334155;color:#f1f5f9}
+.eb-table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.eb-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.eb-table thead tr{border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.eb-table thead th{padding:10px 14px;font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;text-align:left}
+.eb-table tbody tr{border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .08s}
+.eb-table tbody tr:last-child{border-bottom:none}
+.eb-table tbody tr:hover{background:#f9fafb}
+.eb-table tbody tr.selected{background:#eff6ff;outline:2px solid #1d4ed8;outline-offset:-1px}
+.eb-table tbody tr.eb-active{background:#eff6ff !important;outline:2px solid #1d4ed8;outline-offset:-1px}
+.eb-table tbody td{padding:12px 14px;color:#111827;vertical-align:middle}
+html[data-theme="dark"] .eb-table-wrap{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .eb-table thead tr{background:#0f172a;border-color:#334155}
+html[data-theme="dark"] .eb-table thead th{color:#475569}
+html[data-theme="dark"] .eb-table tbody tr{border-color:#1e293b}
+html[data-theme="dark"] .eb-table tbody tr:hover{background:#273549}
+html[data-theme="dark"] .eb-table tbody td{color:#cbd5e1}
+html[data-theme="dark"] .eb-table tbody tr.eb-active{background:rgba(29,78,216,.12) !important;outline-color:#3b82f6}
+.eb-loc-pill{display:inline-flex;align-items:center;gap:5px;font-size:.76rem;font-weight:600;padding:3px 9px;border-radius:20px}
+.eb-dot{width:7px;height:7px;border-radius:50%}
+.eb-loc-estoque{background:#dcfce7;color:#166534}
+.eb-loc-conserto{background:#fef3c7;color:#92400e}
+.eb-loc-retirada{background:#fef2f2;color:#991b1b}
+html[data-theme="dark"] .eb-loc-estoque{background:rgba(22,163,74,.15);color:#4ade80}
+html[data-theme="dark"] .eb-loc-conserto{background:rgba(245,158,11,.12);color:#fbbf24}
+html[data-theme="dark"] .eb-loc-retirada{background:rgba(239,68,68,.12);color:#f87171}
+/* Drawer */
+.eb-drw-overlay{position:fixed;inset:0;z-index:1040;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .25s}
+.eb-drw-overlay.open{opacity:1;pointer-events:auto}
+.eb-drw-panel{position:fixed;top:0;right:0;bottom:0;z-index:1041;width:min(460px,95vw);background:#fff;box-shadow:-8px 0 40px rgba(0,0,0,.14);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.eb-drw-panel.open{transform:none}
+html[data-theme="dark"] .eb-drw-panel{background:#1e293b;box-shadow:-8px 0 40px rgba(0,0,0,.5)}
+.eb-drw-header{padding:18px 20px 14px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
+html[data-theme="dark"] .eb-drw-header{border-color:#334155}
+.eb-drw-avatar{width:40px;height:40px;border-radius:10px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:.84rem;font-weight:800;flex-shrink:0}
+html[data-theme="dark"] .eb-drw-avatar{background:rgba(29,78,216,.2);color:#60a5fa}
+.eb-drw-nome{font-size:.95rem;font-weight:700;color:#111827}
+.eb-drw-sub{font-size:.72rem;color:#9ca3af;margin-top:1px}
+html[data-theme="dark"] .eb-drw-nome{color:#f1f5f9}
+.eb-drw-close{width:32px;height:32px;border-radius:8px;border:none;background:#f3f4f6;color:#6b7280;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.eb-drw-close:hover{background:#e5e7eb}
+html[data-theme="dark"] .eb-drw-close{background:#334155;color:#64748b}
+.eb-drw-actions{padding:10px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0}
+html[data-theme="dark"] .eb-drw-actions{border-color:#334155}
+.eb-drw-body{flex:1;overflow-y:auto;padding:0}
+.eb-drw-section{padding:16px 20px;border-bottom:1px solid #f3f4f6}
+html[data-theme="dark"] .eb-drw-section{border-color:#334155}
+.eb-drw-section-title{font-size:.68rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.eb-drw-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.eb-drw-field{display:flex;flex-direction:column;gap:2px}
+.eb-drw-label{font-size:.7rem;color:#9ca3af;font-weight:500}
+.eb-drw-value{font-size:.86rem;color:#111827;font-weight:500}
+html[data-theme="dark"] .eb-drw-value{color:#e2e8f0}
+.eb-drw-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid #e5e7eb;background:#fff;color:#374151;transition:background .12s;text-decoration:none}
+.eb-drw-btn:hover{background:#f9fafb}
+.eb-drw-btn-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.eb-drw-btn-primary:hover{background:#1e40af;color:#fff}
+.eb-drw-btn-green{color:#166534;border-color:#86efac}
+.eb-drw-btn-green:hover{background:#f0fdf4}
+.eb-drw-btn-amber{color:#92400e;border-color:#fde68a}
+.eb-drw-btn-amber:hover{background:#fffbeb}
+html[data-theme="dark"] .eb-drw-btn{background:#1e293b;border-color:#334155;color:#cbd5e1}
+/* Histórico timeline */
+.eb-tl{display:flex;flex-direction:column;gap:0;position:relative;padding-left:24px}
+.eb-tl::before{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:1px;background:#e5e7eb}
+html[data-theme="dark"] .eb-tl::before{background:#334155}
+.eb-tl-item{display:flex;gap:10px;position:relative;padding-bottom:16px}
+.eb-tl-dot{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff;flex-shrink:0;position:absolute;left:-24px;top:0;border:2px solid #fff;box-shadow:0 0 0 2px #e5e7eb}
+html[data-theme="dark"] .eb-tl-dot{border-color:#1e293b;box-shadow:0 0 0 2px #334155}
+.eb-tl-titulo{font-size:.82rem;font-weight:700;color:#111827}
+html[data-theme="dark"] .eb-tl-titulo{color:#f1f5f9}
+.eb-tl-sub{font-size:.74rem;color:#9ca3af}
+.eb-tl-det{font-size:.76rem;color:#6b7280;background:#f9fafb;border:1px solid #f3f4f6;border-radius:6px;padding:5px 8px;margin-top:4px}
+html[data-theme="dark"] .eb-tl-det{background:#0f172a;border-color:#334155;color:#64748b}
+.eb-empty{padding:40px;text-align:center;color:#9ca3af;font-size:.84rem}
+</style>
+
+<div class="eb-header">
+  <div class="eb-title">
+    <h1>Estoque de Bombas</h1>
+    <p>Cadastro, localização e histórico de movimentações</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    {% if can('edit_controle') %}
+    <button class="eb-btn eb-btn-primary" onclick="ebNovaBtn()"><i class="bi bi-plus"></i> Nova bomba</button>
+    {% endif %}
+    <button class="eb-btn eb-btn-ghost" id="ebEditBtn"><i class="bi bi-pencil"></i> Editar</button>
+    {% if can('delete_controle') %}
+    <button class="eb-btn eb-btn-red" id="ebDeleteBtn"><i class="bi bi-trash"></i> Excluir</button>
+    {% endif %}
+    {% if can('generate_excel') %}
+    <a class="eb-btn eb-btn-ghost" href="{{ url_for('controle_excel') }}" download><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    {% endif %}
+    <a class="eb-btn eb-btn-ghost" href="{{ url_for('controle_mapa') }}"><i class="bi bi-map"></i> Mapa</a>
+  </div>
+</div>
+
+<div class="eb-kpi-row">
+  <div class="eb-kpi"><span class="eb-kpi-label">Total</span><span class="eb-kpi-value">{{ total }}</span></div>
+  <div class="eb-kpi-div"></div>
+  <div class="eb-kpi"><span class="eb-kpi-label">Em estoque</span><span class="eb-kpi-value green">{{ counts.em_estoque or 0 }}</span></div>
+  <div class="eb-kpi-div"></div>
+  <div class="eb-kpi"><span class="eb-kpi-label">Em conserto</span><span class="eb-kpi-value amber">{{ counts.em_conserto or 0 }}</span></div>
+  <div class="eb-kpi-div"></div>
+  <div class="eb-kpi"><span class="eb-kpi-label">Instaladas</span><span class="eb-kpi-value red">{{ counts.retiradas or 0 }}</span></div>
+</div>
+
+<div class="eb-filter-bar">
+  <div class="eb-search-wrap">
+    <i class="bi bi-search eb-search-icon"></i>
+    <input class="eb-search-input" id="ebBusca" placeholder="Equipamento, modelo, marca, nº série…">
+  </div>
+  <select class="eb-filter-select" id="ebFiltroLoc">
+    <option value="">Todas</option>
+    <option value="estoque">Em estoque</option>
+    <option value="conserto">Em conserto</option>
+    <option value="retirada">Instaladas</option>
+  </select>
+</div>
+
+<div class="eb-table-wrap">
+  <table class="eb-table" id="ebTable">
+    <thead>
+      <tr>
+        <th>#</th><th>Equipamento</th><th>Modelo / Marca</th><th>Nº Série</th>
+        <th>Situação</th><th>Instalada em</th><th>Fornecedor</th><th>Garantia</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+    {% set loc = (r.localizacao or 'estoque')|lower %}
+    <tr data-id="{{ r.id }}" data-loc="{{ loc }}">
+      <td style="color:#9ca3af;font-size:.76rem">#{{ r.id }}</td>
+      <td style="font-weight:600;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.equipamento or r.nome or '—' }}</td>
+      <td style="font-size:.8rem;color:#374151">{{ r.modelo or '—' }}{% if r.marca %}<div style="font-size:.7rem;color:#9ca3af">{{ r.marca }}</div>{% endif %}</td>
+      <td style="font-size:.76rem;color:#6b7280">{{ r.numero_serie or '—' }}</td>
+      <td>
+        {% if loc == 'estoque' %}<span class="eb-loc-pill eb-loc-estoque"><span class="eb-dot" style="background:#22c55e"></span>Estoque</span>
+        {% elif loc == 'conserto' %}<span class="eb-loc-pill eb-loc-conserto"><span class="eb-dot" style="background:#f59e0b"></span>Conserto</span>
+        {% else %}<span class="eb-loc-pill eb-loc-retirada"><span class="eb-dot" style="background:#ef4444"></span>Instalada</span>{% endif %}
+      </td>
+      <td style="font-size:.78rem;color:#6b7280">{{ r.destino_retirada or '—' }}</td>
+      <td style="font-size:.78rem;color:#374151">{{ r.fornecedor or '—' }}</td>
+      <td style="font-size:.76rem;color:#6b7280">{{ r.garantia_ate or '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="eb-empty">Nenhuma bomba cadastrada.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Drawer -->
+<div class="eb-drw-overlay" id="ebDrwOverlay"></div>
+<aside class="eb-drw-panel" id="ebDrwPanel">
+  <div class="eb-drw-header">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0">
+      <div class="eb-drw-avatar" id="ebDrwAvatar"></div>
+      <div style="min-width:0">
+        <div class="eb-drw-nome" id="ebDrwNome"></div>
+        <div class="eb-drw-sub" id="ebDrwSub"></div>
+      </div>
+    </div>
+    <button class="eb-drw-close" onclick="fecharEbDrw()"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="eb-drw-actions" id="ebDrwActions"></div>
+  <div class="eb-drw-body" id="ebDrwBody">
+    <div style="padding:48px;text-align:center;color:#9ca3af">Carregando…</div>
+  </div>
+</aside>
+
+<!-- Modal cadastro/edição -->
+<div class="modal fade" id="ebModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl" style="height:calc(100vh - 60px)">
+    <div class="modal-content" style="max-height:calc(100vh - 60px);display:flex;flex-direction:column;overflow:hidden">
+      <form method="post" action="{{ url_for('controle_save') }}" id="ebForm">
+        <div class="modal-header">
+          <div><h5 class="modal-title" id="ebModalTitle">Nova Bomba</h5><small class="text-muted">Dados do equipamento</small></div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" style="overflow-y:auto;flex:1 1 auto;min-height:0">
+          <input type="hidden" name="id" id="eb_id">
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Equipamento *</label><input class="form-control" name="equipamento" id="eb_equipamento" placeholder="Ex: Bomba Submersa"></div>
+            <div class="col-md-4"><label class="form-label">Modelo</label><input class="form-control" name="modelo" id="eb_modelo"></div>
+            <div class="col-md-4"><label class="form-label">Marca</label><input class="form-control" name="marca" id="eb_marca" placeholder="Ex: WEG, KSB"></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Número de série</label><input class="form-control" name="numero_serie" id="eb_numero_serie"></div>
+            <div class="col-md-4"><label class="form-label">Potência</label><input class="form-control" name="potencia" id="eb_potencia" placeholder="Ex: 5cv"></div>
+            <div class="col-md-4"><label class="form-label">Vazão</label><input class="form-control" name="vazao" id="eb_vazao" placeholder="Ex: 10 m³/h"></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Situação</label>
+              <select class="form-select" name="localizacao" id="eb_localizacao">
+                <option value="estoque">Em estoque</option>
+                <option value="conserto">Em conserto</option>
+                <option value="retirada">Instalada</option>
+              </select>
+            </div>
+            <div class="col-md-4"><label class="form-label">Instalada em</label><input class="form-control" name="destino_retirada" id="eb_destino_retirada" placeholder="Ex: Poço Batistela"></div>
+            <div class="col-md-4"><label class="form-label">Sistema</label><input class="form-control" name="sistema" id="eb_sistema"></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Local no mapa</label>
+              <select class="form-select" name="local_id" id="eb_local_id">
+                <option value="">— Nenhum —</option>
+                {% for loc in locais %}
+                <option value="{{ loc.id }}">{{ loc.nome }}{% if loc.tipo %} ({{ loc.tipo }}){% endif %}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Fornecedor</label><input class="form-control" name="fornecedor" id="eb_fornecedor"></div>
+            <div class="col-md-4"><label class="form-label">Valor</label><input class="form-control" name="valor" id="eb_valor" placeholder="R$"></div>
+            <div class="col-md-4"><label class="form-label">Custo manutenção</label><input class="form-control" name="custo_manutencao" id="eb_custo_manutencao" placeholder="R$"></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-3"><label class="form-label">Data entrada</label><input class="form-control date-picker" name="data_abertura" id="eb_data_abertura"></div>
+            <div class="col-md-3"><label class="form-label">Garantia até</label><input class="form-control date-picker" name="garantia_ate" id="eb_garantia_ate"></div>
+            <div class="col-md-3"><label class="form-label">Previsão retorno</label><input class="form-control date-picker" name="previsao_entrega" id="eb_previsao_entrega"></div>
+            <div class="col-md-3"><label class="form-label">Pedido / SC</label><input class="form-control" name="pedido_aberto" id="eb_pedido_aberto"></div>
+          </div>
+          <div class="row g-3">
+            <div class="col-12"><label class="form-label">Observações</label><textarea class="form-control" name="observacoes" id="eb_observacoes" rows="2"></textarea></div>
+          </div>
+        </div>
+        <div class="modal-footer" style="flex-shrink:0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal movimentar -->
+<div class="modal fade" id="ebMovModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Movimentar bomba</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label">Para onde?</label>
+          <select class="form-select" id="ebMovAcao">
+            <option value="instalar">Instalar em campo</option>
+            <option value="conserto">Mandar para conserto</option>
+            <option value="estoque">Devolver ao estoque</option>
+          </select>
+        </div>
+        <div class="mb-3" id="ebMovLocalDiv"><label class="form-label">Local / Destino</label><input class="form-control" id="ebMovLocal" placeholder="Ex: Poço Batistela, Oficina XYZ"></div>
+        <div class="mb-3"><label class="form-label">Motivo</label><input class="form-control" id="ebMovMotivo" placeholder="Motivo da movimentação"></div>
+        <div class="mb-3"><label class="form-label">Responsável</label><input class="form-control" id="ebMovResp" placeholder="Quem realizou"></div>
+        <input type="hidden" id="ebMovBombaId">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarMovimentacao()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+// ── Drawer ────────────────────────────────────────────────────
+const ebPanel = document.getElementById('ebDrwPanel');
+const ebOverlay = document.getElementById('ebDrwOverlay');
+let ebCurrentId = null;
+
+function fecharEbDrw(){
+  ebPanel.classList.remove('open');
+  ebOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+  document.querySelectorAll('#ebTable tr.eb-active').forEach(r=>r.classList.remove('eb-active'));
+  ebCurrentId = null;
+}
+ebOverlay.addEventListener('click', fecharEbDrw);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && ebCurrentId) fecharEbDrw(); });
+
+async function abrirEbDrw(id){
+  ebCurrentId = id;
+  document.querySelectorAll('#ebTable tr.eb-active').forEach(r=>r.classList.remove('eb-active'));
+  const row = document.querySelector(`#ebTable tr[data-id="${id}"]`);
+  if(row) row.classList.add('eb-active');
+  ebPanel.classList.add('open');
+  ebOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('ebDrwBody').innerHTML = '<div style="padding:48px;text-align:center;color:#9ca3af"><i class="bi bi-arrow-repeat" style="font-size:1.5rem;animation:spin 1s linear infinite;display:block;margin-bottom:8px"></i>Carregando…</div>';
+  document.getElementById('ebDrwNome').textContent = '…';
+  document.getElementById('ebDrwSub').textContent = '';
+  document.getElementById('ebDrwActions').innerHTML = '';
+  document.getElementById('ebDrwAvatar').textContent = '';
+
+  const r = await fetch(`/controle/api/${id}`);
+  const d = await r.json().catch(()=>({}));
+  if(!r.ok){ document.getElementById('ebDrwBody').innerHTML='<div style="padding:40px;color:#ef4444;text-align:center">Erro ao carregar</div>'; return; }
+  renderEbDrw(d);
+}
+
+function renderEbDrw(d){
+  const nome = d.equipamento || d.nome || 'Sem nome';
+  const ini = nome.split(' ').slice(0,2).map(p=>p[0]||'').join('').toUpperCase();
+  const loc = (d.localizacao||'estoque').toLowerCase();
+  const locLabel = loc==='estoque'?'Em estoque':loc==='conserto'?'Em conserto':'Instalada';
+  const locCor = loc==='estoque'?'#166534':loc==='conserto'?'#92400e':'#991b1b';
+
+  document.getElementById('ebDrwAvatar').textContent = ini;
+  document.getElementById('ebDrwNome').textContent = nome;
+  document.getElementById('ebDrwSub').textContent = `#${d.id} · ${d.modelo||''}${d.marca?' · '+d.marca:''}`;
+
+  document.getElementById('ebDrwActions').innerHTML = `
+    <button class="eb-drw-btn eb-drw-btn-primary" onclick="fecharEbDrw();setTimeout(()=>ebEditarId('${d.id}'),350)"><i class="bi bi-pencil"></i> Editar</button>
+    <button class="eb-drw-btn eb-drw-btn-green" onclick="abrirMovimentar('${d.id}')"><i class="bi bi-arrow-left-right"></i> Movimentar</button>
+  `;
+
+  const movs = d.movimentacoes || [];
+  const movHtml = movs.length ? `<div class="eb-tl">${movs.map(m=>{
+    const cor = m.acao==='instalar'?'#ef4444':m.acao==='conserto'?'#f59e0b':'#22c55e';
+    const label = m.acao==='instalar'?'Instalada':m.acao==='conserto'?'Conserto':'Retornou ao estoque';
+    return `<div class="eb-tl-item">
+      <div class="eb-tl-dot" style="background:${cor}"></div>
+      <div>
+        <div class="eb-tl-titulo">${label}</div>
+        <div class="eb-tl-sub">${m.data||''} · ${m.responsavel||''}</div>
+        ${m.local_destino?`<div class="eb-tl-det">${m.local_destino}</div>`:''}
+        ${m.motivo?`<div class="eb-tl-det">${m.motivo}</div>`:''}
+      </div>
+    </div>`;
+  }).join('')}</div>` : '<span style="color:#9ca3af;font-size:.78rem">Nenhuma movimentação registrada.</span>';
+
+  document.getElementById('ebDrwBody').innerHTML = `
+    <div class="eb-drw-section">
+      <div class="eb-drw-section-title">Situação</div>
+      <div style="margin-bottom:8px"><span style="font-size:.82rem;font-weight:700;color:${locCor}">${locLabel}</span>${d.destino_retirada?` · <span style="font-size:.8rem;color:#6b7280">${d.destino_retirada}</span>`:''}</div>
+    </div>
+    <div class="eb-drw-section">
+      <div class="eb-drw-section-title">Identificação</div>
+      <div class="eb-drw-grid">
+        <div class="eb-drw-field"><span class="eb-drw-label">Nº Série</span><span class="eb-drw-value">${d.numero_serie||'—'}</span></div>
+        <div class="eb-drw-field"><span class="eb-drw-label">Potência</span><span class="eb-drw-value">${d.potencia||'—'}</span></div>
+        <div class="eb-drw-field"><span class="eb-drw-label">Vazão</span><span class="eb-drw-value">${d.vazao||'—'}</span></div>
+        <div class="eb-drw-field"><span class="eb-drw-label">Sistema</span><span class="eb-drw-value">${d.sistema||'—'}</span></div>
+      </div>
+    </div>
+    <div class="eb-drw-section">
+      <div class="eb-drw-section-title">Fornecedor e custo</div>
+      <div class="eb-drw-grid">
+        <div class="eb-drw-field"><span class="eb-drw-label">Fornecedor</span><span class="eb-drw-value">${d.fornecedor||'—'}</span></div>
+        <div class="eb-drw-field"><span class="eb-drw-label">Valor</span><span class="eb-drw-value">${d.valor||'—'}</span></div>
+        <div class="eb-drw-field"><span class="eb-drw-label">Garantia até</span><span class="eb-drw-value">${d.garantia_ate||'—'}</span></div>
+        <div class="eb-drw-field"><span class="eb-drw-label">Custo manutenção</span><span class="eb-drw-value">${d.custo_manutencao||'—'}</span></div>
+      </div>
+    </div>
+    ${d.observacoes?`<div class="eb-drw-section"><div class="eb-drw-section-title">Observações</div><div style="font-size:.82rem;color:#374151">${d.observacoes}</div></div>`:''}
+    <div class="eb-drw-section"><div class="eb-drw-section-title">Histórico</div>${movHtml}</div>
+  `;
+}
+
+// ── Tabela ───────────────────────────────────────────────────
+const table = document.getElementById('ebTable');
+table?.addEventListener('click', e=>{
+  if(e.target.closest('a,button,input')) return;
+  const row = e.target.closest('tbody tr[data-id]');
+  if(!row || row.style.display==='none') return;
+  abrirEbDrw(row.dataset.id);
+});
+
+function getSel(){ return table?.querySelector('tbody tr.eb-active')?.dataset.id; }
+
+// ── Editar ───────────────────────────────────────────────────
+function ebNovaBtn(){
+  document.getElementById('ebForm').reset();
+  document.getElementById('eb_id').value='';
+  document.getElementById('ebModalTitle').textContent='Nova Bomba';
+  const m = document.getElementById('ebModal');
+  try{bootstrap.Modal.getInstance(m)?.dispose();}catch(e){}
+  new bootstrap.Modal(m).show();
+}
+
+async function ebEditarId(id){
+  const r = await fetch(`/controle/api/${id}`);
+  if(!r.ok) return;
+  const d = await r.json();
+  const fields = ['id','equipamento','modelo','marca','numero_serie','potencia','vazao','localizacao','local_id','destino_retirada','sistema','fornecedor','valor','custo_manutencao','data_abertura','garantia_ate','previsao_entrega','pedido_aberto','observacoes'];
+  fields.forEach(f=>{ const el=document.getElementById('eb_'+f); if(el) el.value=d[f]||''; });
+  document.getElementById('ebModalTitle').textContent='Editar Bomba';
+  const m = document.getElementById('ebModal');
+  try{bootstrap.Modal.getInstance(m)?.dispose();}catch(e){}
+  setTimeout(()=>new bootstrap.Modal(m).show(), 50);
+}
+
+document.getElementById('ebEditBtn')?.addEventListener('click',()=>{
+  const id=getSel(); if(id) ebEditarId(id); else showToast?.('Selecione uma bomba','error');
+});
+document.getElementById('ebDeleteBtn')?.addEventListener('click', async()=>{
+  const id=getSel(); if(!id){showToast?.('Selecione uma bomba','error');return;}
+  if(!await irisConfirm?.({title:'Excluir bomba',message:'Remover esta bomba permanentemente?',danger:true,btnOk:'Excluir'})) return;
+  const r=await fetch('/controle/delete',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF_TOKEN},body:JSON.stringify({id:Number(id)})});
+  if(r.ok){fecharEbDrw();location.reload();}
+});
+
+// ── Movimentar ───────────────────────────────────────────────
+function abrirMovimentar(id){
+  document.getElementById('ebMovBombaId').value=id;
+  document.getElementById('ebMovAcao').value='instalar';
+  document.getElementById('ebMovLocal').value='';
+  document.getElementById('ebMovMotivo').value='';
+  document.getElementById('ebMovResp').value='';
+  ebMovOnChange();
+  const m=document.getElementById('ebMovModal');
+  try{bootstrap.Modal.getInstance(m)?.dispose();}catch(e){}
+  new bootstrap.Modal(m).show();
+}
+function ebMovOnChange(){
+  const v=document.getElementById('ebMovAcao').value;
+  document.getElementById('ebMovLocalDiv').style.display=v==='estoque'?'none':'';
+}
+document.getElementById('ebMovAcao')?.addEventListener('change',ebMovOnChange);
+
+async function confirmarMovimentacao(){
+  const id=document.getElementById('ebMovBombaId').value;
+  const acao=document.getElementById('ebMovAcao').value;
+  const local=document.getElementById('ebMovLocal').value;
+  const motivo=document.getElementById('ebMovMotivo').value;
+  const resp=document.getElementById('ebMovResp').value;
+  const r=await fetch('/controle/movimentar',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF_TOKEN},body:JSON.stringify({bomba_id:Number(id),acao,local_destino:local,motivo,responsavel:resp})});
+  const d=await r.json().catch(()=>({}));
+  if(d.ok){
+    bootstrap.Modal.getInstance(document.getElementById('ebMovModal'))?.hide();
+    showToast?.('Movimentação registrada!');
+    setTimeout(()=>location.reload(),800);
+  } else {showToast?.(d.error||'Erro','error');}
+}
+
+// ── Filtros ──────────────────────────────────────────────────
+function aplicarFiltros(){
+  const q=(document.getElementById('ebBusca')?.value||'').toLowerCase();
+  const loc=document.getElementById('ebFiltroLoc')?.value||'';
+  table?.querySelectorAll('tbody tr[data-id]').forEach(tr=>{
+    const okQ=!q||tr.textContent.toLowerCase().includes(q);
+    const okL=!loc||(tr.dataset.loc||'')==loc;
+    tr.style.display=(okQ&&okL)?'':'none';
+  });
+}
+document.getElementById('ebBusca')?.addEventListener('input',aplicarFiltros);
+document.getElementById('ebFiltroLoc')?.addEventListener('change',aplicarFiltros);
+
+// Spin keyframe
+const s=document.createElement('style');
+s.textContent='@keyframes spin{to{transform:rotate(360deg)}}';
+document.head.appendChild(s);
+</script>
+{% endblock %}

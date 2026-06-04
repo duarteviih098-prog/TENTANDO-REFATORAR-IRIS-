@@ -1,0 +1,467 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+/* ════ COMBUSTÍVEL — ERP Premium ════ */
+/* Override base */
+.hero{display:none!important}
+
+/* Header */
+.cb-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:28px 0 20px;flex-wrap:wrap}
+.cb-title h1{margin:0;font-size:1.35rem;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.cb-title p{margin:4px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .cb-title h1{color:#f0f0f0}
+html[data-theme="dark"] .cb-title p{color:#666666}
+
+/* Tabs */
+.cb-tabs{display:flex;gap:0;border-bottom:1px solid #e5e7eb;margin-bottom:24px}
+.cb-tab{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;font-size:.82rem;font-weight:600;color:#6b7280;text-decoration:none;border-bottom:2px solid transparent;transition:.15s}
+.cb-tab:hover{color:var(--text)}
+.cb-tab.active{color:#1d4ed8;border-bottom-color:#1d4ed8}
+html[data-theme="dark"] .cb-tab{color:#666666}
+html[data-theme="dark"] .cb-tab:hover{color:#f0f0f0}
+html[data-theme="dark"] .cb-tab.active{color:#60a5fa;border-bottom-color:#3b82f6}
+html[data-theme="dark"] .cb-tabs{border-color:#2e2e2e}
+
+/* Botões */
+.cb-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:background .12s;white-space:nowrap}
+.cb-btn-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.cb-btn-primary:hover{background:#1e40af;color:#fff}
+.cb-btn-ghost{background:#fff;color:#333333;border-color:#e5e7eb}
+.cb-btn-ghost:hover{background:#f9fafb;border-color:#d1d5db}
+.cb-btn-red{background:#fff;color:#991b1b;border-color:#fca5a5}
+.cb-btn-red:hover{background:#fef2f2}
+html[data-theme="dark"] .cb-btn-ghost{background:#1a1a1a;color:#cccccc;border-color:#2e2e2e}
+html[data-theme="dark"] .cb-btn-ghost:hover{background:#273549}
+
+/* KPIs */
+.cb-kpi-row{display:flex;gap:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:18px 24px;margin-bottom:20px}
+.cb-kpi{flex:1;display:flex;flex-direction:column;gap:2px;padding:0 16px}
+.cb-kpi:first-child{padding-left:0}
+.cb-kpi:last-child{padding-right:0}
+.cb-kpi-div{width:1px;height:36px;background:#e5e7eb;flex-shrink:0}
+.cb-kpi-label{font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+.cb-kpi-value{font-size:1.25rem;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.cb-kpi-sub{font-size:.7rem;color:#9ca3af}
+html[data-theme="dark"] .cb-kpi-row{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .cb-kpi-label{color:#666666}
+html[data-theme="dark"] .cb-kpi-value{color:#f0f0f0}
+html[data-theme="dark"] .cb-kpi-div{background:#2e2e2e}
+
+/* Grid gráficos */
+.cb-charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.cb-chart-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:18px}
+.cb-chart-title{font-size:.88rem;font-weight:700;color:var(--text);margin-bottom:2px}
+.cb-chart-sub{font-size:.74rem;color:#6b7280;margin-bottom:14px}
+html[data-theme="dark"] .cb-chart-card{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .cb-chart-title{color:#f0f0f0}
+html[data-theme="dark"] .cb-chart-sub{color:#666666}
+
+/* Filtros */
+.cb-filter-bar{display:flex;align-items:flex-end;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px 18px;margin-bottom:16px;flex-wrap:wrap}
+.cb-filter-field{display:flex;flex-direction:column;gap:3px}
+.cb-filter-field label{font-size:.68rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.cb-filter-input,.cb-filter-select{padding:7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:var(--text);background:#fff;outline:none;transition:border-color .12s}
+.cb-filter-input:focus,.cb-filter-select:focus{border-color:#1d4ed8}
+.cb-search-wrap{position:relative;flex:1;min-width:200px}
+.cb-search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.78rem;pointer-events:none}
+.cb-search-input{padding-left:28px!important;width:100%}
+html[data-theme="dark"] .cb-filter-bar{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .cb-filter-field label{color:#444444}
+html[data-theme="dark"] .cb-filter-input,html[data-theme="dark"] .cb-filter-select{background:#111111;border-color:#2e2e2e;color:#f0f0f0}
+
+/* Tabela */
+.cb-table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.cb-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.cb-table thead tr{border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.cb-table thead th{padding:10px 14px;font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;text-align:left}
+.cb-table tbody tr{border-bottom:1px solid #f3f4f6;transition:background .08s}
+.cb-table tbody tr:last-child{border-bottom:none}
+.cb-table tbody tr:hover{background:#f9fafb}
+.cb-table tbody td{padding:11px 14px;color:var(--text);vertical-align:middle}
+html[data-theme="dark"] .cb-table-wrap{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .cb-table thead tr{background:#111111;border-color:#2e2e2e}
+html[data-theme="dark"] .cb-table thead th{color:#444444}
+html[data-theme="dark"] .cb-table tbody tr{border-color:#1a1a1a}
+html[data-theme="dark"] .cb-table tbody tr:hover{background:#273549}
+html[data-theme="dark"] .cb-table tbody td{color:#cccccc}
+.cb-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800;color:#fff;flex-shrink:0}
+.cb-placa{font-family:monospace;font-size:.76rem;font-weight:700;padding:2px 7px;border-radius:5px;background:#f3f4f6;border:1px solid #e5e7eb;color:#6b7280}
+html[data-theme="dark"] .cb-placa{background:#2e2e2e;border-color:#444444;color:#aaaaaa}
+.cb-empty{padding:40px;text-align:center;color:#9ca3af;font-size:.84rem}
+
+/* Veículos */
+.cb-veiculo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:20px}
+.cb-veiculo-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px 18px;display:flex;align-items:center;gap:14px;transition:box-shadow .12s}
+.cb-veiculo-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.cb-veiculo-icon{width:42px;height:42px;border-radius:10px;background:#f3f4f6;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#6b7280;flex-shrink:0}
+.cb-veiculo-nome{font-size:.88rem;font-weight:700;color:var(--text);margin-bottom:3px}
+.cb-veiculo-info{font-size:.76rem;color:#6b7280}
+.cb-veiculo-actions{display:flex;gap:6px;margin-left:auto;flex-shrink:0}
+.cb-icon-btn{width:30px;height:30px;border-radius:7px;border:1px solid #e5e7eb;background:#fff;color:#6b7280;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.78rem;transition:background .1s}
+.cb-icon-btn:hover{background:#f9fafb;color:var(--text)}
+.cb-icon-btn-red{color:#991b1b;border-color:#fca5a5}
+.cb-icon-btn-red:hover{background:#fef2f2}
+html[data-theme="dark"] .cb-veiculo-card{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .cb-veiculo-nome{color:#f0f0f0}
+html[data-theme="dark"] .cb-veiculo-icon{background:#2e2e2e;border-color:#444444;color:#666666}
+html[data-theme="dark"] .cb-icon-btn{background:#1a1a1a;border-color:#2e2e2e;color:#666666}
+html[data-theme="dark"] .cb-icon-btn:hover{background:#273549;color:#f0f0f0}
+
+@media(max-width:768px){.cb-charts{grid-template-columns:1fr}.cb-kpi-row{flex-wrap:wrap;gap:14px}.cb-kpi-div{display:none}.cb-kpi{flex:1 1 40%}}
+</style>
+
+<!-- Header -->
+<div class="cb-header">
+  <div class="cb-title">
+    <h1>Combustível</h1>
+    <p>Controle de abastecimentos por motorista e veículo</p>
+  </div>
+  {% if aba != 'veiculos' %}
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    {% if can('edit_combustivel') %}
+    <button class="cb-btn cb-btn-primary" data-bs-toggle="modal" data-bs-target="#combModal">
+      <i class="bi bi-plus"></i> Novo abastecimento
+    </button>
+    {% endif %}
+    {% if can('generate_excel') %}
+    <a class="cb-btn cb-btn-ghost" href="{{ url_for('combustivel_excel') }}" download>
+      <i class="bi bi-file-earmark-excel"></i> Excel
+    </a>
+    {% endif %}
+  </div>
+  {% else %}
+  <button class="cb-btn cb-btn-primary" onclick="abrirEditarVeiculo({})">
+    <i class="bi bi-plus"></i> Novo veículo
+  </button>
+  {% endif %}
+</div>
+
+<!-- Tabs -->
+<div class="cb-tabs">
+  <a href="{{ url_for('combustivel') }}" class="cb-tab {% if aba != 'veiculos' %}active{% endif %}">
+    <i class="bi bi-fuel-pump-fill"></i> Lançamentos
+  </a>
+  <a href="{{ url_for('combustivel_veiculos_page') }}" class="cb-tab {% if aba == 'veiculos' %}active{% endif %}">
+    <i class="bi bi-car-front-fill"></i> Motoristas e Veículos
+  </a>
+</div>
+
+{% if aba == 'veiculos' %}
+<!-- ── ABA VEÍCULOS ── -->
+<div class="cb-veiculo-grid">
+  {% for v in veiculos_db %}
+  <div class="cb-veiculo-card">
+    <div class="cb-veiculo-icon">
+      {% if 'moto' in (v.modelo or '')|lower %}<i class="bi bi-bicycle"></i>
+      {% else %}<i class="bi bi-car-front-fill"></i>{% endif %}
+    </div>
+    <div style="flex:1;min-width:0">
+      <div class="cb-veiculo-nome">{{ v.motorista }}</div>
+      <div class="cb-veiculo-info">{{ v.modelo or '—' }} · <span class="cb-placa">{{ v.placa or 'sem placa' }}</span></div>
+    </div>
+    <div class="cb-veiculo-actions">
+      <button class="cb-icon-btn" onclick="abrirEditarVeiculo(this.dataset.v)" data-v="{{ v|tojson|e }}" title="Editar"><i class="bi bi-pencil"></i></button>
+      <form method="post" action="{{ url_for('combustivel_veiculos_page') }}" style="display:inline" onsubmit="return confirm('Remover este veículo?')">
+        <input type="hidden" name="acao" value="excluir">
+        <input type="hidden" name="id" value="{{ v.id }}">
+        <button class="cb-icon-btn cb-icon-btn-red" type="submit" title="Remover"><i class="bi bi-trash"></i></button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div style="grid-column:1/-1;text-align:center;padding:48px;color:#9ca3af;font-size:.84rem">
+    <i class="bi bi-car-front" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.3"></i>
+    Nenhum veículo cadastrado ainda.
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<!-- ── ABA LANÇAMENTOS ── -->
+{% set total_mes = total %}
+{% set n_abast = rows|length %}
+{% set motoristas_uniq = rows|map(attribute='motorista')|select|unique|list|length %}
+{% set km_total = namespace(v=0) %}
+{% for r in rows %}{% set km_total.v = km_total.v + (r.km|int if r.km else 0) %}{% endfor %}
+
+<!-- KPIs -->
+<div class="cb-kpi-row">
+  <div class="cb-kpi">
+    <span class="cb-kpi-label">Total gasto</span>
+    <span class="cb-kpi-value">{{ total_mes|br_money }}</span>
+    <span class="cb-kpi-sub">{{ 'Mês atual' if not todos else 'Todo o período' }}</span>
+  </div>
+  <div class="cb-kpi-div"></div>
+  <div class="cb-kpi">
+    <span class="cb-kpi-label">Abastecimentos</span>
+    <span class="cb-kpi-value">{{ n_abast }}</span>
+    <span class="cb-kpi-sub">No período</span>
+  </div>
+  <div class="cb-kpi-div"></div>
+  <div class="cb-kpi">
+    <span class="cb-kpi-label">Motoristas</span>
+    <span class="cb-kpi-value">{{ motoristas_uniq }}</span>
+    <span class="cb-kpi-sub">Ativos no período</span>
+  </div>
+  <div class="cb-kpi-div"></div>
+  <div class="cb-kpi">
+    <span class="cb-kpi-label">KM rodados</span>
+    <span class="cb-kpi-value">{{ '{:,.0f}'.format(km_total.v).replace(',','.') }}</span>
+    <span class="cb-kpi-sub">Total registrado</span>
+  </div>
+</div>
+
+<!-- Gráficos -->
+<div class="cb-charts">
+  <div class="cb-chart-card">
+    <div class="cb-chart-title">Custo por motorista</div>
+    <div class="cb-chart-sub">Distribuição no período</div>
+    <canvas id="chartMotorista" style="height:200px;max-height:200px"></canvas>
+  </div>
+  <div class="cb-chart-card">
+    <div class="cb-chart-title">Evolução mensal</div>
+    <div class="cb-chart-sub">Custo total por mês</div>
+    <canvas id="chartMensal" style="height:200px;max-height:200px"></canvas>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="cb-filter-bar">
+  <div class="cb-filter-field">
+    <label>Período</label>
+    <div style="display:flex;gap:6px">
+      <a href="{{ url_for('combustivel') }}" class="cb-btn {% if not todos %}cb-btn-primary{% else %}cb-btn-ghost{% endif %}" style="padding:6px 12px">Mês atual</a>
+      <a href="{{ url_for('combustivel') }}?todos=1" class="cb-btn {% if todos %}cb-btn-primary{% else %}cb-btn-ghost{% endif %}" style="padding:6px 12px">Todos</a>
+    </div>
+  </div>
+  <div class="cb-filter-field" style="flex:1;min-width:180px">
+    <label>Buscar</label>
+    <div class="cb-search-wrap">
+      <i class="bi bi-search cb-search-icon"></i>
+      <input class="cb-filter-input cb-search-input" id="cbBusca" placeholder="Motorista, placa, observação…">
+    </div>
+  </div>
+</div>
+
+<!-- Tabela -->
+<div class="cb-table-wrap">
+  <table class="cb-table" id="cbTable">
+    <thead>
+      <tr>
+        <th>Data</th><th>Motorista</th><th>Veículo</th><th>Tipo</th>
+        <th>Litros</th><th>KM</th><th>Custo</th><th>Ref.</th><th>Obs.</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+    {% set cores = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4','#ec4899'] %}
+    {% set cor = cores[loop.index0 % cores|length] %}
+    <tr>
+      <td style="font-size:.78rem;color:#6b7280;white-space:nowrap">{{ r.data or '—' }}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="cb-avatar" style="background:{{ cor }}">{{ (r.motorista or 'N')[0].upper() }}</div>
+          <span style="font-weight:500;font-size:.84rem">{{ r.motorista or '—' }}</span>
+        </div>
+      </td>
+      <td style="font-size:.8rem">
+        {{ r.modelo_veiculo or '—' }}
+        {% if r.placa %}<div><span class="cb-placa">{{ r.placa }}</span></div>{% endif %}
+      </td>
+      <td style="font-size:.78rem;color:#6b7280">{{ r.tipo_combustivel or '—' }}</td>
+      <td style="font-size:.8rem;color:#333333">{{ r.litros or '—' }}</td>
+      <td style="font-size:.8rem;color:#333333">{{ r.km or '—' }}</td>
+      <td style="font-weight:700;color:var(--text);white-space:nowrap">{{ r.custo|br_money if r.custo else '—' }}</td>
+      <td style="font-size:.76rem;color:#9ca3af">{{ r.mes_ref or '—' }}</td>
+      <td style="font-size:.76rem;color:#6b7280;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.obs or '—' }}</td>
+      <td>
+        {% if can('edit_combustivel') %}
+        <button class="cb-icon-btn comb-edit-btn" data-row="{{ r|tojson|e }}" title="Editar"><i class="bi bi-pencil"></i></button>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="10" class="cb-empty">Nenhum lançamento encontrado.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Modal lançamento -->
+<div class="modal fade" id="combModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('combustivel_save') }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Abastecimento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id" id="combustivel_id">
+          <div class="row g-3 mb-3">
+            <div class="col-12">
+              <label class="form-label">Motorista / Veículo</label>
+              <select class="form-select" name="vinculo" id="combustivel_vinculo">
+                <option value="">— Selecione —</option>
+                {% for v in comb_vinculos %}<option value="{{ v.motorista }}">{{ v.motorista }} · {{ v.modelo or '' }} {{ v.placa or '' }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6"><label class="form-label">Motorista</label><input class="form-control" name="motorista" id="combustivel_motorista" placeholder="Nome"></div>
+            <div class="col-md-6"><label class="form-label">Placa</label><input class="form-control" name="placa" id="combustivel_placa" placeholder="ABC-1234"></div>
+            <div class="col-md-6"><label class="form-label">Modelo do veículo</label><input class="form-control" name="modelo_veiculo" id="combustivel_modelo_veiculo"></div>
+            <div class="col-md-6"><label class="form-label">Tipo combustível</label>
+              <select class="form-select" name="tipo_combustivel" id="combustivel_tipo">
+                <option value="">—</option>
+                <option value="Gasolina">Gasolina</option>
+                <option value="Etanol">Etanol</option>
+                <option value="Diesel">Diesel</option>
+                <option value="GNV">GNV</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-4"><label class="form-label">Data</label><input class="form-control date-picker" name="data" id="combustivel_data"></div>
+            <div class="col-md-4"><label class="form-label">Litros</label><input class="form-control" name="litros" id="combustivel_litros" placeholder="0.00"></div>
+            <div class="col-md-4"><label class="form-label">Custo (R$)</label><input class="form-control" name="custo" id="combustivel_custo" placeholder="0,00"></div>
+            <div class="col-md-4"><label class="form-label">KM</label><input class="form-control" name="km" id="combustivel_km" placeholder="Hodômetro"></div>
+            <div class="col-md-4"><label class="form-label">Mês ref.</label><input class="form-control" name="mes_ref" id="combustivel_mes_ref" placeholder="MM/AAAA"></div>
+            <div class="col-12"><label class="form-label">Observação</label><input class="form-control" name="obs" id="combustivel_obs"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal veículo -->
+<div class="modal fade" id="veiculoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('combustivel_veiculos_page') }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Motorista e Veículo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="acao" value="salvar">
+          <input type="hidden" name="id" id="veiculo_id">
+          <div class="mb-3"><label class="form-label">Motorista *</label><input class="form-control" name="motorista" id="veiculo_motorista" placeholder="Nome do motorista" required></div>
+          <div class="mb-3"><label class="form-label">Modelo do veículo</label><input class="form-control" name="modelo" id="veiculo_modelo" placeholder="Ex: Argo, Saveiro, Moto"></div>
+          <div class="mb-3"><label class="form-label">Placa</label><input class="form-control" name="placa" id="veiculo_placa" placeholder="ABC-1234"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const vinculos = {{ comb_vinculos|tojson }};
+
+// ── Gráficos ──────────────────────────────────────
+(function(){
+  const rows = {{ rows|tojson }};
+  if(!rows.length) return;
+  function brMoney(v){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0); }
+  function parseBr(s){ return parseFloat(String(s||'0').replace(/[R$\s.]/g,'').replace(',','.')) || 0; }
+  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  const muted = isDark?'#666666':'#9ca3af';
+  const gridColor = isDark?'rgba(148,163,184,.08)':'rgba(0,0,0,.06)';
+
+  const byMot = {};
+  rows.forEach(r=>{ const n=r.motorista||'Não informado'; byMot[n]=(byMot[n]||0)+parseBr(r.custo); });
+  const motLabels=Object.keys(byMot), motVals=Object.values(byMot);
+  const palette=['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4','#ec4899'];
+  const ctxMot=document.getElementById('chartMotorista');
+  if(ctxMot) new Chart(ctxMot,{type:'doughnut',data:{labels:motLabels,datasets:[{data:motVals,backgroundColor:palette.slice(0,motLabels.length),borderColor:isDark?'#1a1a1a':'#fff',borderWidth:3,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',animation:false,plugins:{legend:{position:'bottom',labels:{color:muted,padding:10,font:{size:11,weight:'600'}}},tooltip:{callbacks:{label:ctx=>' '+brMoney(ctx.parsed)}}}}});
+
+  const byMes={};
+  rows.forEach(r=>{ const m=r.mes_ref||'?'; byMes[m]=(byMes[m]||0)+parseBr(r.custo); });
+  const mesLabels=Object.keys(byMes).sort((a,b)=>{const p=s=>{const x=s.split('/');return x.length===2?parseInt(x[1])*100+parseInt(x[0]):0;};return p(a)-p(b);});
+  const ctxMes=document.getElementById('chartMensal');
+  if(ctxMes){const ctx=ctxMes.getContext('2d');const grad=ctx.createLinearGradient(0,0,0,160);grad.addColorStop(0,'rgba(29,78,216,.15)');grad.addColorStop(1,'rgba(29,78,216,.01)');new Chart(ctxMes,{type:'line',data:{labels:mesLabels,datasets:[{label:'Custo',data:mesLabels.map(m=>byMes[m]||0),borderColor:'#1d4ed8',backgroundColor:grad,fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#1d4ed8',pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+brMoney(ctx.parsed.y)}}},scales:{x:{ticks:{color:muted,font:{size:10}},grid:{color:gridColor}},y:{ticks:{color:muted,font:{size:10},callback:v=>brMoney(v)},grid:{color:gridColor}}}}});}
+})();
+
+// ── Filtro busca ─────────────────────────────────
+document.getElementById('cbBusca')?.addEventListener('input', function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('#cbTable tbody tr').forEach(tr=>{
+    tr.style.display=tr.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+
+// ── Select motorista ─────────────────────────────
+document.getElementById('combustivel_vinculo')?.addEventListener('change', e=>{
+  const v=vinculos.find(x=>x.motorista===e.target.value);
+  if(v){
+    document.getElementById('combustivel_motorista').value=v.motorista;
+    document.getElementById('combustivel_modelo_veiculo').value=v.modelo||'';
+    document.getElementById('combustivel_placa').value=v.placa||'';
+  }
+});
+
+// ── Editar lançamento ────────────────────────────
+document.addEventListener('click', e=>{
+  const btn=e.target.closest('.comb-edit-btn');
+  if(!btn) return;
+  try{ const r=JSON.parse(btn.dataset.row); editarCombustivel(r); }
+  catch(err){ console.error('Erro ao parsear:', err); }
+});
+
+function editarCombustivel(r){
+  ['id','motorista','placa','data','km','custo','litros','obs'].forEach(f=>{
+    const el=document.getElementById('combustivel_'+f); if(el) el.value=r[f]||'';
+  });
+  const mv=document.getElementById('combustivel_modelo_veiculo'); if(mv) mv.value=r.modelo_veiculo||'';
+  const mr=document.getElementById('combustivel_mes_ref'); if(mr) mr.value=r.mes_ref||'';
+  const tp=document.getElementById('combustivel_tipo'); if(tp) tp.value=r.tipo_combustivel||'';
+  const modalEl=document.getElementById('combModal');
+  try{bootstrap.Modal.getInstance(modalEl)?.dispose();}catch(e){}
+  setTimeout(()=>new bootstrap.Modal(modalEl).show(),50);
+}
+
+// ── Editar veículo ───────────────────────────────
+function abrirEditarVeiculo(v){
+  if(typeof v==='string'){try{v=JSON.parse(v);}catch(e){v={};}}
+  document.getElementById('veiculo_id').value=v.id||'';
+  document.getElementById('veiculo_motorista').value=v.motorista||'';
+  document.getElementById('veiculo_modelo').value=v.modelo||'';
+  document.getElementById('veiculo_placa').value=v.placa||'';
+  const modalEl=document.getElementById('veiculoModal');
+  try{bootstrap.Modal.getInstance(modalEl)?.dispose();}catch(e){}
+  setTimeout(()=>new bootstrap.Modal(modalEl).show(),50);
+}
+
+// ── Reset modais ─────────────────────────────────
+document.getElementById('combModal')?.addEventListener('hidden.bs.modal',()=>{
+  document.getElementById('combustivel_id').value='';
+  document.getElementById('combustivel_vinculo').value='';
+});
+document.getElementById('veiculoModal')?.addEventListener('hidden.bs.modal',()=>{
+  ['veiculo_id','veiculo_motorista','veiculo_modelo','veiculo_placa'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+});
+
+// ── Auto-preenche mês ────────────────────────────
+document.getElementById('combModal')?.addEventListener('show.bs.modal',e=>{
+  if(!e.relatedTarget) return;
+  const hoje=new Date();
+  const mr=document.getElementById('combustivel_mes_ref');
+  if(mr && !mr.value)
+    mr.value=String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();
+});
+</script>
+{% endblock %}

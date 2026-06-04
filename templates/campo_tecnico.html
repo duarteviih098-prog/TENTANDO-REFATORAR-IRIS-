@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>IRIS Campo - Atendimento</title>
+  <meta name="theme-color" content="#f8fbff">
+  <link rel="manifest" href="/static/campo_manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root{--bg:#f6f9ff;--bg2:#edf4fb;--card:#fff;--text:#07142d;--muted:#7a859c;--line:#e4eaf4;--blue:#0d86f7;--purple:#8b35f6;--pink:#ef426f;--amber:#f6a400;--green:#28ce7a;--shadow:0 16px 36px rgba(25,45,80,.08);--safe-bottom:env(safe-area-inset-bottom,0px)}
+    html[data-theme="dark"]{--bg:#080f1f;--bg2:#111827;--card:#141e31;--text:#f1f6ff;--muted:#9aa9c1;--line:#263449;--shadow:0 16px 36px rgba(0,0,0,.28)}
+    *{box-sizing:border-box} html,body{min-height:100%;margin:0}
+    body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:radial-gradient(circle at 50% -10%,rgba(13,134,247,.12),transparent 30%),linear-gradient(180deg,var(--bg),var(--bg2));color:var(--text);padding:18px 18px calc(28px + var(--safe-bottom));font-weight:650}
+    .app{width:min(100%,540px);margin:0 auto}.topbar{height:58px;display:grid;grid-template-columns:40px 1fr 40px;align-items:center}.plain-btn{width:40px;height:40px;border:0;background:transparent;color:var(--text);font-size:1.35rem}.brand{display:flex;align-items:center;justify-content:center;gap:10px}.brand img{width:36px;height:36px;object-fit:contain;animation:spin 2s linear infinite}.wordmark{font-size:1.24rem;letter-spacing:.34em;text-indent:.34em;font-weight:600}.hero{margin:20px 0 16px}.hero h1{margin:0;font-size:1.55rem;line-height:1.08;font-weight:900;letter-spacing:-.04em}.hero p{margin:8px 0 0;color:var(--muted);font-size:.92rem;line-height:1.35}
+    .card{background:var(--card);border:1px solid color-mix(in srgb,var(--line) 78%, transparent);border-radius:24px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px}.os-num{font-size:.86rem;color:var(--muted);font-weight:800}.title{font-size:1.06rem;font-weight:900;margin:6px 0 2px}.sub{color:var(--muted);font-size:.86rem;line-height:1.35}.badge{display:inline-flex;border-radius:999px;padding:6px 10px;font-size:.72rem;font-weight:900;margin-top:10px}.b-open{background:rgba(13,134,247,.12);color:var(--blue)}.b-run{background:rgba(246,164,0,.15);color:var(--amber)}.b-done{background:rgba(40,206,122,.14);color:var(--green)}.b-stop{background:rgba(239,66,111,.12);color:var(--pink)}
+    .alert{border-radius:18px;padding:12px 14px;font-weight:850;margin-bottom:14px;border:1px solid}.alert-danger{background:rgba(239,66,111,.12);border-color:rgba(239,66,111,.25);color:var(--pink)}.alert-success{background:rgba(40,206,122,.13);border-color:rgba(40,206,122,.24);color:var(--green)}
+    .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .actions form{display:contents}.btn{border:0;border-radius:17px;min-height:52px;font-family:inherit;font-weight:950;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;cursor:pointer}.btn-blue{background:linear-gradient(100deg,var(--blue),var(--purple))}.btn-amber{background:linear-gradient(100deg,#f59e0b,#f6c343);color:#2b1600}.btn-green{background:linear-gradient(100deg,#16a34a,#28ce7a)}.btn-gray{background:#64748b}.btn:disabled{opacity:.45;cursor:not-allowed}.field{margin-bottom:14px}.field label{display:block;font-weight:900;font-size:.9rem;margin-bottom:7px}.field textarea,.field select,.field input[type="text"]{width:100%;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 94%,var(--bg));color:var(--text);border-radius:16px;padding:12px 13px;font:inherit;font-weight:700;outline:none}.field textarea{min-height:96px;resize:vertical}.field select{height:50px}.hint{color:var(--muted);font-size:.78rem;line-height:1.35;margin-top:6px}.filebox{border:1px dashed color-mix(in srgb,var(--blue) 45%,var(--line));background:color-mix(in srgb,var(--blue) 6%,transparent);border-radius:18px;padding:14px}.filebox input{width:100%;font:inherit}
+    .photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+    .photo-choice{border:0;border-radius:16px;min-height:48px;font-family:inherit;font-weight:950;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;text-align:center}
+    .photo-choice.camera{background:linear-gradient(100deg,var(--blue),var(--purple))}
+    .photo-choice.gallery{background:linear-gradient(100deg,#64748b,#94a3b8)}
+    .selected-count{font-size:.82rem;font-weight:900;color:var(--text);margin-top:8px}
+    .photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+    .photo{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg);aspect-ratio:1/1;position:relative}
+    .photo img{width:100%;height:100%;object-fit:cover;display:block}
+    .remove-photo{position:absolute;top:6px;right:6px;width:26px;height:26px;border:0;border-radius:999px;background:rgba(7,20,45,.78);color:#fff;font-size:1rem;line-height:1;display:flex;align-items:center;justify-content:center}
+    .mini{color:var(--muted);font-size:.78rem}.final-box{border:1px solid rgba(40,206,122,.24);background:rgba(40,206,122,.08);border-radius:18px;padding:13px;line-height:1.4}.hidden{display:none!important}@keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ── Radio terceiro ── */
+    .radio-group{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+    .radio-opt{position:relative}
+    .radio-opt input[type="radio"]{position:absolute;opacity:0;width:0;height:0}
+    .radio-opt label{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:16px;border:2px solid var(--line);background:var(--bg);font-weight:900;font-size:.9rem;cursor:pointer;transition:.15s ease;color:var(--muted)}
+    .radio-opt input[type="radio"]:checked + label{border-color:var(--blue);background:rgba(13,134,247,.09);color:var(--blue)}
+    .radio-opt.danger input[type="radio"]:checked + label{border-color:var(--pink);background:rgba(239,66,111,.09);color:var(--pink)}
+
+    @media(max-width:380px){body{padding-left:14px;padding-right:14px}.actions{grid-template-columns:1fr}.hero h1{font-size:1.38rem}}
+
+    /* ── Sheets ── */
+    .iris-sheet-backdrop{position:fixed;inset:0;z-index:88;background:rgba(7,20,45,.42);opacity:0;pointer-events:none;transition:.22s ease;backdrop-filter:blur(3px)}
+    .iris-sheet-backdrop.open{opacity:1;pointer-events:all}
+    .iris-sheet{position:fixed;inset:auto 0 0;z-index:89;background:var(--card);border-radius:28px 28px 0 0;border-top:1px solid var(--line);box-shadow:0 -24px 70px rgba(0,0,0,.18);padding:20px 22px calc(24px + var(--safe-bottom));transform:translateY(110%);transition:.26s cubic-bezier(.32,1,.32,1)}
+    .iris-sheet.open{transform:translateY(0)}
+    .sheet-handle{width:44px;height:5px;border-radius:999px;background:var(--line);margin:0 auto 16px}
+    .sheet-title{font-size:1.08rem;font-weight:900;letter-spacing:-.03em;margin:0 0 4px}
+    .sheet-sub{color:var(--muted);font-size:.86rem;font-weight:650;line-height:1.4;margin:0 0 16px}
+    .sheet-textarea{width:100%;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 94%,var(--bg));color:var(--text);border-radius:16px;padding:13px;font:inherit;font-size:.92rem;font-weight:700;min-height:108px;resize:vertical;outline:none}
+    .sheet-textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(13,134,247,.12)}
+    .sheet-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+    .sheet-cancel{border:1px solid var(--line);background:var(--bg);color:var(--muted);border-radius:16px;min-height:48px;font:inherit;font-weight:900;cursor:pointer}
+    .sheet-confirm{border:0;border-radius:16px;min-height:48px;font:inherit;font-weight:900;color:#fff;cursor:pointer}
+    .sheet-confirm.amber{background:linear-gradient(100deg,#f59e0b,#f6c343);color:#2b1600}
+    .sheet-confirm.pink{background:linear-gradient(100deg,#ef426f,#f06292)}
+    .motivo-box{border-radius:16px;padding:11px 13px;font-size:.82rem;font-weight:750;line-height:1.4;margin-top:10px}
+    .motivo-pausa-box{background:rgba(246,164,0,.10);border:1px solid rgba(246,164,0,.28);color:#7a4f00}
+    .motivo-atraso-box{background:rgba(239,66,111,.09);border:1px solid rgba(239,66,111,.24);color:#7a1030}
+    html[data-theme="dark"] .motivo-pausa-box{color:#fcd34d}
+    html[data-theme="dark"] .motivo-atraso-box{color:#fca5a5}
+    .motivo-label{font-weight:900;display:block;margin-bottom:3px}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <button class="plain-btn" type="button" onclick="history.back()" aria-label="Voltar"><i class="bi bi-chevron-left"></i></button>
+    <div class="brand"><img src="/static/iris_icon.png" alt="IRIS" onerror="this.style.display='none'"><div class="wordmark">IRIS</div></div>
+    <button class="plain-btn" id="themeBtn" type="button" aria-label="Tema"><i class="bi bi-moon-stars"></i></button>
+  </header>
+
+  {% if erro and not row %}
+    <section class="hero"><h1>Ops.</h1><p>{{ erro }}</p></section>
+  {% else %}
+    <section class="hero">
+      <h1>Atendimento da O.S.</h1>
+      <p>Inicie, pause, retome e finalize com as informações e fotos obrigatórias.</p>
+    </section>
+
+    {% if erro %}<div class="alert alert-danger">{{ erro }}</div>{% endif %}
+    {% if sucesso %}<div class="alert alert-success">{{ sucesso }}</div>{% endif %}
+
+    <section class="card">
+      <div class="os-num">O.S. #{{ row.numero_visivel or row.numero_os or row.id }}</div>
+      <div class="title">{{ row.sistema or 'Sistema não informado' }}</div>
+      <div class="sub">{{ row.equipamento or row.ativo_nome or 'Unidade/equipamento não informado' }}</div>
+      <div class="sub" style="margin-top:8px">{{ row.descricao or 'Sem descrição cadastrada.' }}</div>
+      {% set st = (row.status or '')|lower %}
+      <span class="badge {% if row.finalizada == 'Sim' or 'finalizada' in st %}b-done{% elif 'pausada' in st %}b-stop{% elif 'andamento' in st %}b-run{% else %}b-open{% endif %}">
+        {{ row.status or 'Aberta' }}{% if row.tempo_decorrido %} · {{ row.tempo_decorrido }}{% endif %}
+      </span>
+
+      {% if row.motivo_pausa %}
+        <div class="motivo-box motivo-pausa-box">
+          <span class="motivo-label"><i class="bi bi-pause-circle-fill"></i> Motivo da pausa</span>
+          {{ row.motivo_pausa }}
+        </div>
+      {% endif %}
+      {% if row.motivo_atraso %}
+        <div class="motivo-box motivo-atraso-box">
+          <span class="motivo-label"><i class="bi bi-exclamation-triangle-fill"></i> Justificativa do atraso</span>
+          {{ row.motivo_atraso }}
+        </div>
+      {% endif %}
+    </section>
+
+    {% if row.finalizada == 'Sim' or 'finalizada' in (row.status or '')|lower %}
+      <section class="card">
+        <div class="final-box">
+          <strong>Atendimento finalizado.</strong><br>
+          {% if row.campo_problema %}
+            <div class="texto-os"><strong>Problema:</strong><span>{{ row.campo_problema }}</span></div>
+          {% endif %}
+          {% if row.servico_executado %}
+            <div class="texto-os"><strong>Feito:</strong><span>{{ row.servico_executado }}</span></div>
+          {% endif %}
+          {% if row.campo_funcionando %}<span>Funcionando: {{ row.campo_funcionando }}</span><br>{% endif %}
+          {% if row.teve_terceiro == 'Sim' %}
+            <span><strong>Equipe terceira:</strong> {{ row.quem_foi_terceiro or 'Não informado' }}</span><br>
+          {% endif %}
+          {% if row.campo_finalizado_em %}<span>Finalizado em: {{ row.campo_finalizado_em }}</span>{% endif %}
+        </div>
+        {% if row.imagens_lista %}
+          <div class="photos">
+            {% for img in row.imagens_lista %}
+              <a class="photo" href="{{ os_image_public_url(row.id, loop.index0, token) }}" target="_blank" rel="noopener"><img src="{{ os_image_public_url(row.id, loop.index0, token) }}" alt="Foto {{ loop.index }}" loading="lazy" decoding="async"></a>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% if row.orcamentos_lista %}
+          <div style="margin-top:14px">
+            <div style="font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,#64748b);margin-bottom:8px">📎 Documentos (Boleto / NF / Orçamento)</div>
+            {% for doc in row.orcamentos_lista %}
+            <a href="{{ doc }}" target="_blank" rel="noopener"
+               style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2,#f1f5f9);border:1px solid var(--line,#e2e8f0);border-radius:12px;text-decoration:none;color:var(--text,#1e293b);font-size:.85rem;font-weight:600;margin-bottom:8px">
+              <i class="bi bi-file-earmark-pdf-fill" style="font-size:1.2rem;color:#dc2626;flex-shrink:0"></i>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                {{ doc.split('/')[-1].split('?')[0] or 'Documento ' ~ loop.index }}
+              </span>
+              <i class="bi bi-box-arrow-up-right" style="margin-left:auto;font-size:.8rem;opacity:.5;flex-shrink:0"></i>
+            </a>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </section>
+    {% else %}
+      <section class="card">
+        <div class="actions">
+          <button class="btn btn-blue" type="button" onclick="document.getElementById('formAcaoInicial').acao.value='iniciar';document.getElementById('formAcaoInicial').submit()"><i class="bi bi-play-fill"></i> Iniciar</button>
+          <button class="btn btn-amber" type="button" id="btnAbrirPausa"><i class="bi bi-pause-fill"></i> Pausar</button>
+          <button class="btn btn-blue" type="button" onclick="document.getElementById('formAcaoInicial').acao.value='retomar';document.getElementById('formAcaoInicial').submit()"><i class="bi bi-arrow-clockwise"></i> Retomar</button>
+          <button class="btn btn-gray" type="button" onclick="document.getElementById('finalizarBox').classList.toggle('hidden')"><i class="bi bi-check2-circle"></i> Finalizar</button>
+        </div>
+        <form method="post" id="formAcaoInicial" style="display:none">
+          <input type="hidden" name="acao" value="">
+        </form>
+
+        {% set atrasada_bool = (row.atrasada is sameas true) or (row.atrasada or '')|string|lower in ['sim','true','1','atrasada'] %}
+        {% if atrasada_bool and not row.motivo_atraso %}
+          <button class="btn btn-gray" type="button" id="btnAbrirAtraso" style="margin-top:10px;width:100%;background:linear-gradient(100deg,#ef426f,#f06292)">
+            <i class="bi bi-exclamation-triangle-fill"></i> Justificar atraso
+          </button>
+        {% elif atrasada_bool and row.motivo_atraso %}
+          <button class="btn btn-gray" type="button" id="btnAbrirAtraso" style="margin-top:10px;width:100%;background:#64748b">
+            <i class="bi bi-pencil-fill"></i> Editar justificativa
+          </button>
+        {% endif %}
+      </section>
+
+      <form method="post" id="formPausar" class="hidden">
+        <input type="hidden" name="acao" value="pausar">
+        <input type="hidden" name="motivo_pausa" id="inputMotivoPausa">
+      </form>
+
+      <form method="post" id="formAtraso" class="hidden">
+        <input type="hidden" name="acao" value="justificar_atraso">
+        <input type="hidden" name="motivo_atraso" id="inputMotivoAtraso">
+      </form>
+
+      <section class="card hidden" id="finalizarBox">
+        <form method="post" enctype="multipart/form-data" id="finalizarForm">
+          <input type="hidden" name="acao" value="finalizar">
+
+          <div class="field">
+            <label>Qual foi o problema?</label>
+            <textarea name="campo_problema" required placeholder="Descreva o problema encontrado"></textarea>
+          </div>
+
+          <div class="field">
+            <label>O que foi feito?</label>
+            <textarea name="servico_executado" required placeholder="Descreva o serviço realizado"></textarea>
+          </div>
+
+          <div class="field">
+            <label>Está funcionando?</label>
+            <select name="campo_funcionando" required>
+              <option value="">Selecione</option>
+              <option value="Sim">Sim</option>
+              <option value="Não">Não</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Houve troca de componentes?</label>
+            <select name="troca_componentes" id="trocaComponentes">
+              <option value="Não">Não</option>
+              <option value="Sim">Sim</option>
+            </select>
+          </div>
+
+          <div class="field hidden" id="componentesBox">
+            <label>Quais componentes?</label>
+            <textarea name="componentes_descricao" placeholder="Informe os componentes trocados"></textarea>
+          </div>
+
+          <!-- ── TERCEIROS ────────────────────────────────── -->
+          <div class="field">
+            <label><i class="bi bi-people-fill"></i> Participou equipe terceira?</label>
+            <div class="radio-group">
+              <div class="radio-opt">
+                <input type="radio" name="teve_terceiro" id="terceiroNao" value="Não" checked>
+                <label for="terceiroNao"><i class="bi bi-x-circle"></i> Não</label>
+              </div>
+              <div class="radio-opt danger">
+                <input type="radio" name="teve_terceiro" id="terceiroSim" value="Sim">
+                <label for="terceiroSim"><i class="bi bi-people-fill"></i> Sim</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="field hidden" id="terceiroBox">
+            <label>Quem foi / qual empresa?</label>
+            <input type="text" name="quem_foi_terceiro" id="quemFoiTerceiro"
+                   placeholder="Ex: Eletrotécnica Dinâmica, João da Silva...">
+            <div class="hint">Nome da empresa ou pessoa que participou do atendimento.</div>
+          </div>
+          <!-- ─────────────────────────────────────────────── -->
+
+          <div class="field">
+            <label>Fotos do atendimento</label>
+            <div class="filebox">
+              <div class="photo-actions">
+                <button class="photo-choice camera" type="button" id="btnCamera"><i class="bi bi-camera-fill"></i> Tirar foto</button>
+                <button class="photo-choice gallery" type="button" id="btnGaleria"><i class="bi bi-images"></i> Galeria</button>
+              </div>
+              <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden">
+              <input type="file" id="galeriaInput" accept="image/*" multiple class="hidden">
+              <input type="file" name="imagens" id="fotosInput" accept="image/*" multiple required class="hidden">
+              <div class="hint">Adicione de 2 a 3 fotos.</div>
+              <div class="selected-count" id="contadorFotos">0 de 3 fotos selecionadas</div>
+            </div>
+            <div class="photos" id="previewFotos"></div>
+          </div>
+
+          <button class="btn btn-green" type="submit" style="width:100%"><i class="bi bi-check-circle-fill"></i> Concluir atendimento</button>
+        </form>
+      </section>
+    {% endif %}
+  {% endif %}
+</div>
+
+<!-- Sheet de motivo de pausa -->
+<div class="iris-sheet-backdrop" id="backdropPausa"></div>
+<div class="iris-sheet" id="sheetPausa">
+  <div class="sheet-handle"></div>
+  <h3 class="sheet-title"><i class="bi bi-pause-circle-fill" style="color:var(--amber)"></i> Por que está pausando?</h3>
+  <p class="sheet-sub">Informe o motivo da pausa. Isso fica registrado na O.S. e aparece no painel do gestor.</p>
+  <textarea class="sheet-textarea" id="textMotivoPausa" placeholder="Ex: aguardando peça, almoço, problema no acesso..."></textarea>
+  <div class="sheet-btns">
+    <button class="sheet-cancel" type="button" id="btnCancelarPausa">Cancelar</button>
+    <button class="sheet-confirm amber" type="button" id="btnConfirmarPausa"><i class="bi bi-pause-fill"></i> Confirmar pausa</button>
+  </div>
+</div>
+
+<!-- Sheet de justificativa de atraso -->
+<div class="iris-sheet-backdrop" id="backdropAtraso"></div>
+<div class="iris-sheet" id="sheetAtraso">
+  <div class="sheet-handle"></div>
+  <h3 class="sheet-title"><i class="bi bi-exclamation-triangle-fill" style="color:var(--pink)"></i> Por que está atrasada?</h3>
+  <p class="sheet-sub">Informe o motivo do atraso. Isso fica registrado e aparece no painel do gestor junto com a O.S.</p>
+  <textarea class="sheet-textarea" id="textMotivoAtraso" placeholder="Ex: aguardando autorização, falta de material, acesso bloqueado...">{{ row.motivo_atraso if row and row.motivo_atraso else '' }}</textarea>
+  <div class="sheet-btns">
+    <button class="sheet-cancel" type="button" id="btnCancelarAtraso">Cancelar</button>
+    <button class="sheet-confirm pink" type="button" id="btnConfirmarAtraso"><i class="bi bi-send-fill"></i> Registrar</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const root=document.documentElement;
+  const saved=localStorage.getItem('iris-campo-theme') || 'light';
+  root.setAttribute('data-theme', saved);
+  document.getElementById('themeBtn')?.addEventListener('click',()=>{
+    const next=root.getAttribute('data-theme')==='dark'?'light':'dark';
+    root.setAttribute('data-theme',next);
+    localStorage.setItem('iris-campo-theme',next);
+  });
+
+  // ── Sheets ──────────────────────────────────────────
+  function openSheet(backdrop, sheet){ backdrop.classList.add('open'); sheet.classList.add('open'); }
+  function closeSheet(backdrop, sheet){ backdrop.classList.remove('open'); sheet.classList.remove('open'); }
+
+  const backdropPausa = document.getElementById('backdropPausa');
+  const sheetPausa = document.getElementById('sheetPausa');
+  const backdropAtraso = document.getElementById('backdropAtraso');
+  const sheetAtraso = document.getElementById('sheetAtraso');
+
+  document.getElementById('btnAbrirPausa')?.addEventListener('click', () => openSheet(backdropPausa, sheetPausa));
+  document.getElementById('btnCancelarPausa')?.addEventListener('click', () => closeSheet(backdropPausa, sheetPausa));
+  backdropPausa?.addEventListener('click', () => closeSheet(backdropPausa, sheetPausa));
+
+  document.getElementById('btnConfirmarPausa')?.addEventListener('click', () => {
+    const motivo = (document.getElementById('textMotivoPausa')?.value || '').trim();
+    if(!motivo){ alert('Informe o motivo da pausa antes de confirmar.'); return; }
+    document.getElementById('inputMotivoPausa').value = motivo;
+    document.getElementById('formPausar').submit();
+  });
+
+  document.getElementById('btnAbrirAtraso')?.addEventListener('click', () => openSheet(backdropAtraso, sheetAtraso));
+  document.getElementById('btnCancelarAtraso')?.addEventListener('click', () => closeSheet(backdropAtraso, sheetAtraso));
+  backdropAtraso?.addEventListener('click', () => closeSheet(backdropAtraso, sheetAtraso));
+
+  document.getElementById('btnConfirmarAtraso')?.addEventListener('click', () => {
+    const motivo = (document.getElementById('textMotivoAtraso')?.value || '').trim();
+    if(!motivo){ alert('Informe o motivo do atraso antes de registrar.'); return; }
+    document.getElementById('inputMotivoAtraso').value = motivo;
+    document.getElementById('formAtraso').submit();
+  });
+
+  // ── Troca de componentes ──────────────────────────
+  const troca = document.getElementById('trocaComponentes');
+  const compBox = document.getElementById('componentesBox');
+  troca?.addEventListener('change', () => compBox?.classList.toggle('hidden', troca.value !== 'Sim'));
+
+  // ── Terceiros ─────────────────────────────────────
+  const terceiroNao = document.getElementById('terceiroNao');
+  const terceiroSim = document.getElementById('terceiroSim');
+  const terceiroBox = document.getElementById('terceiroBox');
+  const quemInput   = document.getElementById('quemFoiTerceiro');
+
+  function toggleTerceiro(){
+    const sim = terceiroSim?.checked;
+    terceiroBox?.classList.toggle('hidden', !sim);
+    if(quemInput) quemInput.required = sim;
+  }
+  terceiroNao?.addEventListener('change', toggleTerceiro);
+  terceiroSim?.addEventListener('change', toggleTerceiro);
+  toggleTerceiro(); // estado inicial
+
+  // ── Fotos ────────────────────────────────────────
+  const input=document.getElementById('fotosInput');
+  const cameraInput=document.getElementById('cameraInput');
+  const galeriaInput=document.getElementById('galeriaInput');
+  const preview=document.getElementById('previewFotos');
+  const contador=document.getElementById('contadorFotos');
+  let fotosSelecionadas=[];
+
+  function atualizarInputReal(){
+    const transfer=new DataTransfer();
+    fotosSelecionadas.forEach(file=>transfer.items.add(file));
+    input.files=transfer.files;
+    if(contador) contador.textContent=`${fotosSelecionadas.length} de 3 fotos selecionadas`;
+  }
+  function renderPreview(){
+    preview.innerHTML='';
+    fotosSelecionadas.forEach((file,index)=>{
+      const url=URL.createObjectURL(file);
+      const div=document.createElement('div'); div.className='photo';
+      const img=document.createElement('img'); img.src=url; img.alt=`Prévia ${index+1}`; img.onload=()=>URL.revokeObjectURL(url);
+      const remove=document.createElement('button'); remove.type='button'; remove.className='remove-photo'; remove.setAttribute('aria-label','Remover foto'); remove.innerHTML='×';
+      remove.addEventListener('click',()=>{ fotosSelecionadas.splice(index,1); atualizarInputReal(); renderPreview(); });
+      div.appendChild(img); div.appendChild(remove); preview.appendChild(div);
+    });
+  }
+  function adicionarFotos(fileList){
+    const novas=[...fileList].filter(f=>f&&f.type&&f.type.startsWith('image/'));
+    const espaco=3-fotosSelecionadas.length;
+    if(espaco<=0){ alert('Você já adicionou 3 fotos.'); return; }
+    if(novas.length>espaco) alert(`Só cabem mais ${espaco} foto(s). Vou adicionar só até completar 3.`);
+    fotosSelecionadas=fotosSelecionadas.concat(novas.slice(0,espaco));
+    atualizarInputReal(); renderPreview();
+  }
+  document.getElementById('btnCamera')?.addEventListener('click',()=>cameraInput?.click());
+  document.getElementById('btnGaleria')?.addEventListener('click',()=>galeriaInput?.click());
+  cameraInput?.addEventListener('change',()=>{ adicionarFotos(cameraInput.files); cameraInput.value=''; });
+  galeriaInput?.addEventListener('change',()=>{ adicionarFotos(galeriaInput.files); galeriaInput.value=''; });
+
+  document.getElementById('finalizarForm')?.addEventListener('submit',(e)=>{
+    atualizarInputReal();
+    const qtd=input?.files?.length||0;
+    if(qtd<2||qtd>3){ e.preventDefault(); alert('Para finalizar, envie de 2 a 3 fotos.'); }
+  });
+})();
+
+// ── GPS — envia localização enquanto O.S. ativa ──────────────
+(function(){
+  const osId = {{ row.id if row else 'null' }};
+  const token = '{{ token or "" }}';
+  const tecnicoToken = '{{ tecnico_token or "" }}';
+  // Usa o token do técnico para identificar no GPS; fallback para token da OS
+  const gpsToken = tecnicoToken || token;
+  if(!osId || !navigator.geolocation) return;
+  const finalizada = '{{ ((row.finalizada or "Nao") if row else "Nao")|lower }}'.replace('ã','a');
+  if(finalizada === 'sim') return;
+
+  function enviarPos(pos){
+    fetch('/api/campo/localizacao?tecnico_token='+encodeURIComponent(gpsToken),{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({lat:pos.coords.latitude,lng:pos.coords.longitude,os_id:osId})
+    }).catch(()=>{});
+  }
+
+  navigator.geolocation.getCurrentPosition(enviarPos,()=>{},{enableHighAccuracy:false,timeout:10000});
+  setInterval(()=>{
+    navigator.geolocation.getCurrentPosition(enviarPos,()=>{},{enableHighAccuracy:false,timeout:10000});
+  },30000);
+})();
+</script>
+</body>
+</html>

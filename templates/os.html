@@ -1,0 +1,1384 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+/* ════════════════════════════════════════════════════════════
+   O.S. — ERP Premium
+   ════════════════════════════════════════════════════════════ */
+
+/* ── OVERRIDE TOTAL — neutraliza base.html ── */
+body #osTable { border-collapse: collapse !important; border-spacing: 0 !important; }
+
+/* Remove linha-atrasada vermelha do base */
+body #osTable tbody tr.linha-atrasada,
+body #osTable tbody tr.os-overdue-row,
+body #osTable tbody tr.os-overdue {
+  background: #fff !important;
+  border-left: 3px solid #ef4444 !important;
+  box-shadow: none !important;
+}
+html[data-theme="dark"] #osTable tbody tr.os-overdue-row,
+html[data-theme="dark"] #osTable tbody tr.os-overdue {
+  background: #1a1a1a !important;
+  border-left: 3px solid #ef4444 !important;
+}
+body #osTable tbody tr.linha-atrasada td,
+body #osTable tbody tr.os-overdue-row td {
+  color: var(--text) !important;
+  font-weight: inherit !important;
+  background: transparent !important;
+}
+/* Override table-gg no osTable */
+body #osTable thead th {
+  background: #f9fafb !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  color: #6b7280 !important;
+  font-size: .69rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: .05em !important;
+  padding: 10px 14px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+}
+body #osTable tbody td {
+  padding: 12px 14px !important;
+  border-top: 1px solid #f3f4f6 !important;
+  vertical-align: middle !important;
+}
+body #osTable tbody tr:hover {
+  background: #f9fafb !important;
+}
+body #osTable tbody tr.selected {
+  background: #eff6ff !important;
+  outline: 2px solid #1d4ed8 !important;
+  outline-offset: -1px !important;
+}
+/* Dark mode overrides para osTable */
+html[data-theme="dark"] #osTable thead th {
+  background: #111111 !important;
+  border-bottom-color: #2e2e2e !important;
+  color: #666666 !important;
+}
+html[data-theme="dark"] #osTable tbody td {
+  border-top-color: #222222 !important;
+  color: #cccccc !important;
+  background: transparent !important;
+}
+html[data-theme="dark"] #osTable tbody tr {
+  background: #111111 !important;
+}
+html[data-theme="dark"] #osTable tbody tr:hover {
+  background: #1a1a1a !important;
+}
+html[data-theme="dark"] #osTable tbody tr.selected {
+  background: #2a2a2a !important;
+  outline-color: #444444 !important;
+}
+/* Remove badge-criticidade global */
+body .os-crit.badge-criticidade {
+  all: unset !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: .78rem !important;
+  font-weight: 500 !important;
+}
+/* Garante btn sem herança do btn-gg */
+.os-btn {
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+  animation: none !important;
+  border-radius: 6px !important;
+}
+/* Remove hero */
+.hero { display: none !important; }
+
+/* ── Page header ── */
+.os-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:28px 0 20px;flex-wrap:wrap}
+.os-page-title h1{margin:0;font-size:1.35rem;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1.2}
+.os-page-title p{margin:4px 0 0;font-size:.82rem;color:#6b7280}
+.os-page-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+html[data-theme="dark"] .os-page-title h1{color:#f0f0f0}
+html[data-theme="dark"] .os-page-title p{color:#666666}
+
+/* ── Buttons ── */
+.os-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:background .12s,border-color .12s,color .12s;white-space:nowrap;line-height:1.4}
+.os-btn i{font-size:.78rem}
+.os-btn-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.os-btn-primary:hover{background:#1e40af;color:#fff}
+.os-btn-ghost{background:#fff;color:#333333;border-color:#e5e7eb}
+.os-btn-ghost:hover{background:#f9fafb;border-color:#d1d5db;color:var(--text)}
+.os-btn-green{background:#fff;color:#166534;border-color:#86efac}
+.os-btn-green:hover{background:#f0fdf4}
+.os-btn-amber{background:#fff;color:#92400e;border-color:#fde68a}
+.os-btn-amber:hover{background:#fffbeb}
+.os-btn-red{background:#fff;color:#991b1b;border-color:#fca5a5}
+.os-btn-red:hover{background:#fef2f2}
+.os-btn-group{display:flex;align-items:center;gap:4px;padding:0 8px;border-left:1px solid #e5e7eb}
+html[data-theme="dark"] .os-btn-ghost{background:#1a1a1a;color:#cccccc;border-color:#2e2e2e}
+html[data-theme="dark"] .os-btn-ghost:hover{background:#2a2a2a;border-color:#444444;color:#f0f0f0}
+html[data-theme="dark"] .os-btn-group{border-left-color:#2e2e2e}
+html[data-theme="dark"] .os-btn-green{background:#1a1a1a;color:#4ade80;border-color:#166534}
+html[data-theme="dark"] .os-btn-green:hover{background:rgba(74,222,128,.08)}
+html[data-theme="dark"] .os-btn-amber{background:#1a1a1a;color:#fbbf24;border-color:#92400e}
+html[data-theme="dark"] .os-btn-amber:hover{background:rgba(251,191,36,.08)}
+html[data-theme="dark"] .os-btn-red{background:#1a1a1a;color:#f87171;border-color:#7f1d1d}
+html[data-theme="dark"] .os-btn-red:hover{background:rgba(248,113,113,.08)}
+
+/* ── KPIs ── */
+.os-kpi-row{display:flex;align-items:center;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:18px 24px;margin-bottom:20px}
+.os-kpi{flex:1;display:flex;flex-direction:column;gap:2px;padding:0 16px}
+.os-kpi:first-child{padding-left:0}
+.os-kpi:last-child{padding-right:0}
+.os-kpi-div{width:1px;height:36px;background:#e5e7eb;flex-shrink:0}
+.os-kpi-label{font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+.os-kpi-value{font-size:1.25rem;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1.1}
+.os-kpi-sub{font-size:.7rem;color:#9ca3af}
+.os-kpi-value.blue{color:#1d4ed8}
+.os-kpi-value.green{color:#166534}
+.os-kpi-value.amber{color:#92400e}
+.os-kpi-value.red{color:#991b1b}
+html[data-theme="dark"] .os-kpi-row{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .os-kpi-label{color:#666666}
+html[data-theme="dark"] .os-kpi-value{color:#f0f0f0}
+html[data-theme="dark"] .os-kpi-div{background:#2e2e2e}
+
+/* ── Filter bar ── */
+.os-filter-bar{display:flex;align-items:flex-end;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;margin-bottom:16px;flex-wrap:wrap}
+.os-filter-field{display:flex;flex-direction:column;gap:3px}
+.os-filter-field label{font-size:.68rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.os-filter-input,.os-filter-select{padding:7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:var(--text);background:#fff;outline:none;transition:border-color .12s}
+.os-filter-input:focus,.os-filter-select:focus{border-color:#1d4ed8}
+.os-filter-select{padding-right:24px;-webkit-appearance:none;-moz-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;-webkit-text-fill-color:inherit}
+.os-filter-search-wrap{position:relative}
+.os-filter-search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.78rem;pointer-events:none}
+.os-filter-search{padding-left:28px !important}
+html[data-theme="dark"] .os-filter-bar{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .os-filter-field label{color:#444444}
+html[data-theme="dark"] .os-filter-input,html[data-theme="dark"] .os-filter-select{background:#111111 !important;border-color:#2e2e2e !important;color:#f0f0f0 !important;-webkit-text-fill-color:#f0f0f0 !important}
+html[data-theme="dark"] .os-filter-input:focus,html[data-theme="dark"] .os-filter-select:focus{border-color:#3b82f6;background:#1a1a1a !important}
+html[data-theme="dark"] .os-filter-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;background-repeat:no-repeat !important;background-position:right 8px center !important}
+html[data-theme="dark"] .os-filter-bar{background:#1a1a1a !important;border-color:#2e2e2e !important}
+html[data-theme="dark"] .os-filter-field label{color:#888888 !important}
+html[data-theme="dark"] .os-filter-input,
+html[data-theme="dark"] .os-filter-select{color-scheme:dark;-webkit-text-fill-color:#f0f0f0 !important}
+html[data-theme="dark"] select.os-filter-select option{background:#1a1a1a;color:#f0f0f0}
+
+/* ── Table ── */
+.os-table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.os-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.os-table thead tr{border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.os-table thead th{padding:10px 14px;font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;text-align:left;border:none}
+.os-table tbody tr{border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .08s}
+.os-table tbody tr:last-child{border-bottom:none}
+.os-table tbody tr:hover{background:#f9fafb}
+.os-table tbody tr.selected{background:#eff6ff;outline:2px solid #1d4ed8;outline-offset:-1px}
+.os-table tbody tr.os-overdue{border-left:3px solid #ef4444}
+.os-table tbody td{padding:12px 14px;color:var(--text);vertical-align:middle;border:none}
+.os-td-desc{max-width:260px}
+.os-td-desc-main{font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+.os-td-desc-sub{font-size:.72rem;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;margin-top:1px}
+.os-td-mono{font-size:.78rem;color:#6b7280;font-variant-numeric:tabular-nums}
+.os-empty{padding:40px;text-align:center;color:#9ca3af;font-size:.84rem}
+html[data-theme="dark"] .os-table-wrap{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .os-table thead tr{background:#111111;border-color:#2e2e2e}
+html[data-theme="dark"] .os-table thead th{color:#444444}
+html[data-theme="dark"] .os-table tbody tr{border-color:#1a1a1a}
+html[data-theme="dark"] .os-table tbody tr:hover{background:#222222}
+html[data-theme="dark"] .os-table tbody tr.selected{background:#2a2a2a;outline-color:#444444}
+html[data-theme="dark"] .os-table tbody td{color:#cccccc}
+html[data-theme="dark"] .os-td-desc-main{color:#f0f0f0}
+html[data-theme="dark"] .os-td-desc-sub{color:#444444}
+
+/* ── Status badges ── */
+.os-status{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.os-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.os-status-aberta .os-dot{background:#aaaaaa}
+.os-status-aberta{color:#666666}
+.os-status-andamento .os-dot{background:#3b82f6;animation:osDotPulse 2s infinite}
+.os-status-andamento{color:#1d4ed8}
+.os-status-pausada .os-dot{background:#f59e0b}
+.os-status-pausada{color:#92400e}
+.os-status-finalizada .os-dot{background:#22c55e}
+.os-status-finalizada{color:#166534}
+.os-status-atrasada .os-dot{background:#ef4444;animation:osDotPulse 1s infinite}
+.os-status-atrasada{color:#991b1b}
+@keyframes osDotPulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── Criticidade ── */
+.os-crit{display:inline-flex;align-items:center;gap:4px;font-size:.78rem;font-weight:500}
+.os-crit-dot{width:6px;height:6px;border-radius:50%}
+.os-crit-baixa .os-crit-dot{background:#22c55e}
+.os-crit-media .os-crit-dot{background:#f59e0b}
+.os-crit-alta .os-crit-dot{background:#ef4444}
+.os-crit-baixa{color:#166534}
+.os-crit-media{color:#92400e}
+.os-crit-alta{color:#991b1b}
+
+/* ── Anexo pill ── */
+.os-attach{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:.74rem;font-weight:600;text-decoration:none;transition:background .12s}
+.os-attach:hover{background:#dbeafe}
+html[data-theme="dark"] .os-attach{background:rgba(29,78,216,.15);border-color:rgba(59,130,246,.3);color:#93c5fd}
+
+/* ── Troca ── */
+.os-troca-sim{color:#166534;font-size:.78rem;font-weight:600}
+.os-troca-nao{color:#9ca3af;font-size:.78rem}
+.os-troca-desc{font-size:.7rem;color:#6b7280;margin-top:2px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Timeline ── */
+.os-timeline-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;margin-top:16px}
+html[data-theme="dark"] .os-timeline-wrap{background:#1a1a1a;border-color:#2e2e2e}
+.timeline{display:flex;flex-direction:column;gap:0;position:relative;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:10px;top:8px;bottom:8px;width:1px;background:#e5e7eb}
+html[data-theme="dark"] .timeline::before{background:#2e2e2e}
+.tl-item{display:flex;gap:14px;position:relative;padding-bottom:20px}
+.tl-item:last-child{padding-bottom:0}
+.tl-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:#fff;flex-shrink:0;position:absolute;left:-28px;top:0;border:2px solid #fff;box-shadow:0 0 0 2px #e5e7eb}
+html[data-theme="dark"] .tl-dot{border-color:#1a1a1a;box-shadow:0 0 0 2px #2e2e2e}
+.tl-body{flex:1;min-width:0}
+.tl-titulo{font-size:.84rem;font-weight:700;color:var(--text);margin-bottom:2px}
+html[data-theme="dark"] .tl-titulo{color:#f0f0f0}
+.tl-quando{font-size:.74rem;color:#6b7280;display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.tl-detalhe{font-size:.78rem;color:#333333;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;margin-top:4px;line-height:1.5}
+html[data-theme="dark"] .tl-detalhe{background:#111111;border-color:#2e2e2e;color:#aaaaaa}
+.tl-usuario{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;color:#9ca3af;margin-top:4px}
+
+/* ── Toast ── */
+.gg-toast{position:fixed;bottom:28px;right:28px;z-index:99999;padding:12px 18px;border-radius:8px;font-size:.84rem;font-weight:500;max-width:360px;opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .2s,transform .2s;border:1px solid transparent;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.gg-toast.show{opacity:1;pointer-events:auto;transform:none}
+.gg-toast.show:not(.error):not(.warning){background:var(--text);color:#f9fafb;border-color:#333333}
+.gg-toast.show.error{background:#fef2f2;color:#991b1b;border-color:#fca5a5}
+html[data-theme="dark"] .gg-toast.show:not(.error){background:#f0f0f0;color:var(--text)}
+html[data-theme="dark"] .gg-toast.show.error{background:#450a0a;color:#fca5a5;border-color:#7f1d1d}
+
+/* ── Responsive ── */
+@media(max-width:900px){.os-kpi-row{flex-wrap:wrap;gap:12px}.os-kpi-div{display:none}.os-kpi{flex:1 1 40%}}
+@media(max-width:600px){.os-page-header{flex-direction:column}.os-filter-bar{flex-direction:column}}
+</style>
+
+<!-- ── PAGE HEADER ── -->
+<div class="os-page-header">
+  <div class="os-page-title">
+    <h1>Ordens de Serviço</h1>
+    <p>Abertura, execução e fechamento de O.S. por técnicos e escritório</p>
+  </div>
+  <div class="os-page-actions">
+    {% if can('create_os') %}
+    <button class="os-btn os-btn-primary" data-bs-toggle="modal" data-bs-target="#osCreateModal" id="osNewBtn">
+      <i class="bi bi-plus"></i> Nova O.S.
+    </button>
+    {% endif %}
+    <div class="os-btn-group">
+      {% if can('edit_os') %}<button class="os-btn os-btn-ghost" id="osEditBtn"><i class="bi bi-pencil"></i> Editar</button>{% endif %}
+      {% if can('edit_os') %}<button class="os-btn os-btn-green" id="osIniciarBtn"><i class="bi bi-play"></i> Iniciar</button>{% endif %}
+      {% if can('edit_os') %}<button class="os-btn os-btn-amber" id="osPausarBtn"><i class="bi bi-pause"></i> Pausar</button>{% endif %}
+      {% if can('edit_os') %}<button class="os-btn os-btn-green" id="osFinalizarBtn"><i class="bi bi-check"></i> Finalizar</button>{% endif %}
+    </div>
+    <div class="os-btn-group">
+      {% if can('view_os') %}<button class="os-btn os-btn-ghost" id="osWhatsappBtn"><i class="bi bi-whatsapp"></i> WhatsApp</button>{% endif %}
+      {% if can('download_os') %}<button class="os-btn os-btn-ghost" id="osDownloadBtn"><i class="bi bi-download"></i> Download</button>{% endif %}
+      {% if can('generate_pdf') %}
+      <a class="os-btn os-btn-ghost" href="#" id="osPdfDiaBtn"><i class="bi bi-file-earmark-pdf"></i> PDF dia</a>
+      <a class="os-btn os-btn-ghost" href="#" id="osPdfMesBtn"><i class="bi bi-file-earmark-pdf"></i> PDF mês</a>
+      {% endif %}
+      {% if can('delete_os') %}<button class="os-btn os-btn-red" id="osDeleteBtn"><i class="bi bi-trash"></i> Excluir</button>{% endif %}
+    </div>
+    <a class="os-btn os-btn-ghost" href="{{ url_for('os_hub') }}">
+      <i class="bi bi-grid-3x3-gap"></i> Hub
+    </a>
+  </div>
+</div>
+
+<!-- ── KPIs ── -->
+{% set total = rows|length %}
+{% set abertas = rows|selectattr('finalizada','ne','Sim')|selectattr('status','ne','Finalizada')|list|length %}
+{% set andamento = rows|selectattr('status','equalto','Em andamento')|list|length %}
+{% set finalizadas = rows|selectattr('finalizada','equalto','Sim')|list|length %}
+{% set atrasadas = rows|selectattr('atrasada','equalto',true)|list|length %}
+<div class="os-kpi-row">
+  <div class="os-kpi">
+    <span class="os-kpi-label">Total</span>
+    <span class="os-kpi-value">{{ total }}</span>
+    <span class="os-kpi-sub">No período</span>
+  </div>
+  <div class="os-kpi-div"></div>
+  <div class="os-kpi">
+    <span class="os-kpi-label">Em andamento</span>
+    <span class="os-kpi-value blue">{{ andamento }}</span>
+    <span class="os-kpi-sub">Executando agora</span>
+  </div>
+  <div class="os-kpi-div"></div>
+  <div class="os-kpi">
+    <span class="os-kpi-label">Abertas</span>
+    <span class="os-kpi-value amber">{{ abertas }}</span>
+    <span class="os-kpi-sub">Aguardando</span>
+  </div>
+  <div class="os-kpi-div"></div>
+  <div class="os-kpi">
+    <span class="os-kpi-label">Finalizadas</span>
+    <span class="os-kpi-value green">{{ finalizadas }}</span>
+    <span class="os-kpi-sub">Concluídas</span>
+  </div>
+  <div class="os-kpi-div"></div>
+  <div class="os-kpi">
+    <span class="os-kpi-label">Atrasadas</span>
+    <span class="os-kpi-value {% if atrasadas > 0 %}red{% endif %}">{{ atrasadas }}</span>
+    <span class="os-kpi-sub">Fora do prazo</span>
+  </div>
+</div>
+
+<!-- ── FILTROS ── -->
+<form class="os-filter-bar os-main-filter-form" method="get">
+  <div class="os-filter-field" style="flex:1;min-width:200px">
+    <label>Buscar</label>
+    <div class="os-filter-search-wrap">
+      <i class="bi bi-search os-filter-search-icon"></i>
+      <input class="os-filter-input os-filter-search iris-live-search" name="q" id="osFiltroBusca"
+             data-module="os" value="{{ filtro_q or '' }}" placeholder="Sistema, equipamento, responsável…" spellcheck="false" autocorrect="off">
+    </div>
+  </div>
+  <div class="os-filter-field">
+    <label>Tipo</label>
+    <select class="os-filter-select" name="tipo_os" id="osFiltroTipo" style="min-width:130px;color-scheme:inherit">
+      <option value="">Todos</option>
+      <option value="Corretiva"  {{ 'selected' if filtro_tipo_os=='Corretiva'  else '' }}>Corretiva</option>
+      <option value="Preventiva" {{ 'selected' if filtro_tipo_os=='Preventiva' else '' }}>Preventiva</option>
+    </select>
+  </div>
+  <div class="os-filter-field">
+    <label>Status</label>
+    <select class="os-filter-select" name="status" id="osFiltroStatus" style="min-width:150px;color-scheme:inherit">
+      <option value="">Todos</option>
+      <option value="finalizada" {{ 'selected' if filtro_status=='finalizada' else '' }}>Finalizada</option>
+      <option value="andamento"  {{ 'selected' if filtro_status=='andamento'  else '' }}>Em andamento</option>
+      <option value="pausadas"   {{ 'selected' if filtro_status=='pausadas'   else '' }}>Pausada</option>
+      <option value="atrasadas"  {{ 'selected' if filtro_status=='atrasadas'  else '' }}>Atrasada</option>
+    </select>
+  </div>
+  <div class="os-filter-field">
+    <label>Criticidade</label>
+    <select class="os-filter-select" id="osFiltroCriticidade" style="min-width:120px;color-scheme:inherit">
+      <option value="">Todas</option>
+      <option value="Baixa">Baixa</option>
+      <option value="Média">Média</option>
+      <option value="Alta">Alta</option>
+    </select>
+  </div>
+  <div class="os-filter-field">
+    <label>Troca</label>
+    <select class="os-filter-select" name="componentes" id="osFiltroComponentes" style="min-width:100px;color-scheme:inherit">
+      <option value="">Todos</option>
+      <option value="Sim" {{ 'selected' if filtro_componentes in ['sim','s','yes','1'] else '' }}>Sim</option>
+      <option value="Não" {{ 'selected' if filtro_componentes in ['nao','não','n','no','0'] else '' }}>Não</option>
+    </select>
+  </div>
+  <div class="os-filter-field">
+    <label>Mês</label>
+    <input class="os-filter-input month-picker" name="mes" id="osMesFiltro"
+           value="{{ filtro_mes }}" placeholder="MM/AAAA" style="min-width:110px">
+  </div>
+  <div class="os-filter-field">
+    <label>Data</label>
+    <input class="os-filter-input date-picker" id="osDataFiltro" placeholder="dd/mm/aaaa" style="min-width:120px">
+  </div>
+  <div style="display:flex;gap:6px;align-items:flex-end">
+    <button class="os-btn os-btn-primary" type="submit" style="padding:7px 14px">Filtrar</button>
+    <a class="os-btn os-btn-ghost" href="/os">Limpar</a>
+  </div>
+</form>
+
+<!-- ── TABELA / TIMELINE TABS ── -->
+<div style="display:flex;gap:6px;margin-bottom:12px">
+  <button class="os-btn os-btn-ghost" id="osTabTableBtn" onclick="osShowTab('table')" style="border-color:#1d4ed8;color:#1d4ed8">
+    <i class="bi bi-table"></i> Ordens de serviço
+  </button>
+  <button class="os-btn os-btn-ghost" id="osTabTimelineBtn" onclick="osShowTab('timeline');abrirTimeline()">
+    <i class="bi bi-clock-history"></i> Linha do tempo
+  </button>
+</div>
+
+<!-- Tabela -->
+<div id="osTabTable">
+  <div class="os-table-wrap">
+    <table class="os-table" id="osTable">
+      <thead>
+        <tr>
+          <th>O.S.</th>
+          <th>Data</th>
+          <th>Sistema</th>
+          <th>Descrição</th>
+          <th>Tipo</th>
+          <th>Status</th>
+          <th>Criticidade</th>
+          <th>Responsável</th>
+          <th>Tempo</th>
+          <th>Troca</th>
+          <th>Pausa / Atraso</th>
+          <th>Anexos</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+      {% set st_raw = (r.status or '')|string|trim %}
+      {% set st_lower = st_raw|lower %}
+      {% set finalizada_bool = (r.finalizada or '')|lower in ['sim','true','1','finalizada'] or st_lower == 'finalizada' %}
+      {% set atrasada_bool = (r.atrasada is sameas true) or (r.atrasada or '')|lower in ['sim','true','1','atrasada'] %}
+      {% set status_exec = 'Finalizada' if finalizada_bool else ('Atrasada' if atrasada_bool else ('Pausada' if st_lower == 'pausada' else ('Em andamento' if st_lower == 'em andamento' else 'Aberta'))) %}
+      {% set status_cls = 'os-status-atrasada' if status_exec == 'Atrasada' else ('os-status-finalizada' if status_exec == 'Finalizada' else ('os-status-pausada' if status_exec == 'Pausada' else ('os-status-andamento' if status_exec == 'Em andamento' else 'os-status-aberta'))) %}
+      {% set crit = (r.criticidade or '')|trim %}
+      {% set crit_cls = 'os-crit-baixa' if crit == 'Baixa' else ('os-crit-media' if crit == 'Média' else ('os-crit-alta' if crit == 'Alta' else '')) %}
+      <tr data-id="{{ r.id }}"
+          data-priority="{{ 0 if atrasada_bool and not finalizada_bool else 2 if finalizada_bool else 1 }}"
+          data-inicio="{{ r.data_inicio or '' }}" data-fim="{{ r.data_fim or '' }}"
+          data-finalizada="{{ r.finalizada or 'Não' }}" data-status="{{ r.status or '' }}"
+          data-status-filter="{{ status_exec }}" data-accum="{{ r.acumulado_minutos or 0 }}"
+          data-criticidade="{{ r.criticidade or '' }}" data-componentes="{{ r.troca_componentes or 'Não' }}"
+          class="{{ 'os-overdue' if atrasada_bool and not finalizada_bool else '' }}">
+        <td class="os-td-mono">#{{ r.numero_os or r.id }}</td>
+        <td class="os-td-mono">{{ r.data or '—' }}</td>
+        <td style="font-weight:500;color:var(--text);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sistema or '—' }}</td>
+        <td class="os-td-desc">
+          <div class="os-td-desc-main">{{ (r.descricao or r.servico_executado or r.equipamento or '—')[:80] }}</div>
+          {% if r.equipamento %}<div class="os-td-desc-sub">{{ r.equipamento }}</div>{% endif %}
+        </td>
+        <td>
+          {% if r.tipo_os == 'Preventiva' %}
+            <span style="font-size:.72rem;font-weight:600;color:#0369a1;background:#e0f2fe;padding:2px 8px;border-radius:4px">Preventiva</span>
+          {% elif r.tipo_os == 'Corretiva' %}
+            <span style="font-size:.72rem;font-weight:600;color:#b45309;background:#fef3c7;padding:2px 8px;border-radius:4px">Corretiva</span>
+          {% else %}
+            <span style="color:#9ca3af">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="os-status {{ status_cls }}">
+            <span class="os-dot"></span>{{ status_exec }}
+          </span>
+        </td>
+        <td>
+          {% if crit %}
+          <span class="os-crit {{ crit_cls }}">
+            <span class="os-crit-dot"></span>{{ crit }}
+          </span>
+          {% else %}
+          <span style="color:#d1d5db;font-size:.78rem">—</span>
+          {% endif %}
+        </td>
+        <td style="font-size:.82rem;color:#333333;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.responsavel or '—' }}</td>
+        <td class="tempo-cell os-td-mono">{{ r.tempo_decorrido or '—' }}</td>
+        <td>
+          {% set troca = (r.troca_componentes or 'Não')|string %}
+          {% if troca|lower in ['sim','s','yes','true','1'] %}
+          <div class="os-troca-sim"><i class="bi bi-check-circle-fill"></i></div>
+          {% if r.componentes_descricao %}<div class="os-troca-desc">{{ r.componentes_descricao }}</div>{% endif %}
+          {% else %}
+          <span class="os-troca-nao">—</span>
+          {% endif %}
+        </td>
+        <td style="font-size:.74rem;color:#6b7280;max-width:160px">
+          {% if r.motivo_pausa %}<div><span style="color:#92400e;font-weight:600">Pausa:</span> {{ r.motivo_pausa }}</div>{% endif %}
+          {% if r.motivo_atraso %}<div><span style="color:#991b1b;font-weight:600">Atraso:</span> {{ r.motivo_atraso }}</div>{% endif %}
+          {% if not r.motivo_pausa and not r.motivo_atraso %}—{% endif %}
+        </td>
+        <td>
+          {% set orcs = r.orcamentos or [] %}
+          {% if orcs %}
+            {% if can('download_os') %}
+            <a class="os-attach" href="/os/download/{{ r.id }}" title="Baixar PDF + orçamento">
+              <i class="bi bi-paperclip"></i> {{ orcs|length }}
+            </a>
+            {% else %}
+            <span class="os-attach"><i class="bi bi-paperclip"></i> {{ orcs|length }}</span>
+            {% endif %}
+          {% else %}
+          <span style="color:#d1d5db;font-size:.78rem">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="11" class="os-empty">Nenhuma O.S. encontrada para os filtros selecionados.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div id="osTabTimeline" style="display:none">
+  <div class="os-timeline-wrap">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <h3 style="margin:0;font-size:.95rem;font-weight:700;color:var(--text)" class="os-tl-title-dark">Linha do tempo</h3>
+      <span style="font-size:.78rem;color:#9ca3af" id="timeline-os-label">Selecione uma O.S. e clique em "Linha do tempo"</span>
+    </div>
+    <div id="timeline-container">
+      <div style="padding:32px;text-align:center;color:#9ca3af;font-size:.84rem">
+        <i class="bi bi-clock-history" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.3"></i>
+        Selecione uma O.S. na tabela e clique em "Linha do tempo"
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="ggToast" class="gg-toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ══ MODAIS (lógica preservada, só estilo limpo) ══ -->
+<div class="modal fade" id="osCreateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <form method="post" action="/os/save" enctype="multipart/form-data" id="osCreateForm">
+        <div class="modal-header">
+          <div><h5 class="modal-title">Nova Ordem de Serviço</h5><small class="text-muted">Preencha os dados da O.S.</small></div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id" value=""><input type="hidden" name="status" id="os_new_status">
+          <div class="row g-3 mb-3">
+            <div class="col-md-3"><label class="form-label">Data</label><input class="form-control date-picker" name="data" id="os_new_data" placeholder="Data"></div>
+            <div class="col-md-3"><label class="form-label">Finalizada</label><select class="form-select" name="finalizada" id="os_new_finalizada"><option value="Não">Não</option><option value="Sim">Sim</option></select></div>
+            <div class="col-md-3"><label class="form-label">Criticidade</label><select class="form-select" name="criticidade" id="os_new_criticidade"><option value="">—</option><option value="Baixa">Baixa</option><option value="Média">Média</option><option value="Alta">Alta</option></select></div>
+            <div class="col-md-3"><label class="form-label">Tipo da O.S.</label><select class="form-select os-tipo-select" name="tipo_os" id="os_new_tipo_os"><option value="">Corretiva ou Preventiva</option><option value="Corretiva">Corretiva</option><option value="Preventiva">Preventiva</option></select></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6"><label class="form-label">Sistema</label><input class="form-control" name="sistema" id="os_new_sistema" list="os_new_sistema_list" placeholder="Buscar sistema"></div>
+            <div class="col-md-6"><label class="form-label">Unidade / equipamento</label><input class="form-control" name="equipamento" id="os_new_equipamento" list="os_new_equipamento_list" placeholder="Buscar unidade"></div>
+            <datalist id="os_new_sistema_list"></datalist><datalist id="os_new_equipamento_list"></datalist>
+            <datalist id="os_tecnicos_list">{% for t in tecnicos_campo or [] %}<option value="{{ t.nome }}">{{ t.telefone|phone_br if t.telefone else 'Sem WhatsApp' }}</option>{% endfor %}</datalist>
+            <div class="col-md-4"><label class="form-label">Responsável / técnico</label><input class="form-control" name="responsavel" id="os_new_responsavel" list="os_tecnicos_list" placeholder="Opcional"></div>
+            <div class="col-md-4 d-flex align-items-end"><div class="form-check"><input class="form-check-input" type="checkbox" name="enviar_whatsapp_auto" id="os_new_enviar_whatsapp_auto" value="1"><label class="form-check-label" for="os_new_enviar_whatsapp_auto">Avisar equipe via WhatsApp</label></div></div>
+            <div class="col-md-4 d-flex align-items-end"><div class="form-check"><input class="form-check-input" type="checkbox" name="iniciar_agora" id="os_new_iniciar_agora" value="1"><label class="form-check-label" for="os_new_iniciar_agora">Iniciar agora</label></div></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-3"><label class="form-label">Horário início</label><input class="form-control" name="data_inicio" id="os_new_data_inicio" placeholder="HH:MM"></div>
+            <div class="col-md-3"><label class="form-label">Horário fim</label><input class="form-control" name="data_fim" id="os_new_data_fim" placeholder="HH:MM"></div>
+            <div class="col-md-3"><label class="form-label">Teve terceiro?</label><select class="form-select" name="teve_terceiro" id="os_new_teve_terceiro"><option>Não</option><option>Sim</option></select></div>
+            <div class="col-md-3" id="campoTerceiroNew"><label class="form-label">Quem foi o terceiro</label><input class="form-control" name="quem_foi_terceiro" id="os_new_quem_foi_terceiro" placeholder="Nome"></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Troca de componentes</label><select class="form-select" name="troca_componentes" id="os_new_troca_componentes"><option value="Não">Não</option><option value="Sim">Sim</option></select></div>
+            <div class="col-md-8"><label class="form-label">O que foi trocado?</label><input class="form-control" name="componentes_descricao" id="os_new_componentes_descricao" placeholder="Ex.: bomba, bóia, cabo, contator"></div>
+            <div class="col-md-4"><label class="form-label">Custo da O.S.</label><input class="form-control" name="custo_os" id="os_new_custo_os" placeholder="R$"></div>
+            <div class="col-md-8"><label class="form-label">Observação do custo</label><input class="form-control" name="observacao_custo" id="os_new_observacao_custo"></div>
+            <div class="col-12"><label class="form-label">Descrição</label><textarea class="form-control" name="descricao" id="os_new_descricao" rows="2"></textarea></div>
+            <div class="col-12"><label class="form-label">Serviço executado</label><textarea class="form-control" name="servico_executado" id="os_new_servico_executado" rows="2"></textarea></div>
+          </div>
+          <div class="row g-3">
+            <div class="col-12"><label class="form-label fw-semibold">Fotos do serviço</label><input type="file" class="form-control" name="imagens" id="os_new_imagens_input" multiple accept="image/*"><small class="text-muted">Aparecem no PDF da O.S.</small></div>
+            <div class="col-12"><label class="form-label fw-semibold">Orçamento / NF</label><input type="file" class="form-control" name="orcamentos" id="os_new_orcamentos_input" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx"><small class="text-muted">Entram no download junto com o PDF.</small></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button><button class="btn btn-primary" type="submit">Salvar O.S.</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="osModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <form method="post" action="/os/save" enctype="multipart/form-data">
+        <div class="modal-header"><div><h5 class="modal-title">Ordem de serviço</h5><small class="text-muted">Editar dados</small></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <input type="hidden" name="id" id="os_id"><input type="hidden" name="status" id="os_status">
+          <div class="row g-3 mb-3">
+            <div class="col-md-3"><label class="form-label">Data</label><input class="form-control date-picker" name="data" id="os_data"></div>
+            <div class="col-md-3"><label class="form-label">Finalizada</label><select class="form-select" name="finalizada" id="os_finalizada"><option value="Não">Não</option><option value="Sim">Sim</option></select></div>
+            <div class="col-md-3"><label class="form-label">Criticidade</label><select class="form-select" name="criticidade" id="os_criticidade"><option value="">—</option><option value="Baixa">Baixa</option><option value="Média">Média</option><option value="Alta">Alta</option></select></div>
+            <div class="col-md-3"><label class="form-label">Tipo da O.S.</label><select class="form-select os-tipo-select" name="tipo_os" id="os_tipo_os"><option value="">Corretiva ou Preventiva</option><option value="Corretiva">Corretiva</option><option value="Preventiva">Preventiva</option></select></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6"><label class="form-label">Sistema</label><input class="form-control" name="sistema" id="os_sistema" list="os_sistema_list"></div>
+            <div class="col-md-6"><label class="form-label">Unidade / equipamento</label><input class="form-control" name="equipamento" id="os_equipamento" list="os_equipamento_list"></div>
+            <datalist id="os_sistema_list"></datalist><datalist id="os_equipamento_list"></datalist>
+            <div class="col-md-4"><label class="form-label">Responsável</label><input class="form-control" name="responsavel" id="os_responsavel" list="os_tecnicos_list"></div>
+            <div class="col-md-4 d-flex align-items-end"><div class="form-check"><input class="form-check-input" type="checkbox" name="enviar_whatsapp_auto" id="os_enviar_whatsapp_auto" value="1"><label class="form-check-label" for="os_enviar_whatsapp_auto">Avisar via WhatsApp</label></div></div>
+            <div class="col-md-4 d-flex align-items-end"><div class="form-check"><input class="form-check-input" type="checkbox" name="iniciar_agora" id="os_iniciar_agora" value="1"><label class="form-check-label" for="os_iniciar_agora">Iniciar agora</label></div></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-3"><label class="form-label">Horário início</label><input class="form-control" name="data_inicio" id="os_data_inicio" placeholder="HH:MM"></div>
+            <div class="col-md-3"><label class="form-label">Horário fim</label><input class="form-control" name="data_fim" id="os_data_fim" placeholder="HH:MM"></div>
+            <div class="col-md-3"><label class="form-label">Teve terceiro?</label><select class="form-select" name="teve_terceiro" id="os_teve_terceiro"><option>Não</option><option>Sim</option></select></div>
+            <div class="col-md-3" id="campoTerceiro"><label class="form-label">Quem foi o terceiro</label><input class="form-control" name="quem_foi_terceiro" id="os_quem_foi_terceiro"></div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Troca de componentes</label><select class="form-select" name="troca_componentes" id="os_troca_componentes"><option value="Não">Não</option><option value="Sim">Sim</option></select></div>
+            <div class="col-md-8"><label class="form-label">O que foi trocado?</label><input class="form-control" name="componentes_descricao" id="os_componentes_descricao"></div>
+            <div class="col-md-4"><label class="form-label">Custo da O.S.</label><input class="form-control" name="custo_os" id="os_custo_os"></div>
+            <div class="col-md-8"><label class="form-label">Observação do custo</label><input class="form-control" name="observacao_custo" id="os_observacao_custo"></div>
+            <div class="col-12"><label class="form-label">Descrição</label><textarea class="form-control" name="descricao" id="os_descricao" rows="2"></textarea></div>
+            <div class="col-12"><label class="form-label">Serviço executado</label><textarea class="form-control" name="servico_executado" id="os_servico_executado" rows="3"></textarea></div>
+          </div>
+          <div class="row g-3">
+            <div class="col-12"><label class="form-label fw-semibold">Fotos existentes</label><div class="attachment-list" id="os_imagens_preview"></div></div>
+            <div class="col-12"><label class="form-label fw-semibold">Adicionar fotos</label><input type="file" class="form-control" name="imagens" id="os_imagens_input" multiple accept="image/*"></div>
+            <div class="col-12"><label class="form-label fw-semibold">Orçamentos / NF existentes</label><div class="attachment-list" id="os_orcamentos_preview"></div></div>
+            <div class="col-12"><label class="form-label fw-semibold">Adicionar orçamento / NF</label><input type="file" class="form-control" name="orcamentos" id="os_orcamentos_input" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx"></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button><button class="btn btn-primary" type="submit">Salvar alterações</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DRAWER LATERAL ══ -->
+<div id="osDrawerOverlay" style="position:fixed;inset:0;z-index:1040;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .25s"></div>
+<aside id="osDrawer" style="position:fixed;top:0;right:0;bottom:0;z-index:1041;width:min(480px,95vw);box-shadow:-8px 0 40px rgba(0,0,0,.14);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);overflow:hidden">
+  <!-- Header -->
+  <div id="osDrawerHeader" style="padding:18px 20px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0">
+      <div id="osDrawerAvatar" style="width:40px;height:40px;border-radius:10px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:.84rem;font-weight:800;flex-shrink:0"></div>
+      <div style="min-width:0">
+        <div id="osDrawerSistema" style="font-size:.95rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+        <div id="osDrawerNum" style="font-size:.72rem;color:#9ca3af;margin-top:1px"></div>
+      </div>
+    </div>
+    <button onclick="fecharOsDrawer()" style="width:32px;height:32px;border-radius:8px;border:none;background:#f3f4f6;color:#6b7280;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <!-- Status + ações -->
+  <div id="osDrawerStatus" style="padding:12px 20px;border-bottom:1px solid #f3f4f6;flex-shrink:0;display:flex;align-items:center;gap:10px"></div>
+  <div id="osDrawerActions" style="padding:10px 20px;border-bottom:1px solid #f3f4f6;flex-shrink:0;display:flex;gap:8px;flex-wrap:wrap"></div>
+  <!-- Body -->
+  <div id="osDrawerBody" style="flex:1;overflow-y:auto;padding:0">
+    <div style="padding:48px;text-align:center;color:#9ca3af;font-size:.84rem">
+      <i class="bi bi-arrow-repeat" style="display:block;font-size:2rem;margin-bottom:8px;opacity:.3;animation:drwOsSpin 1s linear infinite"></i>Carregando…
+    </div>
+  </div>
+</aside>
+<style>
+html[data-theme="dark"] #osDrawer{background:#1a1a1a;box-shadow:-8px 0 40px rgba(0,0,0,.5)}
+html[data-theme="dark"] #osDrawerHeader{border-color:#2e2e2e}
+html[data-theme="dark"] #osDrawerHeader > div > div:first-child{color:#f0f0f0}
+html[data-theme="dark"] #osDrawerNum{color:#444444}
+html[data-theme="dark"] #osDrawerAvatar{background:rgba(29,78,216,.2);color:#60a5fa}
+html[data-theme="dark"] #osDrawerStatus,html[data-theme="dark"] #osDrawerActions{border-color:#2e2e2e}
+@keyframes drwOsSpin{to{transform:rotate(360deg)}}
+.os-drw-section{padding:16px 20px;border-bottom:1px solid #f3f4f6}
+html[data-theme="dark"] #osDrawer{background:#111111 !important;border-left:1px solid #2e2e2e}
+html[data-theme="dark"] #osDrawerHeader{background:#111111;border-bottom:1px solid #2e2e2e !important}
+html[data-theme="dark"] #osDrawerStatus{border-bottom-color:#2e2e2e !important;background:#111111}
+html[data-theme="dark"] #osDrawerActions{border-bottom-color:#2e2e2e !important;background:#111111}
+html[data-theme="dark"] #osDrawerBody{background:#111111}
+html[data-theme="dark"] .os-drw-section{border-color:#2e2e2e}
+.os-drw-title{font-size:.68rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.os-drw-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.os-drw-field{display:flex;flex-direction:column;gap:2px}
+.os-drw-label{font-size:.7rem;color:#9ca3af;font-weight:500}
+.os-drw-value{font-size:.86rem;color:var(--text);font-weight:500;line-height:1.4}
+html[data-theme="dark"] .os-drw-value{color:#cccccc}
+.os-drw-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid #e5e7eb;background:#fff;color:#333333;transition:background .12s;text-decoration:none}
+.os-drw-btn:hover{background:#f9fafb;border-color:#d1d5db}
+.os-drw-btn-blue{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.os-drw-btn-blue:hover{background:#1e40af;color:#fff}
+.os-drw-btn-green{color:#166534;border-color:#86efac}
+.os-drw-btn-green:hover{background:#f0fdf4}
+.os-drw-btn-amber{color:#92400e;border-color:#fde68a}
+.os-drw-btn-amber:hover{background:#fffbeb}
+html[data-theme="dark"] .os-drw-btn{background:#1a1a1a;border-color:#2e2e2e;color:#cccccc}
+html[data-theme="dark"] .os-drw-btn:hover{background:#2a2a2a}
+html[data-theme="dark"] .os-drw-btn-blue{background:#2563eb;border-color:#2563eb;color:#fff}
+/* Fotos inline */
+.os-drw-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px}
+.os-drw-photo{border-radius:8px;overflow:hidden;aspect-ratio:1;background:#f3f4f6}
+.os-drw-photo img{width:100%;height:100%;object-fit:cover;display:block}
+/* Timeline inline */
+.os-drw-tl{display:flex;flex-direction:column;gap:0;position:relative;padding-left:24px}
+.os-drw-tl::before{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:1px;background:#e5e7eb}
+html[data-theme="dark"] .os-drw-tl::before{background:#2e2e2e}
+.os-drw-tl-item{display:flex;gap:10px;position:relative;padding-bottom:16px}
+.os-drw-tl-item:last-child{padding-bottom:0}
+.os-drw-tl-dot{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:#fff;flex-shrink:0;position:absolute;left:-24px;top:0;border:2px solid #fff;box-shadow:0 0 0 2px #e5e7eb}
+html[data-theme="dark"] .os-drw-tl-dot{border-color:#1a1a1a;box-shadow:0 0 0 2px #2e2e2e}
+.os-drw-tl-titulo{font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:1px}
+html[data-theme="dark"] .os-drw-tl-titulo{color:#f0f0f0}
+.os-drw-tl-quando{font-size:.72rem;color:#9ca3af}
+.os-drw-tl-detalhe{font-size:.76rem;color:#6b7280;background:#f9fafb;border:1px solid #f3f4f6;border-radius:6px;padding:5px 8px;margin-top:4px}
+html[data-theme="dark"] .os-drw-tl-detalhe{background:#111111;border-color:#2e2e2e;color:#666666}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+#osCreateModal .modal,
+#osModal .modal { overflow-y: auto; }
+#osCreateModal .modal-dialog,
+#osModal .modal-dialog { margin: 1.75rem auto; }
+</style>
+<script>
+// ── Seleção com suporte a múltiplas linhas ───────────────────
+(function(){
+  const table = document.getElementById('osTable');
+  if(!table) return;
+
+  function getSelRows(){ return [...table.querySelectorAll('tbody tr.selected')]; }
+  function getSelIds(){ return getSelRows().map(r => Number(r.dataset.id)).filter(Boolean); }
+  window.getOsSel = () => getSelRows()[0]?.dataset.id || null;
+  window.getOsSelIds = getSelIds;
+
+  table.addEventListener('click', e => {
+    if(e.target.closest('a,button,input')) return;
+    const row = e.target.closest('tbody tr[data-id]');
+    if(!row || row.style.display === 'none') return;
+    if(e.ctrlKey || e.metaKey) {
+      row.classList.toggle('selected');
+    } else if(e.shiftKey) {
+      const rows = [...table.querySelectorAll('tbody tr[data-id]')].filter(r => r.style.display !== 'none');
+      const lastSel = getSelRows().pop();
+      if(!lastSel){ row.classList.add('selected'); return; }
+      const iA = rows.indexOf(lastSel), iB = rows.indexOf(row);
+      const [from, to] = iA < iB ? [iA, iB] : [iB, iA];
+      rows.forEach((r, i) => { if(i >= from && i <= to) r.classList.add('selected'); });
+    } else {
+      const wasSel = row.classList.contains('selected') && getSelRows().length === 1;
+      table.querySelectorAll('tbody tr.selected').forEach(r => r.classList.remove('selected'));
+      if(!wasSel) row.classList.add('selected');
+    }
+    const ids = getSelIds();
+    const btn = document.getElementById('osDeleteBtn');
+    if(btn){
+      const icon = '<i class="bi bi-trash"></i> ';
+      btn.innerHTML = ids.length > 1 ? `${icon}Excluir (${ids.length})` : `${icon}Excluir`;
+    }
+  });
+
+  table.addEventListener('dblclick', e => {
+    if(e.target.closest('a,button,input')) return;
+    const row = e.target.closest('tbody tr[data-id]');
+    if(row) window.osEdit(row.dataset.id);
+  });
+
+  document.addEventListener('keydown', async e => {
+    if(e.key !== 'Delete') return;
+    if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
+    const ids = getSelIds();
+    if(!ids.length || !CAN_DELETE_OS) return;
+    e.preventDefault();
+    const msg = ids.length > 1
+      ? `Excluir ${ids.length} O.S. selecionadas? Esta ação não pode ser desfeita.`
+      : `Excluir a O.S. #${ids[0]}? Esta ação não pode ser desfeita.`;
+    if(!await irisConfirm({title:'Excluir O.S.',message:msg,danger:true,btnOk:'Excluir'})) return;
+    const r = await fetch('/api/os/delete', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids})});
+    if(r.ok) location.reload();
+  });
+})();
+const sistemas = {{ sistemas_map|tojson }};
+const CAN_EDIT_OS   = {{ can('edit_os')|tojson }};
+const CAN_DELETE_OS = {{ can('delete_os')|tojson }};
+const CAN_VIEW_BUDGET = {{ can('view_budget_files')|tojson }};
+setupSearchableSystemUnit('os_sistema','os_equipamento',sistemas);
+setupSearchableSystemUnit('os_new_sistema','os_new_equipamento',sistemas);
+
+// ── Tabs ─────────────────────────────────────────────────────
+function osShowTab(tab) {
+  const isTable = tab === 'table';
+  document.getElementById('osTabTable').style.display    = isTable ? '' : 'none';
+  document.getElementById('osTabTimeline').style.display = isTable ? 'none' : '';
+  document.getElementById('osTabTableBtn').style.borderColor    = isTable ? '#1d4ed8' : '#e5e7eb';
+  document.getElementById('osTabTableBtn').style.color          = isTable ? '#1d4ed8' : '#333333';
+  document.getElementById('osTabTimelineBtn').style.borderColor = !isTable ? '#1d4ed8' : '#e5e7eb';
+  document.getElementById('osTabTimelineBtn').style.color       = !isTable ? '#1d4ed8' : '#333333';
+}
+
+// ── Seleção ───────────────────────────────────────────────────
+const getSel = () => window.getOsSel?.() || document.querySelector('#osTable tr.selected')?.dataset.id;
+
+// ── Ações dos botões ──────────────────────────────────────────
+document.getElementById('osNewBtn')?.addEventListener('click', () => {
+  resetCreateModal();
+  setTimeout(() => document.getElementById('os_new_troca_componentes')?.dispatchEvent(new Event('change')), 0);
+});
+document.getElementById('osEditBtn')?.addEventListener('click', () => {
+  const id = getSel();
+  if(id) osEdit(id);
+  else showToast('Selecione uma O.S. para editar.', 'error');
+});
+document.getElementById('osDeleteBtn')?.addEventListener('click', () => {
+  document.dispatchEvent(new KeyboardEvent('keydown', {key:'Delete', bubbles:true}));
+});
+document.getElementById('osDownloadBtn')?.addEventListener('click', () => {
+  const id = getSel();
+  if(!id){ showToast('Selecione uma O.S.', 'error'); return; }
+  window.location.href = `/os/download/${id}`;
+});
+document.getElementById('osWhatsappBtn')?.addEventListener('click', () => {
+  const id = getSel();
+  if(!id){ showToast('Selecione uma O.S.', 'error'); return; }
+  const tel = prompt('Telefone para aviso manual (DDD + número):');
+  if(!tel) return;
+  window.open(`/campo/whatsapp/${id}?telefone=${encodeURIComponent(tel)}`, '_blank');
+});
+document.getElementById('osPdfDiaBtn')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  let v = document.getElementById('osDataFiltro')?.value;
+  if(!v){
+    v = prompt('Digite a data para o PDF (dd/mm/aaaa):');
+    if(!v) return;
+  }
+  window.open('/os/pdf/dia?data=' + encodeURIComponent(v), '_blank');
+});
+document.getElementById('osPdfMesBtn')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  let v = document.getElementById('osMesFiltro')?.value;
+  if(!v){
+    const agora = new Date();
+    const mesAtual = String(agora.getMonth()+1).padStart(2,'0') + '/' + agora.getFullYear();
+    v = prompt('Digite o mês para o PDF (MM/AAAA):', mesAtual);
+    if(!v) return;
+  }
+  window.open('/os/pdf/mes?mes=' + encodeURIComponent(v), '_blank');
+});
+
+// ── Timeline ─────────────────────────────────────────────────
+let _timelineOsId = null;
+function abrirTimeline(){
+  const id = getSel();
+  if(!id){
+    document.getElementById('timeline-container').innerHTML =
+      '<div style="padding:32px;text-align:center;color:#9ca3af"><i class="bi bi-arrow-left-circle" style="display:block;font-size:2rem;margin-bottom:8px;opacity:.3"></i>Selecione uma O.S. na tabela primeiro.</div>';
+    document.getElementById('timeline-os-label').textContent = 'Nenhuma O.S. selecionada';
+    return;
+  }
+  if(_timelineOsId === id) return;
+  _timelineOsId = id;
+  const row = document.querySelector(`#osTable tr[data-id="${id}"]`);
+  const numero = row?.children[0]?.textContent || `#${id}`;
+  document.getElementById('timeline-os-label').textContent = `O.S. ${numero}`;
+  document.getElementById('timeline-container').innerHTML =
+    '<div style="padding:24px;color:#9ca3af;text-align:center"><span class="spinner-border spinner-border-sm me-2"></span>Carregando…</div>';
+  fetch(`/api/os/${id}/historico`)
+    .then(r=>r.json())
+    .then(d=>{
+      if(!d.ok || !d.eventos?.length){
+        document.getElementById('timeline-container').innerHTML =
+          '<div style="padding:32px;text-align:center;color:#9ca3af">Nenhum evento registrado ainda.</div>';
+        return;
+      }
+      document.getElementById('timeline-container').innerHTML =
+        '<div class="timeline">' + d.eventos.map(ev=>`
+          <div class="tl-item">
+            <div class="tl-dot" style="background:${ev.cor}"><i class="bi ${ev.icone}" style="font-size:.6rem"></i></div>
+            <div class="tl-body">
+              <div class="tl-titulo">${ev.titulo}</div>
+              <div class="tl-quando"><i class="bi bi-clock"></i>${ev.quando}</div>
+              ${ev.detalhe ? `<div class="tl-detalhe">${ev.detalhe}</div>` : ''}
+              <span class="tl-usuario"><i class="bi bi-person-fill"></i>${ev.usuario}</span>
+            </div>
+          </div>`).join('') + '</div>';
+    })
+    .catch(()=>{
+      document.getElementById('timeline-container').innerHTML =
+        '<div style="padding:24px;color:#ef4444">Erro ao carregar linha do tempo.</div>';
+    });
+}
+document.getElementById('osTable')?.addEventListener('click', ()=>{ _timelineOsId = null; });
+
+// ── File inputs ───────────────────────────────────────────────
+function setupAppendFileInput(inputId){
+  const input = document.getElementById(inputId);
+  if(!input || !window.DataTransfer) return;
+  let buffer = new DataTransfer();
+  input._clearFileBuffer = () => { buffer = new DataTransfer(); input.value=''; input.files=buffer.files; };
+  input.addEventListener('change', () => {
+    const novos = Array.from(input.files||[]);
+    const ja = new Set(Array.from(buffer.files).map(f=>`${f.name}|${f.size}|${f.lastModified}`));
+    novos.forEach(f=>{ const key=`${f.name}|${f.size}|${f.lastModified}`; if(!ja.has(key)){ buffer.items.add(f); ja.add(key); }});
+    input.files = buffer.files;
+  });
+}
+function clearFileInputBuffer(id){ const i=document.getElementById(id); if(i?._clearFileBuffer) i._clearFileBuffer(); else if(i) i.value=''; }
+['os_imagens_input','os_orcamentos_input','os_new_imagens_input','os_new_orcamentos_input'].forEach(setupAppendFileInput);
+
+// ── Helpers ───────────────────────────────────────────────────
+function horaAgora(){ const d=new Date(); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function extrairHora(val){
+  if(!val) return '';
+  const m = String(val).match(/\d{2}\/\d{2}\/\d{4}\s+(\d{2}:\d{2})/);
+  if(m) return m[1];
+  if(/^\d{2}:\d{2}$/.test(String(val).trim())) return String(val).trim();
+  return val;
+}
+
+// ── Reset modal nova O.S. ─────────────────────────────────────
+function resetCreateModal(){
+  const form = document.getElementById('osCreateForm');
+  if(form) form.reset();
+  clearFileInputBuffer('os_new_imagens_input');
+  clearFileInputBuffer('os_new_orcamentos_input');
+  document.getElementById('os_new_status').value = '';
+  document.getElementById('campoTerceiroNew').style.display = 'block';
+  setupSearchableSystemUnit('os_new_sistema','os_new_equipamento',sistemas);
+}
+document.getElementById('osCreateModal')?.addEventListener('hidden.bs.modal', resetCreateModal);
+document.getElementById('osModal')?.addEventListener('hidden.bs.modal', ()=>{
+  const form = document.querySelector('#osModal form');
+  if(form) form.reset();
+  clearFileInputBuffer('os_imagens_input');
+  clearFileInputBuffer('os_orcamentos_input');
+  document.getElementById('os_imagens_preview').innerHTML = '';
+  document.getElementById('os_orcamentos_preview').innerHTML = '';
+  document.getElementById('os_status').value = '';
+});
+
+// ── Eventos do modal nova O.S. ────────────────────────────────
+document.getElementById('os_new_teve_terceiro')?.addEventListener('change', e =>
+  document.getElementById('campoTerceiroNew').style.display = e.target.value==='Sim' ? '' : 'none'
+);
+document.getElementById('os_new_iniciar_agora')?.addEventListener('change', e=>{
+  if(e.target.checked && !document.getElementById('os_new_data_inicio').value){
+    document.getElementById('os_new_data_inicio').value = horaAgora();
+    document.getElementById('os_new_status').value = 'Em andamento';
+  }
+});
+document.getElementById('os_new_finalizada')?.addEventListener('change', e=>{
+  if(e.target.value==='Sim' && !document.getElementById('os_new_data_fim').value){
+    document.getElementById('os_new_data_fim').value = horaAgora();
+    document.getElementById('os_new_status').value = 'Finalizada';
+  }
+});
+
+// ── Anexos ────────────────────────────────────────────────────
+function renderOsAttachments(kind, id, arr){
+  const isOrc = kind==='orcamentos';
+  return (arr||[]).map((p,i)=>{
+    const name = String(p||'').split('/').pop();
+    const href = isOrc ? `/os/orcamento/${id}/${i}` : `/${p}`;
+    const icon = isOrc ? 'bi-paperclip' : 'bi-image';
+    return `<div class="attachment-item" data-kind="${kind}" data-index="${i}">
+      <a href="${href}" target="_blank"><i class="bi ${icon}"></i> ${name}</a>
+      ${CAN_EDIT_OS ? `<button type="button" class="attachment-delete" onclick="deleteOsAttachment('${kind}',${id},${i})"><i class="bi bi-trash"></i> Excluir</button>` : ''}
+    </div>`;
+  }).join('') || '<span style="color:#9ca3af;font-size:.8rem">Nenhum arquivo.</span>';
+}
+async function deleteOsAttachment(kind, id, index){
+  if(!await irisConfirm({title:'Excluir anexo',message:'Remover este arquivo da O.S.?',danger:true,btnOk:'Excluir'})) return;
+  const r = await fetch('/api/os/attachment/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,kind,index})});
+  const d = await r.json().catch(()=>({ok:false}));
+  if(!d.ok){ showToast(d.error||'Não foi possível excluir.','error'); return; }
+  document.getElementById('os_imagens_preview').innerHTML   = renderOsAttachments('imagens',id,d.imagens||[]);
+  document.getElementById('os_orcamentos_preview').innerHTML = renderOsAttachments('orcamentos',id,d.orcamentos||[]);
+}
+
+// ── Iniciar / Finalizar ───────────────────────────────────────
+async function abrirModalAcaoOS(acao, id){
+  const r = await fetch(`/api/os/${id}`);
+  const d = await r.json();
+  for(const k in d){
+    const el = document.getElementById('os_'+k);
+    if(!el || Array.isArray(d[k])) continue;
+    el.value = (k==='data_inicio'||k==='data_fim') ? extrairHora(d[k])||'' : d[k]||'';
+  }
+  setupSearchableSystemUnit('os_sistema','os_equipamento',sistemas,d.sistema||'',d.equipamento||'');
+  document.getElementById('campoTerceiro').style.display = (d.teve_terceiro||'Não')==='Sim' ? '' : 'none';
+  document.getElementById('os_imagens_preview').innerHTML   = renderOsAttachments('imagens',d.id,d.imagens||[]);
+  document.getElementById('os_orcamentos_preview').innerHTML = renderOsAttachments('orcamentos',d.id,d.orcamentos||[]);
+  document.getElementById('os_iniciar_agora').checked = false;
+  document.getElementById('os_id').value = id;
+  const agora = horaAgora();
+  if(acao==='iniciar'){
+    document.querySelector('#osModal .modal-title').textContent = 'Iniciar O.S.';
+    document.getElementById('os_status').value = 'Em andamento';
+    document.getElementById('os_finalizada').value = 'Não';
+    if(!document.getElementById('os_data_inicio').value) document.getElementById('os_data_inicio').value = agora;
+    document.getElementById('os_data_fim').value = '';
+  }
+  if(acao==='finalizar'){
+    document.querySelector('#osModal .modal-title').textContent = 'Finalizar O.S.';
+    document.getElementById('os_status').value = 'Finalizada';
+    document.getElementById('os_finalizada').value = 'Sim';
+    if(!document.getElementById('os_data_inicio').value) document.getElementById('os_data_inicio').value = agora;
+    document.getElementById('os_data_fim').value = agora;
+  }
+  const modalEl = document.getElementById('osModal');
+  const existing = bootstrap.Modal.getInstance(modalEl);
+  if(existing) existing.dispose();
+  new bootstrap.Modal(modalEl).show();
+  setTimeout(()=>document.getElementById('os_servico_executado')?.focus(), 250);
+}
+document.getElementById('osIniciarBtn')?.addEventListener('click', ()=>{
+  const id=getSel(); if(!id){showToast('Selecione uma O.S.','error');return;} abrirModalAcaoOS('iniciar',id);
+});
+document.getElementById('osFinalizarBtn')?.addEventListener('click', ()=>{
+  const id=getSel(); if(!id){showToast('Selecione uma O.S.','error');return;} abrirModalAcaoOS('finalizar',id);
+});
+document.getElementById('osPausarBtn')?.addEventListener('click', async()=>{
+  const id = getSel();
+  if(!id){showToast('Selecione uma O.S.','error');return;}
+  const motivo = prompt('Motivo da pausa (obrigatório):');
+  if(motivo===null) return;
+  if(!motivo.trim()){showToast('Informe o motivo da pausa.','error');return;}
+  const form = document.getElementById('osActionForm');
+  let inp = form.querySelector('input[name="motivo_pausa"]');
+  if(!inp){inp=document.createElement('input');inp.type='hidden';inp.name='motivo_pausa';form.appendChild(inp);}
+  inp.value = motivo.trim();
+  form.action = `/os/pausar/${id}`;
+  form.method = 'post';
+  form.submit();
+});
+
+// ── Troca componentes ─────────────────────────────────────────
+function bindTrocaComponentes(selectId, inputId){
+  const sel=document.getElementById(selectId), inp=document.getElementById(inputId);
+  if(!sel||!inp) return;
+  const apply=()=>{ const sim=(sel.value||'').toLowerCase()==='sim'; inp.disabled=!sim; if(!sim) inp.value=''; };
+  sel.addEventListener('change',apply); apply();
+}
+bindTrocaComponentes('os_new_troca_componentes','os_new_componentes_descricao');
+bindTrocaComponentes('os_troca_componentes','os_componentes_descricao');
+document.getElementById('os_teve_terceiro')?.addEventListener('change', e=>
+  document.getElementById('campoTerceiro').style.display = e.target.value==='Sim' ? '' : 'none'
+);
+document.getElementById('os_iniciar_agora')?.addEventListener('change', e=>{
+  if(e.target.checked && !document.getElementById('os_data_inicio').value)
+    document.getElementById('os_data_inicio').value = horaAgora();
+});
+document.getElementById('os_finalizada')?.addEventListener('change', e=>{
+  if(e.target.value==='Sim' && !document.getElementById('os_data_fim').value)
+    document.getElementById('os_data_fim').value = horaAgora();
+});
+
+// ── Editar O.S. ───────────────────────────────────────────────
+window.osEdit = async(id)=>{
+  // Garante que o body está desbloqueado
+  document.body.style.overflow = '';
+  document.body.classList.remove('modal-open');
+  // Remove qualquer backdrop residual
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+
+  document.querySelector('#osModal .modal-title').textContent = 'Ordem de serviço';
+  document.getElementById('os_status').value = '';
+  try {
+    const r = await fetch(`/api/os/${id}`);
+    if(!r.ok) { showToast('Erro ao carregar O.S.', 'error'); return; }
+    const d = await r.json();
+    for(const k in d){
+      const el=document.getElementById('os_'+k);
+      if(!el||Array.isArray(d[k])) continue;
+      el.value=(k==='data_inicio'||k==='data_fim')?extrairHora(d[k])||'':d[k]||'';
+    }
+    setupSearchableSystemUnit('os_sistema','os_equipamento',sistemas,d.sistema||'',d.equipamento||'');
+    document.getElementById('campoTerceiro').style.display=(d.teve_terceiro||'Não')==='Sim'?'':'none';
+    document.getElementById('os_imagens_preview').innerHTML=renderOsAttachments('imagens',d.id,d.imagens||[]);
+    document.getElementById('os_orcamentos_preview').innerHTML=renderOsAttachments('orcamentos',d.id,d.orcamentos||[]);
+    document.getElementById('os_iniciar_agora').checked=false;
+    document.getElementById('os_troca_componentes')?.dispatchEvent(new Event('change'));
+  } catch(err) {
+    showToast('Erro de conexão ao carregar O.S.', 'error');
+    return;
+  }
+  const modalEl = document.getElementById('osModal');
+  try { bootstrap.Modal.getInstance(modalEl)?.dispose(); } catch(e){}
+  modalEl.classList.remove('show');
+  modalEl.style.display = '';
+  setTimeout(() => new bootstrap.Modal(modalEl).show(), 50);
+};
+
+// Duplo clique edita
+document.getElementById('osTable')?.addEventListener('dblclick', e=>{
+  if(e.target.closest('a,button,input')) return;
+  const row=e.target.closest('tbody tr[data-id]');
+  if(!row) return;
+  window.osEdit(row.dataset.id);
+});
+
+// ── Tempo decorrido ───────────────────────────────────────────
+function elapsed(start,end,finalizada,status,accum){
+  const base=parseInt(accum||'0',10)||0;
+  const fmt=mins=>`${String(Math.floor(mins/60)).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}`;
+  const startOk=/^\d{2}:\d{2}/.test(start||'');
+  const endOk=/^\d{2}:\d{2}/.test(end||'');
+  if((status||'').toLowerCase()==='em andamento' && startOk){
+    const [sh,sm]=start.slice(0,5).split(':').map(Number);
+    const now=new Date();
+    let extra=(now.getHours()*60+now.getMinutes())-(sh*60+sm);
+    if(extra<0) extra+=24*60;
+    return fmt(base+Math.max(extra,0));
+  }
+  if(base>0) return fmt(base);
+  if(startOk && endOk){
+    const [sh,sm]=start.slice(0,5).split(':').map(Number);
+    const [eh,em]=end.slice(0,5).split(':').map(Number);
+    let diff=(eh*60+em)-(sh*60+sm);
+    if(diff<0) diff+=24*60;
+    return fmt(Math.max(diff,0));
+  }
+  return startOk ? '00:00' : '—';
+}
+function refreshOsTimes(){
+  document.querySelectorAll('#osTable tbody tr[data-id]').forEach(tr=>{
+    const cell=tr.querySelector('.tempo-cell');
+    if(cell) cell.textContent=elapsed(tr.dataset.inicio||'',tr.dataset.fim||'',tr.dataset.finalizada||'Não',tr.dataset.status||'',tr.dataset.accum||'0');
+  });
+}
+
+// ── Filtros ───────────────────────────────────────────────────
+function applyOsFilters(){
+  const crit=(document.getElementById('osFiltroCriticidade')?.value||'').trim();
+  const dataFiltro=(document.getElementById('osDataFiltro')?.value||'').trim();
+  document.querySelectorAll('#osTable tbody tr[data-id]').forEach(tr=>{
+    const okCrit=!crit||(tr.dataset.criticidade||'').trim()===crit;
+    const dataCell=(tr.children[1]?.textContent||'').trim();
+    const okData=!dataFiltro||dataCell===dataFiltro;
+    tr.style.display=(okCrit&&okData)?'':'none';
+  });
+}
+['osFiltroCriticidade','osDataFiltro'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el){ el.addEventListener('input',applyOsFilters); el.addEventListener('change',applyOsFilters); }
+});
+['osFiltroStatus','osFiltroComponentes','osMesFiltro'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('change',()=>document.querySelector('.os-main-filter-form')?.submit());
+});
+
+// ── Ordenação por prioridade ──────────────────────────────────
+function ordenarOsPorPrioridade(){
+  const tbody=document.querySelector('#osTable tbody');
+  if(!tbody) return;
+  const rows=[...tbody.querySelectorAll('tr[data-id]')];
+  rows.sort((a,b)=>{
+    const pa=Number(a.dataset.priority||1), pb=Number(b.dataset.priority||1);
+    if(pa!==pb) return pa-pb;
+    return Number(b.dataset.id||0)-Number(a.dataset.id||0);
+  });
+  rows.forEach(r=>tbody.appendChild(r));
+}
+
+// ── Form de ação (pausar) ─────────────────────────────────────
+document.body.insertAdjacentHTML('beforeend',
+  '<form method="post" id="osActionForm" style="display:none"><input type="hidden" name="id" id="osActionId"></form>'
+);
+
+// ── Init ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', ()=>{
+  ordenarOsPorPrioridade();
+  applyOsFilters();
+  refreshOsTimes();
+});
+setInterval(refreshOsTimes, 60000);
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// DRAWER LATERAL — Detalhes da O.S.
+// ══════════════════════════════════════════════════════════════
+(function(){
+  const panel   = document.getElementById('osDrawer');
+  const overlay = document.getElementById('osDrawerOverlay');
+  let currentId = null;
+
+  window.fecharOsDrawer = function() {
+    panel.style.transform = 'translateX(100%)';
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    document.body.style.overflow = '';
+    document.querySelectorAll('#osTable tr.os-drw-active').forEach(r => r.classList.remove('os-drw-active'));
+    currentId = null;
+  };
+
+  function abrirDrawer(id) {
+    if(!id) return;
+    currentId = id;
+    // Destaca linha
+    document.querySelectorAll('#osTable tr.os-drw-active').forEach(r => r.classList.remove('os-drw-active'));
+    const row = document.querySelector(`#osTable tr[data-id="${id}"]`);
+    if(row) row.classList.add('os-drw-active');
+    // Abre
+    panel.style.transform = 'none';
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'auto';
+    document.body.style.overflow = 'hidden';
+    carregarDrawer(id);
+  }
+
+  overlay.addEventListener('click', fecharOsDrawer);
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && currentId) fecharOsDrawer(); });
+
+  async function carregarDrawer(id) {
+    document.getElementById('osDrawerBody').innerHTML =
+      '<div style="padding:48px;text-align:center;color:#9ca3af;font-size:.84rem"><i class="bi bi-arrow-repeat" style="display:block;font-size:2rem;margin-bottom:8px;opacity:.3;animation:drwOsSpin 1s linear infinite"></i>Carregando…</div>';
+    document.getElementById('osDrawerSistema').textContent = '…';
+    document.getElementById('osDrawerNum').textContent = '';
+    document.getElementById('osDrawerStatus').innerHTML = '';
+    document.getElementById('osDrawerActions').innerHTML = '';
+    document.getElementById('osDrawerAvatar').textContent = '';
+
+    const resp = await fetch(`/api/os/${encodeURIComponent(id)}`, {headers:{'Accept':'application/json'}});
+    const d = await resp.json().catch(()=>({}));
+    if(!resp.ok || d.error) {
+      document.getElementById('osDrawerBody').innerHTML =
+        `<div style="padding:48px;text-align:center;color:#ef4444">Erro ao carregar.</div>`;
+      return;
+    }
+    renderDrawer(d);
+
+    // Carrega timeline em paralelo
+    fetch(`/api/os/${id}/historico`)
+      .then(r=>r.json())
+      .then(th => { if(th.ok) renderTimeline(id, th.eventos||[]); })
+      .catch(()=>{});
+  }
+
+  function statusInfo(d) {
+    const fin = String(d.finalizada||'').toLowerCase() === 'sim';
+    const st  = String(d.status||'').toLowerCase();
+    if(fin || st === 'finalizada') return {label:'Finalizada', cls:'os-status-finalizada', dot:'#22c55e'};
+    if(st === 'em andamento')       return {label:'Em andamento', cls:'os-status-andamento', dot:'#3b82f6'};
+    if(st === 'pausada')            return {label:'Pausada', cls:'os-status-pausada', dot:'#f59e0b'};
+    if(d.atrasada)                  return {label:'Atrasada', cls:'os-status-atrasada', dot:'#ef4444'};
+    return {label:'Aberta', cls:'os-status-aberta', dot:'#aaaaaa'};
+  }
+
+  function renderDrawer(d) {
+    const sis = d.sistema || 'Sem sistema';
+    const ini = sis.split(' ').slice(0,2).map(p=>p[0]||'').join('').toUpperCase();
+    const st  = statusInfo(d);
+    const fin = String(d.finalizada||'').toLowerCase() === 'sim';
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+    document.getElementById('osDrawerAvatar').textContent = ini;
+    document.getElementById('osDrawerSistema').textContent = sis;
+    document.getElementById('osDrawerNum').textContent = `O.S. #${d.numero_os || d.id}`;
+
+    // Status
+    document.getElementById('osDrawerStatus').innerHTML = `
+      <span class="os-status ${st.cls}"><span class="os-dot" style="background:${st.dot}"></span>${st.label}</span>
+      ${d.criticidade ? `<span style="font-size:.76rem;color:#6b7280;margin-left:8px">· ${d.criticidade}</span>` : ''}
+      ${d.data ? `<span style="font-size:.74rem;color:#9ca3af;margin-left:auto">${d.data}</span>` : ''}
+    `;
+
+    // Ações
+    let acts = `<button class="os-drw-btn os-drw-btn-blue" onclick="fecharOsDrawer();setTimeout(()=>window.osEdit('${d.id}'),400)"><i class="bi bi-pencil"></i> Editar</button>`;
+    if(!fin) {
+      const stl = String(d.status||'').toLowerCase();
+      if(stl !== 'em andamento') acts += `<button class="os-drw-btn os-drw-btn-green" onclick="fecharOsDrawer();abrirModalAcaoOS('iniciar','${d.id}')"><i class="bi bi-play"></i> Iniciar</button>`;
+      if(stl === 'em andamento') acts += `<button class="os-drw-btn os-drw-btn-amber" onclick="fecharOsDrawer();document.getElementById('osPausarBtn').click()"><i class="bi bi-pause"></i> Pausar</button>`;
+      acts += `<button class="os-drw-btn os-drw-btn-green" onclick="fecharOsDrawer();abrirModalAcaoOS('finalizar','${d.id}')"><i class="bi bi-check"></i> Finalizar</button>`;
+    }
+    if(typeof CAN_DOWNLOAD_OS !== 'undefined' && CAN_DOWNLOAD_OS) {
+      acts += `<a class="os-drw-btn" href="/os/download/${d.id}" style="margin-left:auto"><i class="bi bi-download"></i> PDF</a>`;
+    }
+    document.getElementById('osDrawerActions').innerHTML = acts;
+
+    // Fotos
+    const imagens = d.imagens || [];
+    const fotosHtml = imagens.length
+      ? `<div class="os-drw-photos">${imagens.slice(0,6).map((p,i)=>
+          `<a class="os-drw-photo" href="/${p}" target="_blank"><img src="/${p}" alt="Foto ${i+1}" loading="lazy"></a>`
+        ).join('')}</div>`
+      : '<span style="color:#9ca3af;font-size:.78rem">Nenhuma foto.</span>';
+
+    // Orçamentos
+    const orcs = d.orcamentos || [];
+    const orcsHtml = orcs.length
+      ? orcs.map((o,i)=>`<a href="/os/orcamento/${d.id}/${i}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:.76rem;font-weight:600;text-decoration:none;margin:2px"><i class="bi bi-paperclip"></i>${String(o).split('/').pop()}</a>`).join('')
+      : '<span style="color:#9ca3af;font-size:.78rem">Nenhum arquivo.</span>';
+
+    document.getElementById('osDrawerBody').innerHTML = `
+      <div class="os-drw-section">
+        <div class="os-drw-title">Detalhes</div>
+        <div class="os-drw-grid">
+          <div class="os-drw-field"><span class="os-drw-label">Equipamento</span><span class="os-drw-value">${d.equipamento||'—'}</span></div>
+          <div class="os-drw-field"><span class="os-drw-label">Responsável</span><span class="os-drw-value">${d.responsavel||'—'}</span></div>
+          <div class="os-drw-field"><span class="os-drw-label">Início</span><span class="os-drw-value">${d.data_inicio||'—'}</span></div>
+          <div class="os-drw-field"><span class="os-drw-label">Fim</span><span class="os-drw-value">${d.data_fim||'—'}</span></div>
+          <div class="os-drw-field"><span class="os-drw-label">Tempo acumulado</span><span class="os-drw-value">${d.tempo_decorrido||'—'}</span></div>
+          <div class="os-drw-field"><span class="os-drw-label">Troca componentes</span><span class="os-drw-value">${d.troca_componentes||'Não'}</span></div>
+          ${d.componentes_descricao ? `<div class="os-drw-field" style="grid-column:1/-1"><span class="os-drw-label">O que foi trocado</span><span class="os-drw-value">${d.componentes_descricao}</span></div>` : ''}
+          ${d.custo_os ? `<div class="os-drw-field"><span class="os-drw-label">Custo</span><span class="os-drw-value">${d.custo_os}</span></div>` : ''}
+          ${d.teve_terceiro === 'Sim' ? `<div class="os-drw-field"><span class="os-drw-label">Terceiro</span><span class="os-drw-value">${d.quem_foi_terceiro||'—'}</span></div>` : ''}
+        </div>
+      </div>
+      ${d.descricao || d.servico_executado ? `
+      <div class="os-drw-section">
+        <div class="os-drw-title">Serviço</div>
+        ${d.descricao ? `<div class="os-drw-field" style="margin-bottom:8px"><span class="os-drw-label">Descrição</span><span class="os-drw-value">${d.descricao}</span></div>` : ''}
+        ${d.servico_executado ? `<div class="os-drw-field"><span class="os-drw-label">Serviço executado</span><span class="os-drw-value">${d.servico_executado}</span></div>` : ''}
+        ${d.motivo_pausa ? `<div class="os-drw-field" style="margin-top:8px"><span class="os-drw-label">Motivo da pausa</span><span class="os-drw-value" style="color:#92400e">${d.motivo_pausa}</span></div>` : ''}
+        ${d.motivo_atraso ? `<div class="os-drw-field" style="margin-top:8px"><span class="os-drw-label">Motivo do atraso</span><span class="os-drw-value" style="color:#991b1b">${d.motivo_atraso}</span></div>` : ''}
+      </div>` : ''}
+      <div class="os-drw-section">
+        <div class="os-drw-title">Fotos (${imagens.length})</div>
+        ${fotosHtml}
+      </div>
+      <div class="os-drw-section">
+        <div class="os-drw-title">Orçamentos / NF (${orcs.length})</div>
+        ${orcsHtml}
+      </div>
+      <div class="os-drw-section" id="osDrawerTimeline">
+        <div class="os-drw-title">Linha do tempo</div>
+        <div style="color:#9ca3af;font-size:.78rem">Carregando…</div>
+      </div>
+    `;
+  }
+
+  function renderTimeline(id, eventos) {
+    const tl = document.getElementById('osDrawerTimeline');
+    if(!tl) return;
+    if(!eventos.length) {
+      tl.querySelector('div:last-child').textContent = 'Nenhum evento registrado.';
+      return;
+    }
+    tl.querySelector('div:last-child').innerHTML = `
+      <div class="os-drw-tl">
+        ${eventos.map(ev=>`
+          <div class="os-drw-tl-item">
+            <div class="os-drw-tl-dot" style="background:${ev.cor}"><i class="bi ${ev.icone}" style="font-size:.5rem"></i></div>
+            <div style="flex:1;min-width:0">
+              <div class="os-drw-tl-titulo">${ev.titulo}</div>
+              <div class="os-drw-tl-quando">${ev.quando} · ${ev.usuario}</div>
+              ${ev.detalhe ? `<div class="os-drw-tl-detalhe">${ev.detalhe}</div>` : ''}
+            </div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  // Highlight linha ativa
+  const style = document.createElement('style');
+  style.textContent = `
+    #osTable tbody tr.os-drw-active{background:#eff6ff !important;outline:2px solid #1d4ed8;outline-offset:-1px}
+    html[data-theme="dark"] #osTable tbody tr.os-drw-active{background:rgba(255,255,255,.04) !important;outline-color:#444444}
+  `;
+  document.head.appendChild(style);
+
+  // Intercepta clique simples na tabela
+  const table = document.getElementById('osTable');
+  table?.addEventListener('click', e => {
+    if(e.target.closest('a,button,input')) return;
+    const row = e.target.closest('tbody tr[data-id]');
+    if(!row || row.style.display === 'none') return;
+    const id = row.dataset.id;
+    if(!id || !/^\d+$/.test(id)) return;
+    if(e.ctrlKey || e.metaKey || e.shiftKey) return; // seleção mantida pelo handler existente
+    abrirDrawer(id);
+  });
+})();
+
+
+// Dark mode fix para selects — aplica style inline que o browser não consegue sobrescrever
+(function(){
+  var SELECTS = '.os-filter-select,.os-filter-input';
+  function applyDark(dark){
+    document.querySelectorAll(SELECTS).forEach(function(el){
+      if(dark){
+        el.setAttribute('style', (el.getAttribute('style')||'').replace(/background[^;]*;?/g,'').replace(/color[^;]*;?/g,'').replace(/border-color[^;]*;?/g,''));
+        el.style.setProperty('background','#111111','important');
+        el.style.setProperty('color','#f0f0f0','important');
+        el.style.setProperty('border-color','#2e2e2e','important');
+        el.style.setProperty('-webkit-text-fill-color','#f0f0f0','important');
+        el.style.setProperty('color-scheme','dark','important');
+      } else {
+        el.style.removeProperty('background');
+        el.style.removeProperty('color');
+        el.style.removeProperty('border-color');
+        el.style.removeProperty('-webkit-text-fill-color');
+        el.style.removeProperty('color-scheme');
+      }
+    });
+  }
+  function check(){ applyDark(document.documentElement.getAttribute('data-theme')==='dark'); }
+  document.addEventListener('DOMContentLoaded', check);
+  new MutationObserver(check).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  check();
+})();
+</script>
+{% endblock %}

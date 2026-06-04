@@ -1,0 +1,368 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="hero">
+  <h1>Usuários, empresas e permissões</h1>
+  <p>Somente a Administradora Suprema cria empresas, usuários e permissões. Cada usuário enxerga apenas a empresa vinculada.</p>
+</div>
+
+{% if is_super_admin %}
+<div class="content-card">
+  <h5 class="fw-bold mb-3"><i class="bi bi-building-add"></i> Nova empresa</h5>
+  <form method="post" action="{{ url_for('empresas_save') }}" class="row g-3 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label fw-bold">Nome da empresa</label>
+      <input class="form-control" name="empresa_nome" placeholder="Ex: Getec Porto Alegre" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label fw-bold">Cidade</label>
+      <input class="form-control" name="empresa_cidade" placeholder="Ex: Porto Alegre">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label fw-bold">Domínio do e-mail</label>
+      <input class="form-control" name="empresa_dominio" placeholder="empresa.com.br">
+    </div>
+    <div class="col-md-2">
+      <button class="btn-gg btn-blue w-100" type="submit"><i class="bi bi-plus-circle"></i> Criar</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+{% if is_super_admin %}
+<div class="content-card">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h5 class="fw-bold mb-0"><i class="bi bi-buildings"></i> Empresas cadastradas</h5>
+    <span class="mini">{{ empresas|length }} empresa(s)</span>
+  </div>
+  <div class="table-shell">
+    <div class="table-responsive">
+      <table class="table-gg align-middle">
+        <thead>
+          <tr>
+            <th>Empresa</th>
+            <th>Cidade</th>
+            <th>Domínio do e-mail</th>
+            <th>Status</th>
+            <th>PDF / Marca</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in empresas %}
+          <tr>
+            <form method="post" action="{{ url_for('empresas_update', empresa_id=e.id) }}" enctype="multipart/form-data">
+              <td><input class="form-control form-control-sm" name="nome" value="{{ e.nome or '' }}" required></td>
+              <td><input class="form-control form-control-sm" name="cidade" value="{{ e.cidade or '' }}" placeholder="Cidade"></td>
+              <td><input class="form-control form-control-sm" name="dominio_email" value="{{ e.dominio_email or '' }}" placeholder="empresa.com.br"></td>
+              <td>
+                <select class="form-select form-select-sm" name="ativo">
+                  <option value="1" {% if e.ativo %}selected{% endif %}>Ativa</option>
+                  <option value="0" {% if not e.ativo %}selected{% endif %}>Inativa</option>
+                </select>
+              </td>
+              <td style="min-width:520px">
+                <div class="row g-1">
+                  <div class="col-6">
+                    <input class="form-control form-control-sm" name="cliente_pdf" value="{{ e.cliente_pdf or e.cliente or '' }}" placeholder="Cliente no PDF">
+                  </div>
+                  <div class="col-6">
+                    <input class="form-control form-control-sm" name="contratada_pdf" value="{{ e.contratada_pdf or e.contratada or e.nome or '' }}" placeholder="Contratada no PDF">
+                  </div>
+                  <div class="col-6">
+                    <input class="form-control form-control-sm" name="cnpj_pdf" value="{{ e.cnpj_pdf or e.cnpj or '' }}" placeholder="CNPJ">
+                  </div>
+                  <div class="col-6">
+                    <input class="form-control form-control-sm" name="cidade_pdf" value="{{ e.cidade_pdf or e.cidade or '' }}" placeholder="Cidade no PDF">
+                  </div>
+                  <div class="col-6">
+                    <input class="form-control form-control-sm" name="responsavel_pdf" value="{{ e.responsavel_pdf or e.responsavel or '' }}" placeholder="Responsável">
+                  </div>
+                  <div class="col-6">
+                    <input class="form-control form-control-sm" name="assinatura_esquerda_label" value="{{ e.assinatura_esquerda_label or e.nome or '' }}" placeholder="Texto assinatura esq.">
+                  </div>
+                  <div class="col-6">
+                    <input class="form-control form-control-sm" name="assinatura_direita_label" value="{{ e.assinatura_direita_label or '' }}" placeholder="Texto assinatura dir.">
+                  </div>
+                  <div class="col-12 small text-muted mt-1">Logo esquerda / logo direita / assinatura</div>
+                  <div class="col-4"><input class="form-control form-control-sm" type="file" name="logo_esquerda" accept="image/*"></div>
+                  <div class="col-4"><input class="form-control form-control-sm" type="file" name="logo_direita" accept="image/*"></div>
+                  <div class="col-4"><input class="form-control form-control-sm" type="file" name="assinatura" accept="image/*"></div>
+                </div>
+              </td>
+              <td><button class="btn-gg btn-sm btn-blue" type="submit"><i class="bi bi-save-fill"></i> Salvar</button></td>
+            </form>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="empty">Nenhuma empresa cadastrada.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="content-card">
+  <form method="get" action="{{ url_for('usuarios_page') }}" class="row g-3 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label fw-bold">Filtrar por empresa</label>
+      <select class="form-select" name="empresa_id">
+        <option value="">Todas as empresas</option>
+        {% for e in empresas %}
+          <option value="{{ e.id }}" {% if filtro_empresa|string == e.id|string %}selected{% endif %}>
+            {{ e.nome }}{% if e.cidade %} - {{ e.cidade }}{% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label fw-bold">Filtrar por perfil</label>
+      <select class="form-select" name="perfil">
+        <option value="">Todos os perfis</option>
+        {% for key, label in role_labels.items() %}
+          {% if key != 'super_admin' %}
+            <option value="{{ key }}" {% if filtro_perfil == key %}selected{% endif %}>{{ label }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button class="btn-gg btn-blue w-100" type="submit"><i class="bi bi-funnel-fill"></i> Filtrar</button>
+    </div>
+    <div class="col-md-3 text-md-end">
+      <button class="btn-gg btn-blue" data-bs-toggle="modal" data-bs-target="#userModal" onclick="novoUsuario()" type="button">
+        <i class="bi bi-person-plus-fill"></i> Novo usuário
+      </button>
+    </div>
+  </form>
+</div>
+
+<div class="content-card">
+  <div class="table-shell">
+    <div class="table-responsive">
+      <table class="table-gg">
+        <thead>
+          <tr>
+            <th>Empresa</th>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>WhatsApp</th>
+            <th>Perfil</th>
+            <th>Status</th>
+            <th>Permissões</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in rows %}
+          <tr>
+            <td>{{ u.empresa_nome or 'Sem empresa' }}{% if u.empresa_cidade %}<div class="mini">{{ u.empresa_cidade }}</div>{% endif %}</td>
+            <td>{{ u.nome }}</td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.telefone|phone_br if u.telefone else '—' }}</td>
+            <td>
+              {% if u.perfil == "super_admin" or u.is_super_admin %}
+                Administrador Supremo
+              {% else %}
+                {{ u.perfil_label or role_labels.get(u.perfil, u.perfil) }}
+              {% endif %}
+            </td>
+            <td>{{ 'Ativo' if u.ativo else 'Inativo' }}</td>
+            <td class="mini">{{ u.permissions|length }} permissões</td>
+            <td>
+              <button class="btn-gg btn-sm btn-blue" data-bs-toggle="modal" data-bs-target="#userModal" onclick='editarUsuario({{ u|tojson }})'>
+                <i class="bi bi-pencil-square"></i> Editar
+              </button>
+              <form method="post" action="{{ url_for('usuarios_delete', rid=u.id) }}" style="display:inline" onsubmit="return confirm('Excluir este usuário?')">
+                <button class="btn-gg btn-sm btn-red" type="submit"><i class="bi bi-trash-fill"></i> Excluir</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="empty">Nenhum usuário.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="userModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('usuarios_save') }}" id="userForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Usuário</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id" id="user_id">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Empresa</label>
+              <select class="form-select" name="empresa_id" id="user_empresa_id" {% if not is_super_admin %}disabled{% endif %}>
+                {% for e in empresas %}
+                  <option value="{{ e.id }}" data-dominio="{{ e.dominio_email or '' }}">{{ e.nome }}{% if e.cidade %} - {{ e.cidade }}{% endif %}</option>
+                {% endfor %}
+              </select>
+              {% if not is_super_admin and empresas %}
+                <input type="hidden" name="empresa_id" value="{{ empresas[0].id }}">
+              {% endif %}
+              <div class="form-text">O usuário só verá dados da empresa vinculada aqui.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Nome</label>
+              <input class="form-control" name="nome" id="user_nome" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">E-mail</label>
+              <input class="form-control" type="email" name="email" id="user_email" readonly placeholder="Gerado automaticamente pelo nome + domínio">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">WhatsApp / celular</label>
+              <input class="form-control" name="telefone" id="user_telefone" placeholder="DDD + número">
+              <div class="form-text">Usado no envio da O.S. para campo.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Senha</label>
+              <div style="position:relative">
+                <input class="form-control" type="password" name="senha" id="user_senha" placeholder="Deixe em branco para manter" autocomplete="new-password">
+                <button type="button" id="btnToggleSenha" onclick="toggleSenhaVisivel()"
+                  style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:.85rem;padding:0">
+                  <i class="bi bi-eye" id="iconSenha"></i>
+                </button>
+              </div>
+              <div id="senhaAtualInfo" style="display:none;margin-top:5px;padding:5px 10px;background:rgba(37,99,235,.07);border-radius:8px;font-size:.75rem;color:#2563eb;font-weight:600">
+                <i class="bi bi-shield-check"></i> Senha ativa cadastrada
+              </div>
+              <div class="form-text">Deixe em branco para manter a senha atual.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Perfil base</label>
+              <select class="form-select" name="perfil" id="user_perfil" onchange="aplicarPerfil()">
+                {% if is_super_admin %}<option value="super_admin">Administrador Supremo</option>{% endif %}
+                <option value="campo">Colaborador de campo</option>
+                <option value="admin">Administrador de empresa</option>
+                <option value="gestor">Gestor</option>
+                <option value="padrao">Usuário padrão</option>
+              </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="ativo" value="1" id="user_ativo" checked>
+                <label class="form-check-label fw-bold" for="user_ativo">Usuário ativo</label>
+              </div>
+            </div>
+            <div class="col-12">
+              <hr>
+              <h6 class="fw-bold">Permissões</h6>
+              <div class="form-text mb-2">Só a Administradora Suprema altera estes acessos. Ao escolher um perfil, as permissões base são preenchidas automaticamente.</div>
+              <div class="row g-2">
+                {% for perm in all_permissions %}
+                <div class="col-md-4">
+                  <label class="form-check soft-card p-2">
+                    <input class="form-check-input perm-check ms-1 me-2" type="checkbox" name="permissions" value="{{ perm }}" id="perm_{{ perm }}">
+                    <span>{{ permission_labels[perm] }}</span>
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary" type="submit">Salvar usuário</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const rolePerms={{ role_permissions|tojson }};
+rolePerms.super_admin = Object.keys({{ permission_labels|tojson }});
+function setPerms(perms){document.querySelectorAll('.perm-check').forEach(c=>c.checked=perms.includes(c.value));}
+function aplicarPerfil(){const p=document.getElementById('user_perfil').value; setPerms(rolePerms[p]||[]);}
+function novoUsuario(){
+  document.getElementById('userForm').reset();
+  document.getElementById('user_id').value='';
+  document.getElementById('user_ativo').checked=true;
+  const empresaSelect=document.getElementById('user_empresa_id');
+  if(empresaSelect && empresaSelect.options.length && !empresaSelect.value){empresaSelect.selectedIndex=0;}
+  delete document.getElementById('user_email').dataset.editando;
+  document.getElementById('user_email').value='';
+  aplicarPerfil();
+  gerarEmailUsuario();
+}
+
+function normalizarLogin(nome){
+  return (nome || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s._-]/g, '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .join('.');
+}
+function dominioEmpresaSelecionada(){
+  const empresaSelect=document.getElementById('user_empresa_id');
+  if(!empresaSelect || !empresaSelect.options.length) return '';
+  const opt=empresaSelect.options[empresaSelect.selectedIndex];
+  return (opt.getAttribute('data-dominio') || '').replace(/^@+/, '').trim().toLowerCase();
+}
+function gerarEmailUsuario(){
+  const nome=document.getElementById('user_nome').value;
+  const dominio=dominioEmpresaSelecionada();
+  const emailInput=document.getElementById('user_email');
+  const base=normalizarLogin(nome);
+  if(base && dominio){
+    emailInput.value = base + '@' + dominio;
+  } else if(!emailInput.dataset.editando){
+    emailInput.value = '';
+  }
+}
+function toggleSenhaVisivel(){
+  const inp = document.getElementById('user_senha');
+  const icon = document.getElementById('iconSenha');
+  if(!inp) return;
+  if(inp.type === 'password'){
+    inp.type = 'text';
+    if(icon){ icon.className = 'bi bi-eye-slash'; }
+  } else {
+    inp.type = 'password';
+    if(icon){ icon.className = 'bi bi-eye'; }
+  }
+}
+
+function editarUsuario(u){
+  document.getElementById('userForm').reset();
+  document.getElementById('user_id').value=u.id||'';
+  const empresaSelect=document.getElementById('user_empresa_id');
+  if(empresaSelect && u.empresa_id){empresaSelect.value=String(u.empresa_id);}
+  document.getElementById('user_nome').value=u.nome||'';
+  document.getElementById('user_email').dataset.editando='1';
+  document.getElementById('user_email').value=u.email||'';
+  document.getElementById('user_senha').value='';
+  document.getElementById('user_telefone').value=u.telefone||'';
+  document.getElementById('user_perfil').value=(u.is_super_admin ? 'super_admin' : (u.perfil||'campo'));
+  document.getElementById('user_ativo').checked=String(u.ativo)==='1'||u.ativo===true;
+  setPerms(u.permissions||[]);
+  // Indica se tem senha cadastrada
+  const infoEl = document.getElementById('senhaAtualInfo');
+  if(infoEl) infoEl.style.display = u.tem_senha ? '' : 'none';
+  // Reset eye icon
+  const icon = document.getElementById('iconSenha');
+  const inp = document.getElementById('user_senha');
+  if(icon) icon.className = 'bi bi-eye';
+  if(inp) inp.type = 'password';
+}
+document.getElementById('user_nome')?.addEventListener('input',()=>{delete document.getElementById('user_email').dataset.editando; gerarEmailUsuario();});
+document.getElementById('user_empresa_id')?.addEventListener('change',()=>{delete document.getElementById('user_email').dataset.editando; gerarEmailUsuario();});
+document.getElementById('userModal')?.addEventListener('shown.bs.modal',()=>gerarEmailUsuario());
+document.getElementById('userModal')?.addEventListener('hidden.bs.modal',()=>novoUsuario());
+</script>
+{% endblock %}

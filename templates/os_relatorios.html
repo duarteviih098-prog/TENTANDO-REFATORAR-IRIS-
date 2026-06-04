@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.osr-header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 20px;flex-wrap:wrap;gap:12px}
+.osr-header h1{margin:0;font-size:1.25rem;font-weight:700;color:#111827}
+.osr-header p{margin:3px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .osr-header h1{color:#f0f0f0}
+html[data-theme="dark"] .osr-header p{color:#666666}
+
+/* KPI strip */
+.osr-kpis{display:flex;gap:0;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:18px 24px;margin-bottom:20px}
+.osr-kpi{flex:1;padding:0 16px;display:flex;flex-direction:column;gap:2px}
+.osr-kpi:first-child{padding-left:0}
+.osr-kpi:last-child{padding-right:0}
+.osr-kpi-div{width:1px;background:#e5e7eb;flex-shrink:0}
+.osr-kpi-label{font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+.osr-kpi-value{font-size:1.2rem;font-weight:700;color:#111827}
+.osr-kpi-value.green{color:#166534}
+.osr-kpi-value.amber{color:#92400e}
+.osr-kpi-value.red{color:#991b1b}
+html[data-theme="dark"] .osr-kpis{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .osr-kpi-label{color:#666666}
+html[data-theme="dark"] .osr-kpi-value{color:#f0f0f0}
+html[data-theme="dark"] .osr-kpi-div{background:#2e2e2e}
+
+/* Grid de blocos */
+.osr-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.osr-block{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden}
+.osr-block-full{grid-column:1/-1}
+.osr-block-header{padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:10px}
+.osr-block-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.84rem;flex-shrink:0}
+.osr-block-title{font-size:.88rem;font-weight:700;color:#111827;margin:0}
+.osr-block-sub{font-size:.74rem;color:#6b7280;margin:2px 0 0}
+.osr-block-body{padding:18px}
+.icon-blue{background:#dbeafe;color:#1d4ed8}
+.icon-green{background:#dcfce7;color:#166534}
+.icon-amber{background:#fef3c7;color:#92400e}
+.icon-purple{background:#f3e8ff;color:#7c3aed}
+html[data-theme="dark"] .osr-block{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .osr-block-header{border-color:#2e2e2e}
+html[data-theme="dark"] .osr-block-title{color:#f0f0f0}
+html[data-theme="dark"] .osr-block-sub{color:#666666}
+html[data-theme="dark"] .icon-blue{background:rgba(29,78,216,.15);color:#60a5fa}
+html[data-theme="dark"] .icon-green{background:rgba(22,163,74,.15);color:#4ade80}
+html[data-theme="dark"] .icon-amber{background:rgba(245,158,11,.12);color:#fbbf24}
+html[data-theme="dark"] .icon-purple{background:rgba(124,58,237,.15);color:#c084fc}
+
+/* Rows */
+.osr-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.osr-row:last-child{margin-bottom:0}
+.osr-row-rank{font-size:.7rem;font-weight:700;color:#9ca3af;min-width:18px}
+.osr-row-nome{font-size:.82rem;font-weight:600;color:#111827;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.osr-row-bar-wrap{width:80px;height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden;flex-shrink:0}
+.osr-row-bar-fill{height:100%;border-radius:3px}
+.osr-row-val{font-size:.78rem;font-weight:700;color:#374151;min-width:30px;text-align:right}
+html[data-theme="dark"] .osr-row-nome{color:#f0f0f0}
+html[data-theme="dark"] .osr-row-bar-wrap{background:#2e2e2e}
+html[data-theme="dark"] .osr-row-val{color:#cccccc}
+
+/* Técnicos tabela */
+.osr-tec-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6}
+.osr-tec-row:last-child{border-bottom:none}
+.osr-tec-avatar{width:32px;height:32px;border-radius:8px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0}
+.osr-tec-nome{font-size:.82rem;font-weight:600;color:#111827;flex:1}
+.osr-tec-stats{display:flex;gap:14px;font-size:.76rem;color:#6b7280}
+.osr-tec-taxa{font-size:.78rem;font-weight:700;color:#166534}
+html[data-theme="dark"] .osr-tec-row{border-color:#2e2e2e}
+html[data-theme="dark"] .osr-tec-nome{color:#f0f0f0}
+html[data-theme="dark"] .osr-tec-avatar{background:rgba(29,78,216,.15);color:#60a5fa}
+
+/* Chart */
+.osr-chart-wrap{position:relative;height:180px}
+
+@media(max-width:768px){.osr-grid{grid-template-columns:1fr}}
+</style>
+
+<div class="osr-header">
+  <div>
+    <h1>Relatórios — O.S.</h1>
+    <p>Análise de produtividade, SLA e equipamentos</p>
+  </div>
+  <a href="{{ url_for('os_hub') }}" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:.8rem;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#374151;text-decoration:none">
+    <i class="bi bi-grid-3x3-gap"></i> Hub
+  </a>
+</div>
+
+<!-- KPIs -->
+<div class="osr-kpis">
+  <div class="osr-kpi">
+    <span class="osr-kpi-label">Total de O.S.</span>
+    <span class="osr-kpi-value">{{ total }}</span>
+  </div>
+  <div class="osr-kpi-div"></div>
+  <div class="osr-kpi">
+    <span class="osr-kpi-label">Finalizadas</span>
+    <span class="osr-kpi-value green">{{ finalizadas_total }}</span>
+  </div>
+  <div class="osr-kpi-div"></div>
+  <div class="osr-kpi">
+    <span class="osr-kpi-label">Atrasadas</span>
+    <span class="osr-kpi-value {% if atrasadas_total > 0 %}red{% endif %}">{{ atrasadas_total }}</span>
+  </div>
+  <div class="osr-kpi-div"></div>
+  <div class="osr-kpi">
+    <span class="osr-kpi-label">SLA</span>
+    <span class="osr-kpi-value {% if sla >= 80 %}green{% elif sla >= 60 %}amber{% else %}red{% endif %}">{{ sla }}%</span>
+  </div>
+</div>
+
+<div class="osr-grid">
+
+  <!-- Equipamentos problemáticos -->
+  <div class="osr-block">
+    <div class="osr-block-header">
+      <div class="osr-block-icon icon-amber"><i class="bi bi-exclamation-triangle"></i></div>
+      <div>
+        <div class="osr-block-title">Equipamentos com mais O.S.</div>
+        <div class="osr-block-sub">Top 10 — onde estão os problemas crônicos</div>
+      </div>
+    </div>
+    <div class="osr-block-body">
+      {% set max_eq = top_equipamentos[0].total if top_equipamentos else 1 %}
+      {% for e in top_equipamentos %}
+      <div class="osr-row">
+        <span class="osr-row-rank">{{ loop.index }}</span>
+        <span class="osr-row-nome" title="{{ e.nome }}">{{ e.nome }}</span>
+        <div class="osr-row-bar-wrap">
+          <div class="osr-row-bar-fill" style="width:{{ (e.total/max_eq*100)|round(0)|int }}%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div>
+        </div>
+        <span class="osr-row-val">{{ e.total }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Por criticidade -->
+  <div class="osr-block">
+    <div class="osr-block-header">
+      <div class="osr-block-icon icon-red" style="background:#fef2f2;color:#991b1b"><i class="bi bi-flag"></i></div>
+      <div>
+        <div class="osr-block-title">Por Criticidade</div>
+        <div class="osr-block-sub">Distribuição das O.S. por nível</div>
+      </div>
+    </div>
+    <div class="osr-block-body">
+      {% set max_crit = por_criticidade[0].total if por_criticidade else 1 %}
+      {% for c in por_criticidade %}
+      {% set cor = '#ef4444' if c.label == 'Alta' else ('#f59e0b' if c.label in ('Média','Media') else ('#22c55e' if c.label == 'Baixa' else '#94a3b8')) %}
+      <div class="osr-row">
+        <span class="osr-row-nome">{{ c.label }}</span>
+        <div class="osr-row-bar-wrap">
+          <div class="osr-row-bar-fill" style="width:{{ (c.total/max_crit*100)|round(0)|int }}%;background:{{ cor }}"></div>
+        </div>
+        <span class="osr-row-val">{{ c.total }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Produtividade por técnico -->
+  <div class="osr-block osr-block-full">
+    <div class="osr-block-header">
+      <div class="osr-block-icon icon-green"><i class="bi bi-people"></i></div>
+      <div>
+        <div class="osr-block-title">Produtividade por Técnico</div>
+        <div class="osr-block-sub">Total de O.S., finalizadas, atrasadas e tempo médio</div>
+      </div>
+    </div>
+    <div class="osr-block-body">
+      {% for t in top_tecnicos %}
+      <div class="osr-tec-row">
+        <div class="osr-tec-avatar">{{ t.nome[:2].upper() }}</div>
+        <div class="osr-tec-nome">{{ t.nome }}</div>
+        <div class="osr-tec-stats">
+          <span>{{ t.total }} total</span>
+          <span style="color:#166534">{{ t.finalizadas }} finalizadas</span>
+          {% if t.atrasadas %}<span style="color:#991b1b">{{ t.atrasadas }} atrasadas</span>{% endif %}
+          <span>⏱ {{ t.tempo_medio }}</span>
+        </div>
+        <span class="osr-tec-taxa">{{ t.taxa }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Tendência 6 meses -->
+  <div class="osr-block osr-block-full">
+    <div class="osr-block-header">
+      <div class="osr-block-icon icon-blue"><i class="bi bi-graph-up"></i></div>
+      <div>
+        <div class="osr-block-title">Tendência — Últimos 6 Meses</div>
+        <div class="osr-block-sub">O.S. abertas vs finalizadas por mês</div>
+      </div>
+    </div>
+    <div class="osr-block-body">
+      <div class="osr-chart-wrap">
+        <canvas id="osrChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  const labels  = {{ meses_labels|tojson }};
+  const abertas = {{ meses_abertas|tojson }};
+  const fechadas= {{ meses_fechadas|tojson }};
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const gridColor = isDark ? 'rgba(148,163,184,.12)' : 'rgba(0,0,0,.06)';
+  const textColor = isDark ? '#666666' : '#9ca3af';
+  new Chart(document.getElementById('osrChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Abertas',    data:abertas,  backgroundColor:isDark?'rgba(59,130,246,.25)':'rgba(29,78,216,.12)', borderColor:isDark?'#3b82f6':'#1d4ed8', borderWidth:1.5, borderRadius:5 },
+        { label:'Finalizadas',data:fechadas, backgroundColor:isDark?'rgba(74,222,128,.25)':'rgba(22,163,74,.15)',  borderColor:isDark?'#4ade80':'#16a34a',  borderWidth:1.5, borderRadius:5 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:textColor,font:{size:11},boxWidth:12,padding:12}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}`}}
+      },
+      scales:{
+        x:{grid:{color:gridColor},ticks:{color:textColor,font:{size:10}}},
+        y:{grid:{color:gridColor},ticks:{color:textColor,font:{size:10},stepSize:1}}
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

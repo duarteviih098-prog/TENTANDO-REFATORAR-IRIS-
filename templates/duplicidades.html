@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="hero">
+  <h1>Relatório de duplicidades</h1>
+  <p>Bloqueio automático para casos críticos, revisão para suspeitas e “fofoca” registrada para auditoria.</p>
+</div>
+<div class="content-card">
+  <form class="toolbar-form" method="get">
+    <div class="field-inline"><label>Módulo</label><select class="form-select" name="modulo"><option value="">Todos</option><option value="os" {{ 'selected' if modulo=='os' else '' }}>O.S.</option><option value="pagamentos" {{ 'selected' if modulo=='pagamentos' else '' }}>Pagamentos</option><option value="custos" {{ 'selected' if modulo=='custos' else '' }}>Custos</option></select></div>
+    <div class="field-inline"><label>Status</label><input class="form-control" name="status" value="{{ status }}" placeholder="bloqueado, aviso, resolvido..."></div>
+    <button class="btn-gg btn-blue" type="submit"><i class="bi bi-search"></i> Filtrar</button>
+    <a class="btn-gg btn-soft" href="{{ url_for('duplicidades_page') }}"><i class="bi bi-x-circle"></i> Limpar</a>
+    <a class="btn-gg btn-green" href="{{ url_for('duplicidades_excel') }}"><i class="bi bi-file-earmark-excel-fill"></i> Excel</a>
+  </form>
+</div>
+<div class="content-card">
+  <h3>Ocorrências detectadas</h3>
+  <div class="table-shell">
+    <div class="table-responsive">
+      <table class="table-gg">
+        <thead><tr><th>Data/Hora</th><th>Usuário</th><th>Módulo</th><th>Registro</th><th>Duplicado com</th><th>Severidade</th><th>Status</th><th>Motivo</th><th>Ação</th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.criado_em }}</td>
+            <td><b>{{ r.usuario_nome or '-' }}</b><br><span class="mini">{{ r.usuario_email or '-' }}</span></td>
+            <td><span class="badge-status andamento">{{ r.modulo }}</span></td>
+            <td>{{ r.registro_id or 'novo' }}</td>
+            <td>{{ r.duplicate_id or '-' }}</td>
+            <td><span class="badge rounded-pill {{ 'text-bg-danger' if r.severidade == 'critical' else 'text-bg-warning' }}">{{ 'Crítica' if r.severidade == 'critical' else 'Aviso' }}</span></td>
+            <td>{{ r.status }}</td>
+            <td style="min-width:280px">{{ r.motivo }}</td>
+            <td>
+              {% if 'resolvido' not in (r.status or '') %}
+              <form method="post" action="{{ url_for('duplicidades_resolver', dup_id=r.id) }}" class="d-inline">
+                <input type="hidden" name="resolucao" value="Resolvida após revisão manual">
+                <button class="btn-gg btn-soft btn-sm" type="submit"><i class="bi bi-check-circle"></i> Resolver</button>
+              </form>
+              {% else %}<span class="mini">Resolvida</span>{% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="9" class="empty">Nenhuma duplicidade registrada ainda.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="content-card">
+  <h3>Iris recomenda</h3>
+  <p class="mb-0">Duplicidade crítica deve ser bloqueada. Em suspeitas não críticas, abra o registro existente, complemente as informações e só continue se for realmente uma nova ocorrência. Toda decisão fica registrada na aba <b>Fofoca</b>.</p>
+</div>
+{% endblock %}

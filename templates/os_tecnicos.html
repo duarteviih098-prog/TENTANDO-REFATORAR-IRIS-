@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.tec-header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 20px;flex-wrap:wrap;gap:12px}
+.tec-header h1{margin:0;font-size:1.25rem;font-weight:700;color:#111827}
+.tec-header p{margin:3px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .tec-header h1{color:#f0f0f0}
+html[data-theme="dark"] .tec-header p{color:#666666}
+
+.tec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.tec-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;transition:box-shadow .12s}
+.tec-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.tec-card-top{padding:16px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f3f4f6}
+.tec-avatar{width:44px;height:44px;border-radius:10px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:800;flex-shrink:0}
+.tec-nome{font-size:.92rem;font-weight:700;color:#111827;margin:0 0 3px}
+.tec-meta{font-size:.74rem;color:#6b7280;display:flex;gap:10px}
+.tec-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#e5e7eb}
+.tec-kpi{background:#fff;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.tec-kpi-label{font-size:.67rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em}
+.tec-kpi-value{font-size:1rem;font-weight:700;color:#111827}
+.tec-kpi-value.blue{color:#1d4ed8}
+.tec-kpi-value.amber{color:#92400e}
+.tec-kpi-value.green{color:#166534}
+.tec-footer{padding:12px 18px;display:flex;align-items:center;justify-content:space-between;background:#fafafa}
+.tec-bar-wrap{flex:1;height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden;margin-right:10px}
+.tec-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#1d4ed8,#3b82f6);transition:width .5s ease}
+.tec-taxa{font-size:.74rem;font-weight:700;color:#374151}
+html[data-theme="dark"] .tec-card{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .tec-card-top{border-color:#2e2e2e}
+html[data-theme="dark"] .tec-nome{color:#f0f0f0}
+html[data-theme="dark"] .tec-meta{color:#444444}
+html[data-theme="dark"] .tec-kpis{background:#2e2e2e}
+html[data-theme="dark"] .tec-kpi{background:#1a1a1a}
+html[data-theme="dark"] .tec-kpi-value{color:#f0f0f0}
+html[data-theme="dark"] .tec-footer{background:#1a1a1a}
+html[data-theme="dark"] .tec-bar-wrap{background:#2e2e2e}
+html[data-theme="dark"] .tec-taxa{color:#cccccc}
+html[data-theme="dark"] .tec-avatar{background:rgba(29,78,216,.15);color:#60a5fa}
+</style>
+
+<div class="tec-header">
+  <div>
+    <h1>Por Técnico</h1>
+    <p>Distribuição de O.S. por responsável</p>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a href="{{ url_for('os_page') }}" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:.8rem;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#374151;text-decoration:none"><i class="bi bi-list-ul"></i> Tabela</a>
+    <a href="{{ url_for('os_hub') }}" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:.8rem;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#374151;text-decoration:none"><i class="bi bi-grid-3x3-gap"></i> Hub</a>
+  </div>
+</div>
+
+{% if tecnicos %}
+<div class="tec-grid">
+  {% for t in tecnicos %}
+  <div class="tec-card">
+    <div class="tec-card-top">
+      <div class="tec-avatar">{{ t.iniciais }}</div>
+      <div style="flex:1;min-width:0">
+        <div class="tec-nome">{{ t.nome }}</div>
+        <div class="tec-meta">
+          <span><i class="bi bi-clock" style="font-size:.65rem"></i> {{ t.tempo }}</span>
+          <span>{{ t.total }} O.S. total</span>
+        </div>
+      </div>
+    </div>
+    <div class="tec-kpis">
+      <div class="tec-kpi">
+        <span class="tec-kpi-label">Abertas</span>
+        <span class="tec-kpi-value amber">{{ t.abertas }}</span>
+      </div>
+      <div class="tec-kpi">
+        <span class="tec-kpi-label">Andamento</span>
+        <span class="tec-kpi-value blue">{{ t.andamento }}</span>
+      </div>
+      <div class="tec-kpi">
+        <span class="tec-kpi-label">Pausadas</span>
+        <span class="tec-kpi-value">{{ t.pausadas }}</span>
+      </div>
+      <div class="tec-kpi">
+        <span class="tec-kpi-label">Finalizadas</span>
+        <span class="tec-kpi-value green">{{ t.finalizadas }}</span>
+      </div>
+    </div>
+    <div class="tec-footer">
+      <div class="tec-bar-wrap">
+        <div class="tec-bar-fill" style="width:{{ t.taxa_conclusao }}%"></div>
+      </div>
+      <span class="tec-taxa">{{ t.taxa_conclusao }}% concluídas</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="padding:60px;text-align:center;color:#9ca3af;background:#fff;border:1px solid #e5e7eb;border-radius:10px">
+  <i class="bi bi-people" style="font-size:2.5rem;display:block;margin-bottom:10px;opacity:.3"></i>
+  Nenhum técnico com O.S. atribuída.
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.im-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:28px 0 20px;flex-wrap:wrap}
+.im-title h1{margin:0;font-size:1.25rem;font-weight:700;color:#111827}
+.im-title p{margin:4px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .im-title h1{color:#f1f5f9}
+html[data-theme="dark"] .im-title p{color:#64748b}
+.im-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid #e5e7eb;background:#fff;color:#374151;transition:background .12s}
+.im-btn:hover{background:#f9fafb}
+html[data-theme="dark"] .im-btn{background:#1e293b;border-color:#334155;color:#cbd5e1}
+.im-filter-bar{display:flex;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px 18px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end}
+html[data-theme="dark"] .im-filter-bar{background:#1e293b;border-color:#334155}
+.im-search-wrap{position:relative;flex:1;min-width:180px}
+.im-search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.78rem;pointer-events:none}
+.im-search-input{width:100%;padding:7px 10px 7px 28px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:#111827;background:#fff;outline:none}
+.im-search-input:focus{border-color:#1d4ed8}
+html[data-theme="dark"] .im-search-input{background:#0f172a;border-color:#334155;color:#f1f5f9}
+.im-table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.im-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.im-table thead tr{border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.im-table thead th{padding:10px 14px;font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;text-align:left}
+.im-table tbody tr{border-bottom:1px solid #f3f4f6;transition:background .08s}
+.im-table tbody tr:last-child{border-bottom:none}
+.im-table tbody tr:hover{background:#f9fafb}
+.im-table tbody td{padding:11px 14px;color:#111827;vertical-align:middle}
+html[data-theme="dark"] .im-table-wrap{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .im-table thead tr{background:#0f172a;border-color:#334155}
+html[data-theme="dark"] .im-table thead th{color:#475569}
+html[data-theme="dark"] .im-table tbody tr{border-color:#1e293b}
+html[data-theme="dark"] .im-table tbody tr:hover{background:#273549}
+html[data-theme="dark"] .im-table tbody td{color:#cbd5e1}
+.im-tipo{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:12px;font-size:.74rem;font-weight:600}
+.im-entrada{background:#dcfce7;color:#166534}
+.im-saida{background:#fef2f2;color:#991b1b}
+html[data-theme="dark"] .im-entrada{background:rgba(22,163,74,.15);color:#4ade80}
+html[data-theme="dark"] .im-saida{background:rgba(239,68,68,.12);color:#f87171}
+.im-empty{padding:40px;text-align:center;color:#9ca3af;font-size:.84rem}
+</style>
+
+<div class="im-header">
+  <div class="im-title">
+    <h1>Movimentações</h1>
+    <p>Histórico completo de entradas e saídas do estoque</p>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a href="{{ url_for('inventario_itens') }}" class="im-btn"><i class="bi bi-list-ul"></i> Itens</a>
+    <a href="{{ url_for('inventario_hub') }}" class="im-btn"><i class="bi bi-grid-3x3-gap"></i> Hub</a>
+  </div>
+</div>
+
+<div class="im-filter-bar">
+  <div class="im-search-wrap">
+    <i class="bi bi-search im-search-icon"></i>
+    <input class="im-search-input" id="imBusca" placeholder="Item, usuário, motivo…">
+  </div>
+  <select class="im-search-input" id="imFiltroTipo" style="width:auto;min-width:120px;padding-left:10px">
+    <option value="">Todos</option>
+    <option value="entrada">Entradas</option>
+    <option value="saida">Saídas</option>
+  </select>
+</div>
+
+<div class="im-table-wrap">
+  <table class="im-table" id="imTable">
+    <thead>
+      <tr><th>Data</th><th>Tipo</th><th>Item</th><th>Categoria</th><th>Qtd.</th><th>Usuário</th><th>Motivo</th></tr>
+    </thead>
+    <tbody>
+    {% for m in movimentos %}
+    <tr data-tipo="{{ m.tipo }}">
+      <td style="font-size:.76rem;color:#9ca3af;white-space:nowrap">{{ m.quando or '—' }}</td>
+      <td>
+        {% if m.tipo == 'entrada' %}
+        <span class="im-tipo im-entrada"><i class="bi bi-arrow-down-circle-fill" style="font-size:.65rem"></i> Entrada</span>
+        {% else %}
+        <span class="im-tipo im-saida"><i class="bi bi-arrow-up-circle-fill" style="font-size:.65rem"></i> Saída</span>
+        {% endif %}
+      </td>
+      <td style="font-weight:600;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.item_nome or '—' }}</td>
+      <td style="font-size:.76rem;color:#6b7280">{{ m.categoria or '—' }}</td>
+      <td style="font-weight:700;color:{% if m.tipo=='entrada' %}#166534{% else %}#991b1b{% endif %}">
+        {% if m.tipo=='entrada' %}+{% else %}-{% endif %}{{ '{:g}'.format(m.quantidade|float) }} {{ m.unidade or 'un' }}
+      </td>
+      <td style="font-size:.78rem;color:#374151">{{ m.usuario or '—' }}</td>
+      <td style="font-size:.76rem;color:#6b7280;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.motivo or '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="im-empty">Nenhuma movimentação registrada.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function aplicarFiltros(){
+  const q=(document.getElementById('imBusca')?.value||'').toLowerCase();
+  const tipo=document.getElementById('imFiltroTipo')?.value||'';
+  document.querySelectorAll('#imTable tbody tr[data-tipo]').forEach(tr=>{
+    const okQ=!q||tr.textContent.toLowerCase().includes(q);
+    const okT=!tipo||(tr.dataset.tipo===tipo);
+    tr.style.display=(okQ&&okT)?'':'none';
+  });
+}
+document.getElementById('imBusca')?.addEventListener('input',aplicarFiltros);
+document.getElementById('imFiltroTipo')?.addEventListener('change',aplicarFiltros);
+</script>
+{% endblock %}

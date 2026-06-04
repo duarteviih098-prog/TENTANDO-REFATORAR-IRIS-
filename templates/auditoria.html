@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.history-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.history-kpi{background:var(--surface2);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.history-kpi .label{color:var(--muted);font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.04em}
+.history-kpi .value{font-size:2rem;font-weight:900;color:var(--blue)}
+.timeline{position:relative;margin:8px 0 0 8px;padding-left:26px}
+.timeline:before{content:'';position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--blue),var(--purple))}
+.timeline-item{position:relative;margin-bottom:14px;background:var(--surface2);border:1px solid var(--line);border-radius:18px;padding:14px 16px;box-shadow:0 8px 18px rgba(20,40,70,.06)}
+.timeline-item:before{content:'';position:absolute;left:-25px;top:18px;width:14px;height:14px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 5px color-mix(in srgb,var(--blue) 18%, transparent)}
+.timeline-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.timeline-title{font-weight:900}
+.timeline-meta{font-size:.86rem;color:var(--muted)}
+.timeline-details{margin-top:10px}
+.timeline-details summary{cursor:pointer;font-weight:800;color:var(--blue)}
+.timeline-details pre{margin-top:8px;white-space:pre-wrap;max-height:220px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+.status-chip{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;font-size:.78rem;font-weight:900}
+.status-ok{background:rgba(24,160,74,.14);color:#17a34a}
+.status-fail{background:rgba(234,61,61,.14);color:#ea3d3d}
+.btn-danger-soft{background:rgba(234,61,61,.10);color:#ea3d3d;border:1px solid rgba(234,61,61,.25);border-radius:12px;padding:8px 16px;font-weight:800;font-size:.88rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn-danger-soft:hover{background:rgba(234,61,61,.18)}
+</style>
+
+<div class="hero">
+  <h1>Histórico</h1>
+  <p>Timeline operacional: quem fez o quê, quando fez e em qual parte do sistema.</p>
+</div>
+
+<div class="history-metrics">
+  <div class="history-kpi"><div class="label">Registros totais</div><div class="value" id="kpi-total">{{ counts.total }}</div></div>
+  <div class="history-kpi"><div class="label">Ações hoje</div><div class="value" id="kpi-hoje">{{ counts.hoje }}</div></div>
+  <div class="history-kpi"><div class="label">Falhas registradas</div><div class="value" style="color:var(--red)" id="kpi-falhas">{{ counts.falhas }}</div></div>
+</div>
+
+<div class="content-card">
+  <form class="toolbar-form" method="get" id="hist-filter-form">
+    <div class="field-inline">
+      <label>Usuário</label>
+      <input class="form-control" name="usuario" id="f-usuario" value="{{ usuario }}" list="hist-users" placeholder="nome ou e-mail" autocomplete="off">
+    </div>
+    <datalist id="hist-users">{% for u in users %}<option value="{{ u.usuario_nome }}">{{ u.usuario_email }}</option>{% endfor %}</datalist>
+    <div class="field-inline">
+      <label>Ação</label>
+      <input class="form-control" name="acao" id="f-acao" value="{{ acao }}" placeholder="salvou, excluiu, anexo..." autocomplete="off">
+    </div>
+    <div class="field-inline">
+      <label>Módulo</label>
+      <select class="form-select" name="entidade" id="f-entidade">
+        <option value="">Todos</option>
+        {% for e in ['os','pagamentos','custos','combustivel','controle','usuarios'] %}
+          <option value="{{e}}" {% if entidade==e %}selected{% endif %}>{{e}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field-inline">
+      <label>Status</label>
+      <select class="form-select" name="resultado" id="f-resultado">
+        <option value="">Todos</option>
+        <option value="sucesso" {% if resultado=='sucesso' %}selected{% endif %}>Sucesso</option>
+        <option value="falha" {% if resultado=='falha' %}selected{% endif %}>Falha</option>
+      </select>
+    </div>
+    <button class="btn-gg btn-blue" type="submit"><i class="bi bi-search"></i> Filtrar</button>
+    <a class="btn-gg btn-soft" href="{{ url_for('historico_page') }}"><i class="bi bi-x-circle"></i> Limpar filtros</a>
+  </form>
+
+  {% if is_super_admin %}
+  <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px">
+    <form method="post" action="{{ url_for('historico_apagar_tudo') }}" onsubmit="return confirm('Tem certeza? Isso apaga TODO o histórico permanentemente e não pode ser desfeito.')">
+      <button type="submit" class="btn-danger-soft">
+        <i class="bi bi-trash3"></i> Apagar todo o histórico
+      </button>
+    </form>
+    <span style="font-size:.82rem;color:var(--muted)">{{ counts.total }} registro(s) no total</span>
+  </div>
+  {% endif %}
+</div>
+
+<div class="content-card">
+  <div class="timeline" id="hist-timeline">
+    {% for r in rows %}
+      <div class="timeline-item">
+        <div class="timeline-head">
+          <div>
+            <div class="timeline-title">{{ r.acao or r.endpoint or 'Ação registrada' }}</div>
+            <div class="timeline-meta"><b>{{ r.usuario_nome or 'Sistema' }}</b> · {{ r.usuario_email or 'sem e-mail' }}</div>
+            <div class="timeline-meta">{{ r.metodo }} {{ r.rota }}{% if r.entidade_id %} · ID {{ r.entidade_id }}{% endif %}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="timeline-meta">{{ r.criado_em }}</div>
+            <span class="status-chip {{ 'status-fail' if r.resultado and r.resultado.startswith('falha') else 'status-ok' }}">{{ r.resultado or 'sucesso' }}</span>
+          </div>
+        </div>
+        <details class="timeline-details">
+          <summary>Ver detalhes técnicos</summary>
+          <pre>{{ r.detalhes }}</pre>
+        </details>
+      </div>
+    {% else %}
+      <div class="empty">Nenhuma alteração registrada com esses filtros.</div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+// Submete o form automaticamente quando selects mudam
+document.querySelectorAll('#f-entidade, #f-resultado').forEach(function(el) {
+  el.addEventListener('change', function() {
+    document.getElementById('hist-filter-form').submit();
+  });
+});
+
+// Debounce para inputs de texto — submete 600ms após parar de digitar
+function debounce(fn, ms) {
+  var t; return function() { clearTimeout(t); t = setTimeout(fn, ms); };
+}
+document.querySelectorAll('#f-usuario, #f-acao').forEach(function(el) {
+  el.addEventListener('input', debounce(function() {
+    document.getElementById('hist-filter-form').submit();
+  }, 600));
+});
+</script>
+{% endblock %}

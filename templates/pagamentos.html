@@ -1,0 +1,2151 @@
+{% extends 'base.html' %}
+{% block content %}
+{% set rows = rows|default([], true) %}
+{% set hoje_str = now_br_str|default('') %}
+{% set amanha_str = amanha_br_str|default('') %}
+{% set mes_inicio = mes_inicio|default('', true) %}
+{% set mes_fim = mes_fim|default('', true) %}
+{% set mes_atual = mes_atual|default('', true) %}
+{% set periodo_label = periodo_label|default('', true) %}
+{% set total = total|default(0, true) %}
+{% set total_pago = total_pago|default(0, true) %}
+{% set total_pendente = total_pendente|default(0, true) %}
+<!-- ── PAGE HEADER ── -->
+<div class="erp-page-header">
+  <div class="erp-page-title">
+    <h1>Pagamentos</h1>
+    <p>Controle financeiro de fornecedores e serviços</p>
+  </div>
+  <div class="erp-page-actions">
+    {% if can('edit_pagamentos') %}
+    <button class="erp-btn erp-btn-primary" data-bs-toggle="modal" data-bs-target="#pagModal">
+      <i class="bi bi-plus"></i> Novo pagamento
+    </button>
+    {% endif %}
+    <a href="{{ url_for('pagamentos_receber') }}" class="erp-btn erp-btn-ghost">
+      <i class="bi bi-arrow-down-circle"></i> A Receber
+    </a>
+    <div class="erp-btn-group">
+      {% if can('edit_pagamentos') %}<button class="erp-btn erp-btn-ghost" id="pagEditBtn"><i class="bi bi-pencil"></i> Editar</button>{% endif %}
+      {% if can('edit_pagamentos') %}<button class="erp-btn erp-btn-ghost erp-btn-paid" id="pagMarkPaidBtn"><i class="bi bi-check"></i> Marcar pago</button>{% endif %}
+      {% if can('edit_pagamentos') %}<button class="erp-btn erp-btn-ghost" id="pagBulkEditBtn"><i class="bi bi-pencil-fill"></i> Editar selecionados</button>{% endif %}
+      {% if can('delete_pagamentos') %}<button class="erp-btn erp-btn-ghost erp-btn-danger" id="pagDeleteBtn"><i class="bi bi-trash"></i> Excluir</button>{% endif %}
+    </div>
+    <div class="erp-btn-group">
+      {% if can('edit_pagamentos') %}<button class="erp-btn erp-btn-ghost" id="pagEmailBtn"><i class="bi bi-envelope"></i> E-mail</button>{% endif %}
+      {% if can('generate_pdf') %}
+      <a class="erp-btn erp-btn-ghost" href="{{ url_for('pagamentos_pdf', todos=1) if not mes_inicio else url_for('pagamentos_pdf', mes=mes_inicio, mes_fim=mes_fim) }}" id="pagPdfCompletoLink" target="_blank"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+      <button class="erp-btn erp-btn-ghost" type="button" id="pagPdfSelecionados"><i class="bi bi-file-earmark-check"></i> PDF selecionados</button>
+      {% endif %}
+      {% if can('generate_excel') %}<a class="erp-btn erp-btn-ghost" href="{{ url_for('pagamentos_excel', todos=1) if not mes_inicio else url_for('pagamentos_excel', mes=mes_inicio, mes_fim=mes_fim) }}" id="pagExcelLink" download><i class="bi bi-file-earmark-spreadsheet"></i> Excel</a>{% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ── KPIs ── -->
+<div class="erp-kpi-row">
+  <div class="erp-kpi">
+    <span class="erp-kpi-label">OPEX</span>
+    <span class="erp-kpi-value" id="cardTotalGasto">{{ (total_gasto|default(0, true))|br_money }}</span>
+    <span class="erp-kpi-sub">{{ periodo_label|default(mes_atual|default('', true), true) }}</span>
+  </div>
+  <div class="erp-kpi-divider"></div>
+  <div class="erp-kpi">
+    <span class="erp-kpi-label">CAPEX</span>
+    <span class="erp-kpi-value" id="cardTotalInvest">{{ (total_investimento|default(0, true))|br_money }}</span>
+    <span class="erp-kpi-sub">Capital</span>
+  </div>
+  <div class="erp-kpi-divider"></div>
+  <div class="erp-kpi">
+    <span class="erp-kpi-label">Terceiros</span>
+    <span class="erp-kpi-value" id="cardTotalTerceiros">{{ (total_terceiros|default(0, true))|br_money }}</span>
+    <span class="erp-kpi-sub">SAAE / Clientes</span>
+  </div>
+  <div class="erp-kpi-divider"></div>
+  <div class="erp-kpi">
+    <span class="erp-kpi-label">A pagar</span>
+    <span class="erp-kpi-value erp-kpi-pending" id="cardAPagar">{{ (total_a_pagar|default(0, true))|br_money }}</span>
+    <span class="erp-kpi-sub">Pendente</span>
+  </div>
+</div>
+
+<!-- ── FILTROS ── -->
+<div class="erp-filter-bar">
+  <div class="erp-filter-fields">
+    <div class="erp-filter-field erp-filter-field--wide">
+      <label>Buscar</label>
+      <div class="erp-filter-search">
+        <i class="bi bi-search erp-filter-icon"></i>
+        <input class="erp-filter-input iris-live-search" id="pagFiltroBusca" data-module="pagamentos" placeholder="Fornecedor, descrição, SC ou pedido…">
+      </div>
+    </div>
+    <div class="erp-filter-field">
+      <label>Mês</label>
+      <input class="erp-input iris-live-search" data-module="pagamentos-mes" id="pagFiltroMes" value="{{ mes_inicio|default('', true) }}" placeholder="MM/AAAA" autocomplete="off">
+    </div>
+    <div class="erp-filter-field">
+      <label>Até</label>
+      <input class="erp-input month-picker" id="pagFiltroMesFim" value="{{ mes_fim|default('', true) }}" placeholder="Opcional">
+    </div>
+    <div class="erp-filter-field">
+      <label>Status</label>
+      <select class="erp-select" id="pagFiltroStatus">
+        <option value="">Todos</option>
+        <option value="Sim">Pago</option>
+        <option value="Não">Pendente</option>
+      </select>
+    </div>
+    <div class="erp-filter-field">
+      <label>Tipo</label>
+      <select class="erp-select" id="pagFiltroTipo">
+        <option value="">Todos</option>
+        <option value="Gasto">OPEX</option>
+        <option value="Investimento">CAPEX</option>
+        <option value="Terceiros">Terceiros</option>
+      </select>
+    </div>
+    <div class="erp-filter-field">
+      <label>Vencimento</label>
+      <select class="erp-select" id="pagFiltroVencimento">
+        <option value="">Todos</option>
+        <option value="hoje">Vence hoje</option>
+        <option value="amanha">Vence amanhã</option>
+        <option value="vencidos">Vencidos</option>
+      </select>
+    </div>
+    <div class="erp-filter-field">
+      <label>Ficheiro</label>
+      <select class="erp-select" id="pagFiltroArquivo">
+        <option value="">Todos</option>
+        <option value="orcamento">Orçamento</option>
+        <option value="nf">NF</option>
+        <option value="boleto">Boleto</option>
+        <option value="sem">Sem ficheiro</option>
+      </select>
+    </div>
+  </div>
+  <div class="erp-filter-actions">
+    <button class="erp-btn erp-btn-primary erp-btn-sm" type="button" id="pagAplicarPeriodo">Aplicar</button>
+    <a class="erp-btn erp-btn-ghost erp-btn-sm" href="{{ url_for('pagamentos') }}">Mês atual</a>
+    <a class="erp-btn erp-btn-ghost erp-btn-sm" href="{{ url_for('pagamentos', todos=1) }}">Todos</a>
+    {% if can('edit_pagamentos') %}
+    <form method="post" action="{{ url_for('pagamentos_import') }}" enctype="multipart/form-data" id="erp-import-form">
+      <input type="file" id="erp-import-input" name="arquivo_excel" accept=".xlsx,.xlsm,.xltx,.xltm" style="display:none">
+      <input type="hidden" name="mes_importacao" id="erp-import-mes">
+      <input type="month" id="erp-import-mes-picker" class="form-control form-control-sm" style="width:140px;font-size:.8rem" title="Mês de destino da importação (deixe em branco para usar o mês da planilha)">
+      <button type="button" class="erp-btn erp-btn-ghost erp-btn-sm" id="erp-import-trigger">
+        <i class="bi bi-upload"></i> Importar planilha
+      </button>
+      <span class="erp-import-filename" id="erp-import-filename"></span>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ── TABELA ── -->
+<div class="erp-table-wrap">
+  <table class="erp-table" id="pagamentosTable">
+    <thead>
+      <tr>
+        <th class="erp-th-check"><input type="checkbox" id="pagSelectAll" class="erp-checkbox"></th>
+        <th>Fornecedor</th>
+        <th>Descrição</th>
+        <th class="erp-th-num">Valor</th>
+        <th>Tipo</th>
+        <th>Status</th>
+        <th>Vencimento</th>
+        <th>Mês</th>
+        <th>SC / Pedido</th>
+        <th>Anexos</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows|default([], true) %}
+      <tr data-id="{{ r.id or '' }}"
+          data-valid-id="{{ '1' if r.id else '0' }}"
+          data-status="{{ r.status or 'Não' }}"
+          data-tipo="{{ r.tipo_lancamento or 'Gasto' }}"
+          data-month="{{ r.month_ref or '' }}"
+          data-search="{{ ((r.fornecedor or '') ~ ' ' ~ (r.descricao_servico or '') ~ ' ' ~ (r.numero_documento or '') ~ ' ' ~ (r.sc_pedido or ''))|lower }}"
+          data-has-files="{{ '1' if r.has_files else '0' }}"
+          data-file-types="{{ r.file_types or '' }}"
+          data-vencimento="{{ r.data_vencimento or '' }}">
+        <td class="erp-td-check"><input type="checkbox" class="erp-checkbox row-selector" value="{{ r.id or '' }}" {% if not r.id %}disabled{% endif %}></td>
+        <td class="erp-td-main">
+          <span class="erp-cell-primary">{{ r.fornecedor or '—' }}</span>
+          <span class="erp-cell-id">#{{ r.id or '—' }}</span>
+        </td>
+        <td class="erp-td-desc">{{ r.descricao_servico or '—' }}</td>
+        <td class="erp-td-num" data-value="{{ r.valor_num }}">{{ r.valor|br_money if 'R$' not in (r.valor or '') else r.valor }}</td>
+        <td>
+          {% if (r.tipo_lancamento or 'Gasto') == 'Investimento' %}
+          <span class="erp-badge erp-badge-invest">CAPEX</span>
+          {% elif (r.tipo_lancamento or 'Gasto') == 'Terceiros' %}
+          <span class="erp-badge erp-badge-terceiros" title="{{ r.terceiro_nome or '' }}">Terceiros{% if r.terceiro_nome %} · {{ r.terceiro_nome }}{% endif %}</span>
+          {% else %}
+          <span class="erp-badge erp-badge-gasto">OPEX</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if (r.status or '')|lower == 'sim' %}
+          <span class="erp-status erp-status-paid"><span class="erp-dot erp-dot-paid"></span>Pago</span>
+          {% else %}
+          <span class="erp-status erp-status-open"><span class="erp-dot erp-dot-open"></span>Em aberto</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if r.data_vencimento %}
+          <span class="erp-venc {% if r.data_vencimento == hoje_str %}erp-venc-hoje{% elif r.data_vencimento == amanha_str %}erp-venc-amanha{% endif %}">{{ r.data_vencimento }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td class="erp-td-mono">{{ r.month_ref or '—' }}</td>
+        <td class="erp-td-mono">
+          {% if r.numero_documento %}{{ r.numero_documento }}{% endif %}
+          {% if r.numero_documento and r.sc_pedido %} / {% endif %}
+          {% if r.sc_pedido %}{{ r.sc_pedido }}{% endif %}
+          {% if not r.numero_documento and not r.sc_pedido %}—{% endif %}
+        </td>
+        <td>
+          <div class="erp-files">
+            {% for item in r.attachments_all %}
+            <a href="{{ item.url }}" target="_blank" class="erp-file-pill erp-file-{{ item.group }}" title="{{ item.label }}: {{ item.name }}">
+              <i class="bi {{ item.icon }}"></i>
+            </a>
+            {% endfor %}
+            {% if not r.attachments_all %}—{% endif %}
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="erp-empty">Nenhum registro encontrado para o período selecionado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ===================== MODAL PAGAMENTO ===================== -->
+<div class="modal fade iris-modal modal-xl" id="pagModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('pagamentos_save') }}" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf_token" id="pag_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="id" id="pagamentos_id">
+
+        <div class="modal-header">
+          <div>
+            <div class="modal-title"><i class="bi bi-currency-dollar me-2"></i>Pagamento</div>
+            <div class="modal-subtitle">Preencha os dados do lançamento financeiro</div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body" style="max-height:70vh;overflow-y:auto">
+
+          <!-- SEÇÃO 1: Fornecedor e valor -->
+          <div class="modal-section">
+            <div class="modal-section-title"><i class="bi bi-building"></i>Fornecedor e valor</div>
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label class="form-label">Fornecedor</label>
+                <input class="form-control" name="fornecedor" id="pagamentos_fornecedor" placeholder="Nome do fornecedor">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Valor</label>
+                <input class="form-control" name="valor" id="pagamentos_valor" placeholder="R$ 0,00">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Descrição / Serviço</label>
+                <input class="form-control" name="descricao_servico" id="pagamentos_descricao_servico" placeholder="O que foi contratado ou comprado">
+              </div>
+            </div>
+          </div>
+
+          <!-- SEÇÃO 2: Classificação -->
+          <div class="modal-section">
+            <div class="modal-section-title"><i class="bi bi-tags"></i>Classificação</div>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Tipo de lançamento</label>
+                <select class="form-select" name="tipo_lancamento" id="pagamentos_tipo_lancamento" onchange="onTipoChange(this)">
+                  <option value="Gasto">OPEX</option>
+                  <option value="Investimento">CAPEX</option>
+                  <option value="Terceiros">Terceiros (SAAE / Cliente)</option>
+                </select>
+              </div>
+              <!-- Campo Para quem — aparece só ao selecionar Terceiros -->
+              <div class="col-md-4" id="pagTerceiroNomeWrap" style="display:none">
+                <label class="form-label">Para quem <span style="color:#ef4444">*</span></label>
+                <input class="form-control" name="terceiro_nome" id="pagamentos_terceiro_nome" placeholder="Ex: Joãozinho Mecânica, SAAE Capivari…">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Status de pagamento</label>
+                <select class="form-select" name="status" id="pagamentos_status">
+                  <option value="Não">Pendente (não pago)</option>
+                  <option value="Sim">Pago</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Mês de referência</label>
+                <input class="form-control month-picker" name="pagamento_mes" id="pagamentos_pagamento_mes" placeholder="MM/AAAA">
+              </div>
+            </div>
+          </div>
+
+          <!-- SEÇÃO 3: Documentação -->
+          <div class="modal-section">
+            <div class="modal-section-title"><i class="bi bi-file-text"></i>Documentação</div>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">SC / Nº do documento</label>
+                <input class="form-control" name="numero_documento" id="pagamentos_numero_documento" placeholder="Número da SC">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Pedido</label>
+                <input class="form-control" name="sc_pedido" id="pagamentos_sc_pedido" placeholder="Número do pedido">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">NF / Proposta</label>
+                <input class="form-control" name="nf_proposta" id="pagamentos_nf_proposta" placeholder="Número da NF">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Vencimento</label>
+                <input class="form-control date-picker" name="data_vencimento" id="pagamentos_data_vencimento" placeholder="dd/mm/aaaa">
+                <div class="mini mt-1 text-success" id="pagVencimentoHint" style="display:none"></div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Aprovado por</label>
+                <input class="form-control" name="aprovado" id="pagamentos_aprovado" placeholder="Responsável pela aprovação">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Tipo de documento</label>
+                <input class="form-control" name="tipo_documento" id="pagamentos_tipo_documento" placeholder="NF, Contrato, Boleto...">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Ação</label>
+                <input class="form-control" name="acao" id="pagamentos_acao" placeholder="Compra, Serviço...">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Fluxo / Status de aprovação</label>
+                <input class="form-control" name="fluxo_status" id="pagamentos_fluxo_status" placeholder="Status do fluxo de aprovação">
+              </div>
+            </div>
+          </div>
+
+          <!-- SEÇÃO 4: Anexos -->
+          <div class="modal-section">
+            <div class="modal-section-title"><i class="bi bi-paperclip"></i>Anexos</div>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label"><span class="badge-file-label orc">Orçamento / SC</span></label>
+                <div class="dropzone-pay" data-target="pagAnexoOrc">
+                  <i class="bi bi-cloud-arrow-up-fill"></i>
+                  <span>Arraste ou clique para anexar</span>
+                  <input type="file" class="d-none" id="pagAnexoOrc" name="anexos_orcamento" multiple>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label"><span class="badge-file-label nf">Nota Fiscal / Pedido</span></label>
+                <div class="dropzone-pay" data-target="pagAnexoNf">
+                  <i class="bi bi-cloud-arrow-up-fill"></i>
+                  <span>Arraste ou clique para anexar</span>
+                  <input type="file" class="d-none" id="pagAnexoNf" name="anexos_nf" multiple>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label"><span class="badge-file-label bol">Boleto</span></label>
+                <div class="dropzone-pay" data-target="pagAnexoBol">
+                  <i class="bi bi-cloud-arrow-up-fill"></i>
+                  <span>Arraste ou clique para anexar</span>
+                  <input type="file" class="d-none" id="pagAnexoBol" name="anexos_boleto" multiple>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="attachment-list payment-attachment-list" id="pagamentos_attachments"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ RECORRÊNCIA ══════════════════════════════════════════ -->
+          <div class="modal-section" id="secaoRecorrente">
+
+            <!-- Inputs hidden que o backend já lê -->
+            <input type="hidden" name="repetir_meses"      id="pag_repetir_meses"      value="">
+            <input type="hidden" name="modo_valor"         id="pag_modo_valor"         value="">
+            <input type="hidden" name="repetir_a_partir"   id="pag_repetir_a_partir"   value="">
+            <input type="hidden" name="repetir_mes_inicio" id="pag_repetir_mes_inicio" value="">
+
+            <div class="modal-section-title"><i class="bi bi-arrow-repeat"></i>Repetir / Parcelar</div>
+
+            <!-- Passo 1: o que fazer? -->
+            <div class="recorr-row" id="recorrPasso1">
+              <span class="recorr-label">O que você quer fazer?</span>
+              <div class="recorr-chips">
+                <button type="button" class="recorr-chip active" data-recorr-modo="">
+                  <i class="bi bi-x-circle"></i> Não repetir
+                </button>
+                <button type="button" class="recorr-chip" data-recorr-modo="duplicar">
+                  <i class="bi bi-copy"></i> Repetir o valor inteiro
+                </button>
+                <button type="button" class="recorr-chip" data-recorr-modo="dividir">
+                  <i class="bi bi-scissors"></i> Dividir em parcelas
+                </button>
+              </div>
+            </div>
+
+            <!-- Passo 2: quantos meses? -->
+            <div class="recorr-row" id="recorrPasso2" style="display:none">
+              <span class="recorr-label" id="recorrQtdLabel">Em quantos meses?</span>
+              <div class="d-flex align-items-center gap-3 flex-wrap">
+                <input type="number" class="form-control recorr-num-input"
+                       id="recorrMesesVis" min="2" max="60" placeholder="Ex: 12"
+                       autocomplete="off">
+                <div class="recorr-preview-box" id="recorrPreview" style="display:none"></div>
+              </div>
+            </div>
+
+            <!-- Passo 3: a partir de qual mês? -->
+            <div class="recorr-row" id="recorrPasso3" style="display:none">
+              <span class="recorr-label">A partir de qual mês?</span>
+              <div class="recorr-chips">
+                <button type="button" class="recorr-chip active" data-recorr-apartir="atual">
+                  <i class="bi bi-calendar-check"></i> Este mês
+                </button>
+                <button type="button" class="recorr-chip" data-recorr-apartir="proximo">
+                  <i class="bi bi-calendar-arrow-up"></i> Próximo mês
+                </button>
+                <button type="button" class="recorr-chip" data-recorr-apartir="custom">
+                  <i class="bi bi-calendar3"></i> Outro mês…
+                </button>
+              </div>
+              <div id="recorrMesCustomWrap" style="display:none;margin-top:10px">
+                <input type="text" class="form-control month-picker recorr-mes-custom"
+                       id="recorrMesCustomVis" placeholder="MM/AAAA" maxlength="7" autocomplete="off">
+              </div>
+            </div>
+
+          </div>
+          <!-- ══ /RECORRÊNCIA ════════════════════════════════════════ -->
+
+        </div><!-- /modal-body -->
+
+        <div class="modal-footer">
+          <button class="btn-cancel" data-bs-dismiss="modal" type="button">Cancelar</button>
+          <button type="button" class="btn-gg btn-ghost" id="pagParcelarBtn" style="display:none" title="Parcelar este lançamento em meses futuros">
+            <i class="bi bi-scissors me-1"></i>Parcelar
+          </button>
+          <button class="btn-save" type="submit"><i class="bi bi-floppy-fill me-1"></i>Salvar pagamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- ===================== /MODAL ===================== -->
+
+<!-- ===================== MODAL EDIÇÃO EM LOTE ===================== -->
+<div class="modal fade iris-modal" id="pagBulkModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title"><i class="bi bi-pencil-fill me-2"></i>Editar selecionados</div>
+          <div class="modal-subtitle" id="pagBulkSubtitle">Alterações serão aplicadas a todos os registros selecionados</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <div class="modal-section-title"><i class="bi bi-tags"></i>O que deseja alterar?</div>
+          <div class="mini text-muted mb-3">Deixe em branco os campos que não quer mudar.</div>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Tipo de lançamento</label>
+              <select class="form-select" id="bulk_tipo_lancamento">
+                <option value="">— não alterar —</option>
+                <option value="Gasto">OPEX</option>
+                <option value="Investimento">CAPEX</option>
+                <option value="Terceiros">Terceiros</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Status de pagamento</label>
+              <select class="form-select" id="bulk_status">
+                <option value="">— não alterar —</option>
+                <option value="Sim">Pago</option>
+                <option value="Não">Pendente (não pago)</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Mês de referência</label>
+              <input class="form-control month-picker" id="bulk_pagamento_mes" placeholder="MM/AAAA — deixe vazio para não alterar">
+            </div>
+          </div>
+        </div>
+        <div class="modal-section" id="pagBulkPreview" style="display:none">
+          <div class="modal-section-title"><i class="bi bi-eye"></i>Prévia das alterações</div>
+          <div id="pagBulkPreviewBody" class="mini"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" data-bs-dismiss="modal" type="button">Cancelar</button>
+        <button class="btn-save" id="pagBulkSaveBtn" type="button"><i class="bi bi-floppy-fill me-1"></i>Aplicar a todos</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===================== /MODAL EDIÇÃO EM LOTE ===================== -->
+
+<!-- ══════════ MODAL PARCELAR ══════════ -->
+<div class="modal fade iris-modal" id="pagParcelarModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title"><i class="bi bi-scissors me-2"></i>Parcelar lançamento</div>
+          <div class="modal-subtitle" id="pagParcelarSubtitle">Divide ou replica este registro nos meses seguintes</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <div class="modal-section-title"><i class="bi bi-arrows-collapse"></i>Como tratar o valor?</div>
+          <div class="recorr-chips mb-3">
+            <button type="button" class="recorr-chip active" id="prc_modo_duplicar">
+              <i class="bi bi-copy"></i> Repetir o valor inteiro
+            </button>
+            <button type="button" class="recorr-chip" id="prc_modo_dividir">
+              <i class="bi bi-scissors"></i> Dividir em parcelas
+            </button>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label recorr-label">Em quantos meses?</label>
+              <input type="number" class="form-control recorr-num-input" id="prc_meses" min="2" max="60" placeholder="Ex: 12">
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+              <div class="recorr-preview-box w-100" id="prc_preview" style="display:none"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title"><i class="bi bi-calendar3"></i>A partir de qual mês?</div>
+          <div class="recorr-chips mb-3">
+            <button type="button" class="recorr-chip active" id="prc_apartir_atual">
+              <i class="bi bi-calendar-check"></i> Mês do lançamento
+            </button>
+            <button type="button" class="recorr-chip" id="prc_apartir_proximo">
+              <i class="bi bi-calendar-arrow-up"></i> Próximo mês
+            </button>
+            <button type="button" class="recorr-chip" id="prc_apartir_custom">
+              <i class="bi bi-calendar3"></i> Outro mês…
+            </button>
+          </div>
+          <div id="prc_custom_wrap" style="display:none">
+            <input type="text" class="form-control month-picker recorr-mes-custom" id="prc_mes_custom" placeholder="MM/AAAA" maxlength="7">
+          </div>
+        </div>
+
+        <div class="modal-section" id="prc_aviso_wrap" style="display:none">
+          <div style="padding:10px 14px;border-radius:10px;background:rgba(234,179,8,.10);border:1px solid rgba(234,179,8,.25);font-size:.82rem;font-weight:600;color:#92400e">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            <span id="prc_aviso_txt"></span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" data-bs-dismiss="modal" type="button">Cancelar</button>
+        <button class="btn-save" id="prc_confirmar_btn" disabled>
+          <i class="bi bi-scissors me-1"></i>Confirmar parcelamento
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ══════════ /MODAL PARCELAR ══════════ -->
+
+<div id="ggToast" class="gg-toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ══════════ DRAWER LATERAL ══════════ -->
+<div id="pagDrawerOverlay" class="drw-overlay"></div>
+<aside id="pagDrawer" class="drw-panel" aria-label="Detalhes do pagamento">
+  <div class="drw-header">
+    <div class="drw-header-left">
+      <div class="drw-avatar" id="drwAvatar"></div>
+      <div>
+        <div class="drw-fornecedor" id="drwFornecedor">—</div>
+        <div class="drw-id" id="drwId"></div>
+      </div>
+    </div>
+    <button class="drw-close" onclick="fecharDrawer()" title="Fechar (Esc)"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="drw-valor-row">
+    <div>
+      <div class="drw-valor" id="drwValor">—</div>
+      <div class="drw-mes" id="drwMes"></div>
+    </div>
+    <div id="drwStatus"></div>
+  </div>
+  <div class="drw-actions" id="drwActions"></div>
+  <div class="drw-body" id="drwBody">
+    <div class="drw-loading"><i class="bi bi-arrow-repeat drw-spin"></i> Carregando…</div>
+  </div>
+</aside>
+<!-- ══════════ /DRAWER LATERAL ══════════ -->
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const table=document.getElementById('pagamentosTable');
+  const selectAllPag=document.getElementById('pagSelectAll');
+  // Helper CSRF para fetch POST
+function csrfJson(extra){return Object.assign({'Content-Type':'application/json','X-CSRF-Token':window.IRIS_CSRF_TOKEN||''},extra||{});}
+
+// ── Tipo de lançamento: mostrar/ocultar campo Terceiros ──────────
+function onTipoChange(sel) {
+  const wrap = document.getElementById('pagTerceiroNomeWrap');
+  if(!wrap) return;
+  wrap.style.display = (sel.value === 'Terceiros') ? '' : 'none';
+  const input = document.getElementById('pagamentos_terceiro_nome');
+  if(input && sel.value !== 'Terceiros') input.value = '';
+}
+
+const modalEl=document.getElementById('pagModal');
+
+  const parseMoneyValue=(v)=>{
+    if(typeof v === 'number') return v;
+    let s=String(v||'').trim();
+    if(!s) return 0;
+    s=s.replace(/R\$/g,'').replace(/\s/g,'');
+    if(s.includes(',') && s.includes('.')) s=s.replace(/\./g,'').replace(',', '.');
+    else if(s.includes(',')) s=s.replace(',', '.');
+    const n=Number(s);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const brMoney=(v)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(parseMoneyValue(v));
+  const showToast=(message, kind='success')=>{
+    const toast=document.getElementById('ggToast');
+    if(!toast){ alert(message); return; }
+    toast.textContent=message;
+    toast.className=`gg-toast show ${kind}`;
+    clearTimeout(window.__ggToastTimer);
+    window.__ggToastTimer=setTimeout(()=>toast.className='gg-toast',2400);
+  };
+  const normalizePaymentMonth=(value)=>{
+    const raw=String(value||'').trim();
+    if(!raw) return '';
+    const m=raw.match(/(\d{1,2})\s*\/\s*(\d{2,4})/);
+    if(m){
+      const month=String(Math.max(1,Math.min(12,parseInt(m[1],10)))).padStart(2,'0');
+      let year=parseInt(m[2],10);
+      if(year<100) year+=2000;
+      return `${month}/${year}`;
+    }
+    return raw.toUpperCase();
+  };
+  const paymentMonthKey=(value)=>{
+    const ref=normalizePaymentMonth(value);
+    const m=ref.match(/(\d{2})\/(\d{4})/);
+    if(!m) return null;
+    return Number(m[2])*100 + Number(m[1]);
+  };
+  const isValidPaymentId=(id)=>/^\d+$/.test(String(id||''));
+  const visibleRows=()=>[...document.querySelectorAll('#pagamentosTable tbody tr[data-id]')].filter(r=>r.style.display!=='none');
+  const selectedRows=()=>visibleRows().filter(r=>isValidPaymentId(r.dataset.id) && (r.classList.contains('selected') || r.querySelector('.row-selector')?.checked));
+  const selectedIds=()=>selectedRows().map(r=>Number(r.dataset.id));
+
+  function updateSelectAllState(){
+    if(!selectAllPag) return;
+    const validVisible=visibleRows().filter(r=>isValidPaymentId(r.dataset.id));
+    const selected=validVisible.filter(r=>r.classList.contains('selected') || r.querySelector('.row-selector')?.checked);
+    selectAllPag.checked=validVisible.length>0 && selected.length===validVisible.length;
+    selectAllPag.indeterminate=selected.length>0 && selected.length<validVisible.length;
+  }
+  function syncRowCheckbox(row, checked){
+    if(!row) return;
+    const valid=isValidPaymentId(row.dataset.id);
+    row.classList.toggle('selected', !!checked && valid);
+    row.classList.remove('anchor-selected');
+    const box=row.querySelector('.row-selector');
+    if(box){ box.disabled=!valid; box.checked=!!checked && valid; }
+    if(!valid) row.classList.add('row-without-valid-id');
+    updateSelectAllState();
+  }
+  function clearSelection(){
+    document.querySelectorAll('#pagamentosTable tbody tr').forEach(r=>syncRowCheckbox(r,false));
+    if(selectAllPag){ selectAllPag.checked=false; selectAllPag.indeterminate=false; }
+  }
+  function updateCardsFromVisibleRows(){
+    let total=0,pago=0,pendente=0,count=0;
+    visibleRows().forEach(row=>{
+      count++;
+      const valor=parseMoneyValue(row.querySelector('td[data-value]')?.dataset.value || row.querySelector('td[data-value]')?.dataset.value || 0);
+      total += valor;
+      if(String(row.dataset.status||'').trim().toLowerCase()==='sim') pago += valor;
+      else pendente += valor;
+    });
+    const set=(id,val)=>{const el=document.getElementById(id); if(el) el.textContent=val;};
+    set('cardTotalMes', brMoney(total));
+    set('cardPagoMes', brMoney(pago));
+    set('cardPendenteMes', brMoney(pendente));
+    set('cardRegistros', String(count));
+  }
+  function buildPaymentPeriodParams(){
+    const params=new URLSearchParams();
+    const mes=normalizePaymentMonth(document.getElementById('pagFiltroMes')?.value || '');
+    const fim=normalizePaymentMonth(document.getElementById('pagFiltroMesFim')?.value || '');
+    if(mes) params.set('mes', mes);
+    if(fim) params.set('mes_fim', fim);
+    if(!mes && !fim) params.set('todos','1');
+    return params;
+  }
+  function refreshPaymentReportLinks(){
+    const suffix=buildPaymentPeriodParams().toString();
+    const query=suffix ? '?' + suffix : '';
+    const pdf=document.getElementById('pagPdfCompletoLink');
+    const excel=document.getElementById('pagExcelLink');
+    if(pdf) pdf.href='/pagamentos/pdf' + query;
+    if(excel) excel.href='/pagamentos/excel' + query;
+  }
+  function applyPaymentFilters(){
+    const busca=(document.getElementById('pagFiltroBusca')?.value || '').trim().toLowerCase();
+    const mes=normalizePaymentMonth(document.getElementById('pagFiltroMes')?.value || '');
+    const mesFim=normalizePaymentMonth(document.getElementById('pagFiltroMesFim')?.value || '');
+    const status=document.getElementById('pagFiltroStatus')?.value || '';
+    const tipo=document.getElementById('pagFiltroTipo')?.value || '';
+    const arquivo=document.getElementById('pagFiltroArquivo')?.value || '';
+    const vencFiltro=document.getElementById('pagFiltroVencimento')?.value || '';
+    const hojeStr=new Date().toLocaleDateString('pt-BR');
+    const amStr=new Date(Date.now()+86400000).toLocaleDateString('pt-BR');
+    const startKey=paymentMonthKey(mes), endKey=paymentMonthKey(mesFim);
+
+    document.querySelectorAll('#pagamentosTable tbody tr[data-id]').forEach(row=>{
+      const rowText=(row.dataset.search || row.textContent || '').toLowerCase();
+      const rowMonth=normalizePaymentMonth(row.dataset.month || row.children[7]?.textContent || '');
+      const rowStatus=row.dataset.status || '';
+      const rowTipo=row.dataset.tipo || 'Gasto';
+      const rowFiles=row.dataset.hasFiles || '0';
+      const rowTypes=row.dataset.fileTypes || '';
+      let visible=true;
+      if(busca && !rowText.includes(busca)) visible=false;
+      if(visible && mes){
+        if(mesFim && startKey && endKey){
+          const rowKey=paymentMonthKey(rowMonth);
+          const lo=Math.min(startKey,endKey), hi=Math.max(startKey,endKey);
+          if(rowKey===null || rowKey<lo || rowKey>hi) visible=false;
+        }else if(rowMonth !== mes){ visible=false; }
+      }
+      if(visible && status && rowStatus !== status) visible=false;
+      if(visible && tipo && rowTipo !== tipo) visible=false;
+      if(visible && arquivo){
+        if(arquivo==='sem'){ if(rowFiles==='1') visible=false; }
+        else if(!rowTypes.includes(arquivo)){ visible=false; }
+      }
+      if(visible && vencFiltro){
+        const rv=row.dataset.vencimento||'';
+        if(vencFiltro==='hoje' && rv!==hojeStr) visible=false;
+        else if(vencFiltro==='amanha' && rv!==amStr) visible=false;
+        else if(vencFiltro==='vencidos'){
+          if(!rv) visible=false;
+          else {
+            const parts=rv.split('/');
+            const d=parts.length===3?new Date(parts[2],parts[1]-1,parts[0]):null;
+            if(!d || d>=new Date().setHours(0,0,0,0)) visible=false;
+            if(row.dataset.status==='Sim') visible=false;
+          }
+        }
+      }
+      row.style.display=visible ? '' : 'none';
+      if(!visible) syncRowCheckbox(row,false);
+    });
+    if(selectAllPag){ selectAllPag.checked=false; selectAllPag.indeterminate=false; }
+    updateCardsFromVisibleRows();
+    refreshPaymentReportLinks();
+  }
+  function reloadPaymentPeriod(){
+    const params=buildPaymentPeriodParams();
+    window.location.href='/pagamentos/lancamentos' + (params.toString() ? '?' + params.toString() : '');
+  }
+  function attachmentHtml(item,rid){
+    return `<div class="attach-chip" data-group="${item.group}" data-index="${item.index}">
+      <a href="${item.url}" target="_blank" class="attach-open" title="Abrir ${item.name}"><i class="bi ${item.icon}"></i><span>${item.label}: ${item.name}</span></a>
+      <button type="button" class="attach-delete" data-id="${rid}" data-group="${item.group}" data-index="${item.index}" title="Excluir ficheiro"><i class="bi bi-trash3-fill"></i></button>
+    </div>`;
+  }
+  function renderPaymentAttachments(attachments,rid){
+    const host=document.getElementById('pagamentos_attachments');
+    if(!host) return;
+    host.innerHTML=(attachments||[]).length ? attachments.map(item=>attachmentHtml(item,rid)).join('') : '<div class="mini text-muted">Nenhum ficheiro anexado.</div>';
+    host.querySelectorAll('.attach-delete').forEach(btn=>{
+      btn.addEventListener('click',async()=>{
+        const okFile = await irisConfirm({title:'Excluir ficheiro',message:'Remover este anexo do pagamento?',icon:'📎',danger:true,btnOk:'Excluir'});
+        if(!okFile) return;
+        const resp=await fetch('/api/pagamentos/attachment/delete',{method:'POST',headers:csrfJson(),body:JSON.stringify({id:btn.dataset.id,group:btn.dataset.group,index:Number(btn.dataset.index)})});
+        const data=await resp.json().catch(()=>({}));
+        if(!resp.ok || !data.ok){ showToast(data.error || 'Não foi possível excluir o ficheiro.','error'); return; }
+        renderPaymentAttachments(data.attachments || [], btn.dataset.id);
+        showToast('Ficheiro excluído');
+      });
+    });
+  }
+  window.pagamentosEdit=async(id)=>{
+    if(!isValidPaymentId(id)){ showToast('Este pagamento está sem ID válido. Recarregue a página.', 'error'); return; }
+    const resp=await fetch(`/api/pagamentos/${encodeURIComponent(id)}`, {headers:{'Accept':'application/json'}});
+    const data=await resp.json().catch(()=>({}));
+    if(!resp.ok || data.error){ showToast(data.error || 'Não foi possível abrir este pagamento.', 'error'); return; }
+
+    document.querySelectorAll('#pagModal input[type="file"]').forEach(el=>{ el.value=''; });
+    for(const k in data){
+      const el=document.getElementById('pagamentos_'+k);
+      if(el && !Array.isArray(data[k]) && typeof data[k] !== 'object') el.value=data[k] ?? '';
+    }
+    const idField=document.getElementById('pagamentos_id');
+    if(idField) idField.value=data.id || id;
+    const tipoEl=document.getElementById('pagamentos_tipo_lancamento');
+    if(tipoEl){ tipoEl.value = data.tipo_lancamento || 'Gasto'; onTipoChange(tipoEl); }
+    const terceiroEl=document.getElementById('pagamentos_terceiro_nome');
+    if(terceiroEl) terceiroEl.value = data.terceiro_nome || '';
+    // Normaliza mês: se vier só "04" sem ano, converte para "04/AAAA"
+    const mesEl=document.getElementById('pagamentos_pagamento_mes');
+    if(mesEl){
+      const mesVal=String(mesEl.value||'').trim();
+      if(/^\d{1,2}$/.test(mesVal)){
+        const ano=new Date().getFullYear();
+        mesEl.value=String(parseInt(mesVal,10)).padStart(2,'0')+'/'+ano;
+        if(mesEl._flatpickr) mesEl._flatpickr.setDate(mesEl.value,false,'m/Y');
+      }
+    }
+    renderPaymentAttachments(data.attachments_all || [], data.id || id);
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  };
+
+
+  // ── Recorrência: chips interativos ──────────────────────────
+  (function initRecorrencia(){
+    let modoAtual    = '';
+    let aPartirAtual = 'atual';
+    const el = id => document.getElementById(id);
+
+    function parseBR(s){
+      s = String(s||'').replace(/[R$\s]/g,'');
+      if(s.includes(',') && s.includes('.')) s = s.replace(/\./g,'').replace(',','.');
+      else if(s.includes(',')) s = s.replace(',','.');
+      return parseFloat(s) || 0;
+    }
+    function fmtBR(n){
+      return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    }
+
+    function updatePreview(){
+      const n = parseInt(el('recorrMesesVis')?.value||'0')||0;
+      const preview = el('recorrPreview');
+      if(!preview) return;
+      if(!modoAtual || n < 2){ preview.style.display='none'; preview.innerHTML=''; return; }
+      const total = parseBR(document.querySelector('#pagModal [name="valor"]')?.value || '0');
+      if(modoAtual === 'dividir'){
+        preview.innerHTML = `<i class="bi bi-scissors me-1"></i><strong>${n}x</strong> de R$&nbsp;${fmtBR(total/n)}`;
+      } else {
+        preview.innerHTML = `<i class="bi bi-copy me-1"></i><strong>${n}</strong> cópias de R$&nbsp;${fmtBR(total)}`;
+      }
+      preview.style.display = 'flex';
+    }
+
+    function syncHiddens(){
+      el('pag_modo_valor').value       = modoAtual;
+      el('pag_repetir_a_partir').value = modoAtual ? aPartirAtual : '';
+    }
+
+    function refreshUI(){
+      const ativo = !!modoAtual;
+      const n = parseInt(el('recorrMesesVis')?.value||'0')||0;
+      el('recorrPasso2').style.display = ativo ? '' : 'none';
+      el('recorrPasso3').style.display = (ativo && n >= 2) ? '' : 'none';
+      el('recorrMesCustomWrap').style.display = (ativo && aPartirAtual==='custom') ? '' : 'none';
+      const lbl = el('recorrQtdLabel');
+      if(lbl) lbl.textContent = modoAtual==='dividir' ? 'Em quantas parcelas?' : 'Em quantos meses?';
+      el('pag_repetir_meses').value = (ativo && n >= 2) ? n : '';
+      el('pag_repetir_mes_inicio').value = (aPartirAtual==='custom') ? (el('recorrMesCustomVis')?.value||'') : '';
+      syncHiddens();
+      updatePreview();
+    }
+
+    document.querySelectorAll('[data-recorr-modo]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        modoAtual = btn.dataset.recorrModo;
+        document.querySelectorAll('[data-recorr-modo]').forEach(b => b.classList.toggle('active', b===btn));
+        if(el('recorrMesesVis')) el('recorrMesesVis').value = '';
+        el('pag_repetir_meses').value = '';
+        refreshUI();
+      });
+    });
+
+    document.querySelectorAll('[data-recorr-apartir]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        aPartirAtual = btn.dataset.recorrApartir;
+        document.querySelectorAll('[data-recorr-apartir]').forEach(b => b.classList.toggle('active', b===btn));
+        if(aPartirAtual !== 'custom' && el('recorrMesCustomVis')) el('recorrMesCustomVis').value = '';
+        refreshUI();
+      });
+    });
+
+    el('recorrMesesVis')?.addEventListener('input', refreshUI);
+    el('recorrMesCustomVis')?.addEventListener('input', () => {
+      el('pag_repetir_mes_inicio').value = el('recorrMesCustomVis').value;
+    });
+    document.querySelector('#pagModal [name="valor"]')?.addEventListener('input', updatePreview);
+
+    // Reset ao abrir NOVO pagamento
+    modalEl?.addEventListener('show.bs.modal', e => {
+      const isNew = e.relatedTarget && e.relatedTarget.matches('[data-bs-target="#pagModal"]');
+      // reset form + arquivos (mantido do código original)
+      if(isNew){
+        const form = modalEl.querySelector('form');
+        if(form) form.reset();
+        const idField = el('pagamentos_id');
+        if(idField) idField.value = '';
+        document.querySelectorAll('#pagModal input[type="file"]').forEach(f=>{ f.value=''; });
+        renderPaymentAttachments([], '');
+      }
+      // reset recorrência sempre (para edição também oculta)
+      modoAtual    = '';
+      aPartirAtual = 'atual';
+      document.querySelectorAll('[data-recorr-modo]').forEach(b => b.classList.toggle('active', b.dataset.recorrModo===''));
+      document.querySelectorAll('[data-recorr-apartir]').forEach(b => b.classList.toggle('active', b.dataset.recorrApartir==='atual'));
+      if(el('recorrMesesVis'))     el('recorrMesesVis').value     = '';
+      if(el('recorrMesCustomVis')) el('recorrMesCustomVis').value = '';
+      // oculta seção ao editar existente
+      const rid = el('pagamentos_id')?.value || '';
+      el('secaoRecorrente').style.display = (isNew || !rid) ? '' : 'none';
+      refreshUI();
+    });
+
+    refreshUI();
+  })();
+
+  if(selectAllPag){
+    selectAllPag.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const checked=selectAllPag.checked;
+      visibleRows().forEach(row=>{ if(isValidPaymentId(row.dataset.id)) syncRowCheckbox(row,checked); });
+    });
+  }
+  table?.addEventListener('click',(e)=>{
+    const box=e.target.closest('.row-selector');
+    if(box){
+      e.stopPropagation();
+      const row=box.closest('tr[data-id]');
+      if(row && isValidPaymentId(row.dataset.id)) syncRowCheckbox(row,box.checked);
+      return;
+    }
+    // Clique com Ctrl/Shift = seleciona (sem abrir drawer)
+    const row=e.target.closest('tbody tr[data-id]');
+    if(!row || e.target.closest('a,button,label')) return;
+    if((e.ctrlKey || e.metaKey || e.shiftKey)){
+      if(!isValidPaymentId(row.dataset.id)){ showToast('Este pagamento está sem ID válido.', 'error'); return; }
+      const willSelect=!row.classList.contains('selected');
+      syncRowCheckbox(row,willSelect);
+    }
+    // Clique simples sem modificador → tratado pelo drawer (script separado)
+  });
+  document.getElementById('pagEditBtn')?.addEventListener('click',()=>{
+    const rows=selectedRows();
+    if(rows.length!==1){ showToast('Selecione exatamente um pagamento válido para editar.','error'); return; }
+    window.pagamentosEdit(rows[0].dataset.id);
+  });
+  document.getElementById('pagEmailBtn')?.addEventListener('click',()=>{
+    const ids=selectedIds();
+    if(ids.length!==1){ showToast('Selecione exatamente um pagamento válido para preparar o e-mail.','error'); return; }
+    const row=document.querySelector(`#pagamentosTable tr[data-id="${ids[0]}"]`);
+    const temPedido=!!(row && row.children[9] && row.children[9].textContent.trim());
+    window.location.href='/outlook?pagamento_id='+ids[0]+'&flow='+(temPedido?'contabil':'compras')+'#tab-preparo';
+  });
+  document.getElementById('pagMarkPaidBtn')?.addEventListener('click',async()=>{
+    const ids=selectedIds();
+    if(!ids.length){ showToast('Selecione um ou mais pagamentos para marcar como pagos.','error'); return; }
+    const okPago = await irisConfirm({title:'Confirmar pagamento',message:`Marcar ${ids.length} pagamento(s) como pago(s)?`,icon:'✅',danger:false,btnOk:'Marcar como pago'});
+    if(!okPago) return;
+    const resp=await fetch('/api/pagamentos/mark-paid',{method:'POST',headers:csrfJson(),body:JSON.stringify({ids})});
+    const data=await resp.json().catch(()=>({}));
+    if(!resp.ok || !data.ok){ showToast(data.error || 'Não foi possível atualizar os pagamentos.','error'); return; }
+    ids.forEach(id=>{
+      const row=document.querySelector(`#pagamentosTable tr[data-id="${id}"]`);
+      if(!row) return;
+      row.dataset.status='Sim';
+      syncRowCheckbox(row,false);
+      const statusEl=row.querySelector('td:nth-child(6) .erp-status');
+      if(statusEl){ statusEl.className='erp-status erp-status-paid'; statusEl.innerHTML='<span class="erp-dot erp-dot-paid"></span>Pago'; }
+    });
+    applyPaymentFilters();
+    showToast('Pagamentos atualizados');
+  });
+  // ── Delete via teclado ───────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if(e.key !== 'Delete') return;
+    // Não aciona se o foco estiver em input/textarea/select/modal aberto
+    const tag = (document.activeElement?.tagName || '').toLowerCase();
+    if(['input','textarea','select'].includes(tag)) return;
+    if(document.querySelector('.modal.show')) return;
+    if(!selectedIds().length) return;
+    e.preventDefault();
+    document.getElementById('pagDeleteBtn')?.click();
+  });
+
+  document.getElementById('pagDeleteBtn')?.addEventListener('click',async()=>{
+    const ids=selectedIds();
+    if(!ids.length){ showToast('Selecione um ou mais pagamentos para excluir.','error'); return; }
+    const nomesDel = [...document.querySelectorAll('#pagamentosTable tr.selected')].map(r=>r.querySelector('.erp-cell-primary')?.textContent?.trim()||'').filter(Boolean).slice(0,3).join(', ');
+    const okDel = await irisConfirm({title:'Excluir pagamentos',message:`Excluir ${ids.length} pagamento(s)${nomesDel?' ('+nomesDel+')':''}? Esta ação não pode ser desfeita.`,icon:'🗑️',danger:true,btnOk:'Excluir'});
+    if(!okDel) return;
+    const resp=await fetch('/api/pagamentos/delete',{method:'POST',headers:csrfJson(),body:JSON.stringify({ids})});
+    const data=await resp.json().catch(()=>({}));
+    if(!resp.ok || !data.ok){ showToast(data.error || 'Não foi possível excluir os registros.','error'); return; }
+    ids.forEach(id=>document.querySelector(`#pagamentosTable tr[data-id="${id}"]`)?.remove());
+    applyPaymentFilters();
+    showToast('Pagamentos excluídos');
+  });
+  document.getElementById('pagAplicarPeriodo')?.addEventListener('click',reloadPaymentPeriod);
+  ['pagFiltroMes','pagFiltroMesFim'].forEach(id=>document.getElementById(id)?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); reloadPaymentPeriod(); }}));
+  ['pagFiltroBusca','pagFiltroStatus','pagFiltroTipo','pagFiltroArquivo','pagFiltroVencimento'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('input',applyPaymentFilters);
+    document.getElementById(id)?.addEventListener('change',applyPaymentFilters);
+  });
+  ['pagFiltroMes','pagFiltroMesFim'].forEach(id=>document.getElementById(id)?.addEventListener('change',refreshPaymentReportLinks));
+
+  function attachFiles(input,files){
+    const dt=new DataTransfer();
+    [...(input.files||[])].forEach(f=>dt.items.add(f));
+    [...files].forEach(f=>dt.items.add(f));
+    input.files=dt.files;
+  }
+  document.querySelectorAll('.dropzone-pay').forEach(zone=>{
+    const input=document.getElementById(zone.dataset.target);
+    if(!input) return;
+    zone.addEventListener('click',()=>input.click());
+    ['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add('dragging');}));
+    ['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();if(ev!=='drop') zone.classList.remove('dragging');}));
+    zone.addEventListener('drop',e=>{zone.classList.remove('dragging');if(e.dataTransfer?.files?.length){attachFiles(input,e.dataTransfer.files);showToast(`${e.dataTransfer.files.length} ficheiro(s) pronto(s) para salvar`);}});
+    input.addEventListener('change',()=>{if(input.files.length){showToast(`${input.files.length} ficheiro(s) pronto(s) para salvar`);}});
+  });
+  document.getElementById('pagPdfSelecionados')?.addEventListener('click',()=>{
+    const ids=[...document.querySelectorAll('.row-selector:checked')].map(e=>e.value).filter(isValidPaymentId);
+    if(!ids.length){ showToast('Selecione pelo menos um pagamento.','error'); return; }
+    window.open('/pagamentos/pdf?ids='+ids.join(','),'_blank');
+  });
+
+  refreshPaymentReportLinks();
+  applyPaymentFilters();
+
+  // ── Highlight de linha vinda de ?highlight=ID ─────────────────
+  (function(){
+    const params = new URLSearchParams(window.location.search);
+    const hid = params.get('highlight');
+    if(!hid) return;
+    const row = document.querySelector(`#pagamentosTable tr[data-id="${hid}"]`);
+    if(!row) return;
+    setTimeout(() => {
+      row.scrollIntoView({behavior:'smooth', block:'center'});
+      row.style.transition = 'background .3s';
+      row.style.background = '#dbeafe';
+      row.style.outline = '2px solid #1d4ed8';
+      setTimeout(() => {
+        row.style.background = '';
+        row.style.outline = '';
+      }, 2500);
+    }, 400);
+  })();
+
+  // ── Boleto: leitura automática de vencimento ──────────────────
+  const bolInput = document.getElementById('pagAnexoBol');
+  bolInput?.addEventListener('change', async () => {
+    const file = bolInput.files[0];
+    if(!file || !file.name.toLowerCase().endsWith('.pdf')) return;
+    const fd = new FormData();
+    fd.append('boleto', file);
+    try {
+      const r = await fetch('/api/boleto/parse-vencimento', {method:'POST', body: fd});
+      const d = await r.json();
+      if(d.ok && d.vencimento) {
+        const vencEl = document.getElementById('pagamentos_data_vencimento');
+        if(vencEl && !vencEl.value) {
+          vencEl.value = d.vencimento;
+          if(vencEl._flatpickr) vencEl._flatpickr.setDate(d.vencimento, false, 'd/m/Y');
+          const hint = document.getElementById('pagVencimentoHint');
+          if(hint){ hint.textContent = '✓ Vencimento lido automaticamente do boleto'; hint.style.display='block'; }
+          showToast('Vencimento ' + d.vencimento + ' preenchido automaticamente!');
+        }
+      }
+    } catch(e) {}
+  });
+
+})();
+
+// ── Bulk edit ─────────────────────────────────────────────────
+(function(){
+  const bulkBtn = document.getElementById('pagBulkEditBtn');
+  const bulkModal = document.getElementById('pagBulkModal');
+  if(!bulkBtn || !bulkModal) return;
+
+  const normalizeMonth = (v) => {
+    const raw = String(v||'').trim();
+    if(!raw) return '';
+    const m = raw.match(/(\d{1,2})\s*\/\s*(\d{2,4})/);
+    if(m){
+      const mo = String(Math.max(1,Math.min(12,parseInt(m[1],10)))).padStart(2,'0');
+      let yr = parseInt(m[2],10); if(yr<100) yr+=2000;
+      return `${mo}/${yr}`;
+    }
+    if(/^\d{1,2}$/.test(raw)){
+      return String(parseInt(raw,10)).padStart(2,'0')+'/'+new Date().getFullYear();
+    }
+    return raw;
+  };
+
+  bulkBtn.addEventListener('click', () => {
+    const selected = [...document.querySelectorAll('#pagamentosTable tbody tr[data-id]')]
+      .filter(r => r.style.display !== 'none' && (r.classList.contains('selected') || r.querySelector('.row-selector')?.checked))
+      .filter(r => /^\d+$/.test(r.dataset.id));
+    if(!selected.length){ showToast('Selecione pelo menos um pagamento válido.','error'); return; }
+    const subtitle = document.getElementById('pagBulkSubtitle');
+    if(subtitle) subtitle.textContent = `${selected.length} registro(s) selecionado(s)`;
+    document.getElementById('bulk_tipo_lancamento').value = '';
+    document.getElementById('bulk_status').value = '';
+    document.getElementById('bulk_pagamento_mes').value = '';
+    const preview = document.getElementById('pagBulkPreview');
+    if(preview) preview.style.display = 'none';
+    bootstrap.Modal.getOrCreateInstance(bulkModal).show();
+  });
+
+  // Prévia ao mudar campos
+  ['bulk_tipo_lancamento','bulk_status','bulk_pagamento_mes'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', updatePreview);
+    document.getElementById(id)?.addEventListener('input', updatePreview);
+  });
+
+  function updatePreview(){
+    const tipo = document.getElementById('bulk_tipo_lancamento')?.value || '';
+    const status = document.getElementById('bulk_status')?.value || '';
+    const mes = normalizeMonth(document.getElementById('bulk_pagamento_mes')?.value || '');
+    const changes = [];
+    if(tipo) changes.push(`Tipo → <strong>${tipo}</strong>`);
+    if(status) changes.push(`Status → <strong>${status === 'Sim' ? 'Pago' : 'Pendente'}</strong>`);
+    if(mes) changes.push(`Mês → <strong>${mes}</strong>`);
+    const preview = document.getElementById('pagBulkPreview');
+    const body = document.getElementById('pagBulkPreviewBody');
+    if(!preview || !body) return;
+    if(changes.length){
+      body.innerHTML = 'Será aplicado: ' + changes.join(' · ');
+      preview.style.display = '';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
+  document.getElementById('pagBulkSaveBtn')?.addEventListener('click', async () => {
+    const tipo = document.getElementById('bulk_tipo_lancamento')?.value || '';
+    const status = document.getElementById('bulk_status')?.value || '';
+    const mes = normalizeMonth(document.getElementById('bulk_pagamento_mes')?.value || '');
+    if(!tipo && !status && !mes){ showToast('Selecione pelo menos um campo para alterar.','error'); return; }
+
+    const ids = [...document.querySelectorAll('#pagamentosTable tbody tr[data-id]')]
+      .filter(r => r.style.display !== 'none' && (r.classList.contains('selected') || r.querySelector('.row-selector')?.checked))
+      .filter(r => /^\d+$/.test(r.dataset.id))
+      .map(r => Number(r.dataset.id));
+
+    if(!ids.length){ showToast('Nenhum registro selecionado.','error'); return; }
+
+    const payload = {ids};
+    if(tipo) payload.tipo_lancamento = tipo;
+    if(status) payload.status = status;
+    if(mes) payload.pagamento_mes = mes;
+
+    const resp = await fetch('/api/pagamentos/bulk-edit', {
+      method: 'POST',
+      headers:csrfJson(),
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json().catch(()=>({}));
+    if(!resp.ok || !data.ok){
+      showToast(data.error || 'Não foi possível aplicar as alterações.','error');
+      return;
+    }
+
+    // Atualiza a tabela visualmente
+    ids.forEach(id => {
+      const row = document.querySelector(`#pagamentosTable tr[data-id="${id}"]`);
+      if(!row) return;
+      if(tipo){
+        row.dataset.tipo = tipo;
+        const badgeEl = row.querySelector('td:nth-child(5) .erp-badge');
+        if(badgeEl){
+          badgeEl.textContent = tipo;
+          badgeEl.className = tipo === 'Investimento' ? 'erp-badge erp-badge-invest' : 'erp-badge erp-badge-gasto';
+        }
+      }
+      if(status){
+        row.dataset.status = status;
+        const statusEl = row.querySelector('td:nth-child(6) .erp-status');
+        if(statusEl){
+          statusEl.className = status === 'Sim' ? 'erp-status erp-status-paid' : 'erp-status erp-status-open';
+          statusEl.innerHTML = status === 'Sim'
+            ? '<span class="erp-dot erp-dot-paid"></span>Pago'
+            : '<span class="erp-dot erp-dot-open"></span>Em aberto';
+        }
+      }
+      if(mes){
+        row.dataset.month = mes;
+        const td = row.querySelector('td:nth-child(8)');
+        if(td) td.textContent = mes;
+      }
+    });
+
+    bootstrap.Modal.getOrCreateInstance(bulkModal).hide();
+    showToast(`${data.updated} registro(s) atualizados com sucesso!`, 'success');
+
+    // Atualiza cards
+    setTimeout(() => {
+      if(typeof applyPaymentFilters === 'function') applyPaymentFilters();
+    }, 100);
+  });
+
+  // Expor showToast para o bulk edit usar
+  const origIife = document.querySelector('script');
+})();
+
+// ── Normaliza meses sem ano na tabela ──────────────────────────
+(function fixMonthDisplay(){
+  document.querySelectorAll('#pagamentosTable tbody tr[data-id]').forEach(row => {
+    const td = row.querySelector('td:nth-child(8)');
+    if(!td) return;
+    const val = (td.textContent || '').trim();
+    if(/^\d{1,2}$/.test(val)){
+      const normalized = String(parseInt(val,10)).padStart(2,'0') + '/' + new Date().getFullYear();
+      td.textContent = normalized;
+      row.dataset.month = normalized;
+    }
+  });
+})();
+</script>
+<style>
+/* ── Recorrência: chips ── */
+.recorr-row{margin-bottom:16px}
+.recorr-label{display:block;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#3a4a62;margin-bottom:8px}
+.recorr-chips{display:flex;flex-wrap:wrap;gap:8px}
+.recorr-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;border:1.5px solid var(--line,#dde4ef);background:#fff;font-size:.82rem;font-weight:600;cursor:pointer;transition:border-color .15s,background .15s,color .15s;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.recorr-chip:hover{border-color:#1a8fff;color:#1a8fff}
+.recorr-chip.active{border-color:#1a8fff;background:rgba(26,143,255,.10);color:#1a8fff}
+.recorr-chip[data-recorr-modo="dividir"].active{border-color:#8b4fff;background:rgba(139,79,255,.10);color:#8b4fff}
+.recorr-chip[data-recorr-apartir="proximo"].active,
+.recorr-chip[data-recorr-apartir="custom"].active{border-color:#22c55e;background:rgba(34,197,94,.10);color:#16a34a}
+.recorr-num-input{width:130px;font-weight:700}
+.recorr-preview-box{display:none;align-items:center;gap:6px;padding:7px 14px;border-radius:12px;background:rgba(26,143,255,.07);border:1px solid rgba(26,143,255,.18);font-size:.84rem;font-weight:700;color:#1e40af}
+.recorr-mes-custom{max-width:160px}
+html[data-theme="dark"] .recorr-chip{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:#c8d8f0}
+html[data-theme="dark"] .recorr-chip.active{background:rgba(26,143,255,.18);border-color:#1a8fff;color:#60a5fa}
+
+/* ══════════════════════════════════════════════════════════
+   ERP PREMIUM — Pagamentos
+   Paleta: #f8fafc fundo · #ffffff superfície · #e5e7eb bordas
+           var(--text) texto · #6b7280 secundário · #1d4ed8 primário
+   ══════════════════════════════════════════════════════════ */
+
+/* ── PAGE HEADER ── */
+.erp-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:28px 0 20px;flex-wrap:wrap}
+.erp-page-title h1{margin:0;font-size:1.35rem;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1.2}
+.erp-page-title p{margin:4px 0 0;font-size:.82rem;color:#6b7280;font-weight:400}
+.erp-page-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.erp-btn-group{display:flex;align-items:center;gap:4px;padding:0 8px;border-left:1px solid #e5e7eb}
+.erp-btn-group:first-of-type{padding-left:0;border-left:none}
+.erp-import-form{display:inline-flex;align-items:center;gap:6px;padding-left:8px;border-left:1px solid #e5e7eb}
+.erp-file-input{font-size:.76rem;color:#6b7280;max-width:160px;cursor:pointer}
+
+/* ── BUTTONS ── */
+.erp-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;font-size:.8rem;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:background .12s,border-color .12s,color .12s;white-space:nowrap;-webkit-tap-highlight-color:transparent;line-height:1.4}
+.erp-btn i{font-size:.78rem}
+.erp-btn-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.erp-btn-primary:hover{background:#1e40af;border-color:#1e40af;color:#fff}
+.erp-btn-ghost{background:#fff;color:#333333;border-color:#e5e7eb}
+.erp-btn-ghost:hover{background:#f9fafb;border-color:#d1d5db;color:var(--text)}
+.erp-btn-paid{color:#166534}
+.erp-btn-paid:hover{background:#f0fdf4;border-color:#86efac}
+.erp-btn-danger{color:#991b1b}
+.erp-btn-danger:hover{background:#fef2f2;border-color:#fca5a5}
+.erp-btn-sm{padding:5px 10px;font-size:.76rem}
+
+/* ── KPIs ── */
+.erp-kpi-row{display:flex;align-items:center;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px 28px;margin-bottom:20px;gap:0}
+.erp-kpi{flex:1;display:flex;flex-direction:column;gap:3px;padding:0 20px}
+.erp-kpi:first-child{padding-left:0}
+.erp-kpi:last-child{padding-right:0}
+.erp-kpi-divider{width:1px;height:40px;background:#e5e7eb;flex-shrink:0}
+.erp-kpi-label{font-size:.72rem;font-weight:500;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.erp-kpi-value{font-size:1.3rem;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1.1}
+.erp-kpi-paid{color:#166534}
+.erp-kpi-pending{color:#92400e}
+.erp-kpi-sub{font-size:.72rem;color:#9ca3af}
+
+/* ── FILTER BAR ── */
+.erp-filter-bar{display:flex;align-items:flex-end;gap:12px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px 20px;margin-bottom:16px;flex-wrap:wrap}
+.erp-filter-fields{display:flex;gap:8px;flex-wrap:wrap;flex:1;align-items:flex-end}
+.erp-filter-field{display:flex;flex-direction:column;gap:3px}
+.erp-filter-field--wide{flex:1;min-width:200px}
+.erp-filter-field label{font-size:.68rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.erp-filter-search{position:relative;width:100%}
+.erp-filter-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.78rem;pointer-events:none}
+.erp-filter-input{width:100%;padding:7px 10px 7px 28px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:var(--text);background:#fff;outline:none;transition:border-color .12s,box-shadow .12s}
+.erp-filter-input:focus{border-color:#1d4ed8;box-shadow:0 0 0 3px rgba(29,78,216,.07)}
+.erp-filter-input::placeholder{color:#9ca3af}
+.erp-input{padding:7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:var(--text);background:#fff;outline:none;transition:border-color .12s;min-width:90px}
+.erp-input:focus{border-color:#1d4ed8}
+/* Select — custom arrow via clip-path para funcionar em qualquer tema */
+.erp-select{padding:7px 28px 7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:var(--text);background:#fff;outline:none;transition:border-color .12s;min-width:90px;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.erp-select:focus{border-color:#1d4ed8}
+.erp-filter-actions{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap}
+/* Import customizado */
+#erp-import-form{display:inline-flex;align-items:center;gap:6px}
+.erp-import-filename{font-size:.72rem;color:#6b7280;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── TABLE WRAPPER ── */
+.erp-table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.erp-table{width:100%;border-collapse:collapse;font-size:.82rem}
+
+/* ── TABLE HEAD ── */
+.erp-table thead tr{border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.erp-table thead th{padding:11px 14px;font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;text-align:left;border:none}
+.erp-th-check{width:40px;padding:11px 14px}
+.erp-th-num{text-align:right}
+
+/* ── TABLE BODY ── */
+.erp-table tbody tr{border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .08s}
+.erp-table tbody tr.drw-active{background:#eff6ff !important;outline:2px solid #1d4ed8;outline-offset:-1px}
+html[data-theme="dark"] .erp-table tbody tr.drw-active{background:rgba(29,78,216,.12) !important;outline-color:#3b82f6}
+.erp-table tbody tr:last-child{border-bottom:none}
+.erp-table tbody tr:hover{background:#f9fafb}
+.erp-table tbody tr.selected{background:#eff6ff}
+.erp-table tbody td{padding:13px 14px;color:var(--text);vertical-align:middle;border:none}
+.erp-td-check{width:40px;padding:13px 14px}
+.erp-td-main{min-width:160px}
+.erp-td-desc{max-width:260px;color:#333333}
+.erp-td-num{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.erp-td-mono{font-size:.78rem;color:#6b7280;font-variant-numeric:tabular-nums}
+.erp-cell-primary{display:block;font-weight:500;color:var(--text)}
+.erp-cell-id{display:block;font-size:.72rem;color:#9ca3af;margin-top:1px}
+.erp-empty{padding:40px;text-align:center;color:#9ca3af;font-size:.84rem}
+
+/* ── CHECKBOX ── */
+.erp-checkbox{width:15px;height:15px;accent-color:#1d4ed8;cursor:pointer;border-radius:3px}
+
+/* ── STATUS ── */
+.erp-status{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;font-weight:500;white-space:nowrap}
+.erp-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.erp-status-paid{color:#166534}
+.erp-dot-paid{background:#16a34a}
+.erp-status-open{color:#6b7280}
+.erp-dot-open{background:#d1d5db}
+.erp-status-late{color:#991b1b}
+.erp-dot-late{background:#ef4444}
+
+/* ── BADGES ── */
+.erp-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:500;letter-spacing:.01em}
+.erp-badge-gasto{background:#f3f4f6;color:#333333}
+.erp-badge-invest{background:#dbeafe;color:#1e40af}
+.erp-badge-terceiros{background:#dcfce7;color:#166534}
+html[data-theme="dark"] .erp-badge-terceiros{background:rgba(22,163,74,.15);color:#4ade80}
+
+/* ── VENCIMENTO ── */
+.erp-venc{font-size:.8rem;color:#6b7280}
+.erp-venc-hoje{color:#dc2626;font-weight:600}
+.erp-venc-amanha{color:#d97706;font-weight:500}
+
+/* ── FILE PILLS ── */
+.erp-files{display:flex;gap:4px;flex-wrap:wrap}
+.erp-file-pill{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:5px;text-decoration:none;font-size:.78rem;transition:opacity .12s}
+.erp-file-pill:hover{opacity:.75}
+.erp-file-orcamento{background:#dbeafe;color:#1d4ed8}
+.erp-file-nf{background:#dcfce7;color:#166534}
+.erp-file-boleto{background:#fef9c3;color:#854d0e}
+
+/* ── VENC POPUP (mantido) ── */
+to{opacity:1;transform:none}}
+
+/* ── TOAST NOTIFICAÇÃO ── */
+.gg-toast{position:fixed;bottom:28px;right:28px;z-index:99999;padding:12px 18px;border-radius:8px;font-size:.84rem;font-weight:500;max-width:360px;opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .2s,transform .2s;border:1px solid transparent;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.gg-toast.show{opacity:1;pointer-events:auto;transform:none}
+.gg-toast.show:not(.error):not(.warning){background:var(--text);color:#f9fafb;border-color:#333333}
+.gg-toast.show.error{background:#fef2f2;color:#991b1b;border-color:#fca5a5}
+.gg-toast.show.warning{background:#fffbeb;color:#92400e;border-color:#fde68a}
+html[data-theme="dark"] .gg-toast.show:not(.error):not(.warning){background:#f0f0f0;color:var(--text);border-color:#2e2e2e}
+html[data-theme="dark"] .gg-toast.show.error{background:#450a0a;color:#fca5a5;border-color:#7f1d1d}
+
+/* ── DRAWER LATERAL ── */
+.drw-overlay{position:fixed;inset:0;z-index:1040;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .25s}
+.drw-overlay.open{opacity:1;pointer-events:auto}
+.drw-panel{position:fixed;top:0;right:0;bottom:0;z-index:1041;width:min(460px,95vw);background:#fff;box-shadow:-8px 0 40px rgba(0,0,0,.14);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.drw-panel.open{transform:none}
+html[data-theme="dark"] .drw-panel{background:#1a1a1a;box-shadow:-8px 0 40px rgba(0,0,0,.5)}
+/* Header */
+.drw-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid #e5e7eb;gap:12px;flex-shrink:0}
+html[data-theme="dark"] .drw-header{border-color:#2e2e2e}
+.drw-header-left{display:flex;align-items:center;gap:12px;min-width:0}
+.drw-avatar{width:40px;height:40px;border-radius:10px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:800;flex-shrink:0;letter-spacing:-.02em}
+html[data-theme="dark"] .drw-avatar{background:rgba(29,78,216,.2);color:#60a5fa}
+.drw-fornecedor{font-size:.95rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html[data-theme="dark"] .drw-fornecedor{color:#f0f0f0}
+.drw-id{font-size:.72rem;color:#9ca3af;margin-top:1px}
+.drw-close{width:32px;height:32px;border-radius:8px;border:none;background:#f3f4f6;color:#6b7280;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s}
+.drw-close:hover{background:#e5e7eb;color:var(--text)}
+html[data-theme="dark"] .drw-close{background:#2e2e2e;color:#666666}
+html[data-theme="dark"] .drw-close:hover{background:#444444;color:#f0f0f0}
+/* Valor */
+.drw-valor-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #f3f4f6;flex-shrink:0}
+html[data-theme="dark"] .drw-valor-row{border-color:#2e2e2e}
+.drw-valor{font-size:1.5rem;font-weight:800;color:var(--text);letter-spacing:-.03em}
+html[data-theme="dark"] .drw-valor{color:#f0f0f0}
+.drw-mes{font-size:.76rem;color:#9ca3af;margin-top:2px}
+/* Ações */
+.drw-actions{display:flex;gap:8px;padding:12px 20px;border-bottom:1px solid #f3f4f6;flex-shrink:0;flex-wrap:wrap}
+html[data-theme="dark"] .drw-actions{border-color:#2e2e2e}
+.drw-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:7px;font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid #e5e7eb;background:#fff;color:#333333;transition:background .12s,border-color .12s;text-decoration:none}
+.drw-btn:hover{background:#f9fafb;border-color:#d1d5db}
+.drw-btn-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.drw-btn-primary:hover{background:#1e40af;border-color:#1e40af;color:#fff}
+.drw-btn-green{background:#fff;color:#166534;border-color:#86efac}
+.drw-btn-green:hover{background:#f0fdf4}
+.drw-btn-red{background:#fff;color:#991b1b;border-color:#fca5a5}
+.drw-btn-red:hover{background:#fef2f2}
+html[data-theme="dark"] .drw-btn{background:#1a1a1a;border-color:#2e2e2e;color:#cccccc}
+html[data-theme="dark"] .drw-btn:hover{background:#273549;border-color:#444444}
+html[data-theme="dark"] .drw-btn-primary{background:#2563eb;border-color:#2563eb;color:#fff}
+/* Body */
+.drw-body{flex:1;overflow-y:auto;padding:0}
+.drw-section{padding:16px 20px;border-bottom:1px solid #f3f4f6}
+html[data-theme="dark"] .drw-section{border-color:#2e2e2e}
+.drw-section-title{font-size:.68rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.drw-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.drw-field:last-child{margin-bottom:0}
+.drw-field-label{font-size:.7rem;color:#9ca3af;font-weight:500}
+.drw-field-value{font-size:.86rem;color:var(--text);font-weight:500}
+html[data-theme="dark"] .drw-field-value{color:#e2e8f0}
+.drw-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+/* Badges no drawer */
+.drw-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:.74rem;font-weight:600}
+.drw-badge-pago{background:#dcfce7;color:#166534}
+.drw-badge-aberto{background:#f3f4f6;color:#333333}
+.drw-badge-vencido{background:#fef2f2;color:#991b1b}
+.drw-badge-gasto{background:#f3f4f6;color:#333333}
+.drw-badge-invest{background:#dbeafe;color:#1e40af}
+.drw-badge-terceiros{background:#dcfce7;color:#166534}
+html[data-theme="dark"] .drw-badge-pago{background:rgba(22,163,74,.15);color:#4ade80}
+html[data-theme="dark"] .drw-badge-aberto{background:#2e2e2e;color:#aaaaaa}
+html[data-theme="dark"] .drw-badge-gasto{background:#2e2e2e;color:#aaaaaa}
+html[data-theme="dark"] .drw-badge-invest{background:rgba(29,78,216,.15);color:#93c5fd}
+html[data-theme="dark"] .drw-badge-terceiros{background:rgba(22,163,74,.15);color:#4ade80}
+/* Anexos no drawer */
+.drw-files{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.drw-file-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;text-decoration:none;font-size:.78rem;font-weight:500;transition:opacity .12s;border:1px solid}
+.drw-file-pill:hover{opacity:.8}
+.drw-file-orcamento{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+.drw-file-nf{background:#f0fdf4;color:#166534;border-color:#bbf7d0}
+.drw-file-boleto{background:#fffbeb;color:#92400e;border-color:#fde68a}
+/* Loading */
+.drw-loading{padding:48px;text-align:center;color:#9ca3af;font-size:.84rem}
+.drw-spin{display:inline-block;animation:drwSpin 1s linear infinite;margin-right:6px}
+@keyframes drwSpin{to{transform:rotate(360deg)}}
+/* Status no header do valor */
+.drw-status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
+.drw-status-pago .drw-status-dot{background:#16a34a}
+.drw-status-aberto .drw-status-dot{background:#d1d5db}
+.drw-status-vencido .drw-status-dot{background:#ef4444;animation:drwPulse 1.2s ease-in-out infinite}
+@keyframes drwPulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){.drw-panel{width:100vw}}
+
+@media(max-width:1100px){.erp-filter-fields{gap:6px}.erp-filter-search{flex:0 0 200px}}
+@media(max-width:768px){.erp-page-header{flex-direction:column}.erp-kpi-row{flex-wrap:wrap;gap:16px}.erp-kpi-divider{display:none}.erp-kpi{flex:1 1 40%}.erp-filter-bar{flex-direction:column;align-items:stretch}.erp-filter-search{flex:none}.erp-table thead{display:none}.erp-table tbody td{display:block;text-align:left}.erp-table tbody tr{border-bottom:2px solid #e5e7eb;margin-bottom:8px}}
+
+/* ══ DARK MODE ══════════════════════════════════════════════ */
+html[data-theme="dark"] .erp-page-title h1{color:#f0f0f0}
+html[data-theme="dark"] .erp-page-title p{color:#aaaaaa}
+
+/* Botões */
+html[data-theme="dark"] .erp-btn-primary{background:#2563eb;border-color:#2563eb;color:#fff}
+html[data-theme="dark"] .erp-btn-primary:hover{background:#1d4ed8;border-color:#1d4ed8}
+html[data-theme="dark"] .erp-btn-ghost{background:#1a1a1a;color:#cccccc;border-color:#2e2e2e}
+html[data-theme="dark"] .erp-btn-ghost:hover{background:#273549;border-color:#444444;color:#f0f0f0}
+html[data-theme="dark"] .erp-btn-paid{color:#4ade80}
+html[data-theme="dark"] .erp-btn-paid:hover{background:rgba(74,222,128,.08);border-color:#166534}
+html[data-theme="dark"] .erp-btn-danger{color:#f87171}
+html[data-theme="dark"] .erp-btn-danger:hover{background:rgba(248,113,113,.08);border-color:#7f1d1d}
+html[data-theme="dark"] .erp-btn-group{border-left-color:#2e2e2e}
+html[data-theme="dark"] .erp-import-form{border-left-color:#2e2e2e}
+html[data-theme="dark"] .erp-file-input{color:#666666}
+
+/* KPIs */
+html[data-theme="dark"] .erp-kpi-row{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .erp-kpi-label{color:#666666}
+html[data-theme="dark"] .erp-kpi-value{color:#f0f0f0}
+html[data-theme="dark"] .erp-kpi-paid{color:#4ade80}
+html[data-theme="dark"] .erp-kpi-pending{color:#fbbf24}
+html[data-theme="dark"] .erp-kpi-sub{color:#444444}
+html[data-theme="dark"] .erp-kpi-divider{background:#2e2e2e}
+
+/* Filtros */
+html[data-theme="dark"] .erp-filter-bar{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .erp-filter-field label{color:#444444}
+html[data-theme="dark"] .erp-filter-input,
+html[data-theme="dark"] .erp-input{background:#111111;border-color:#2e2e2e;color:#f0f0f0}
+html[data-theme="dark"] .erp-filter-input::placeholder{color:#2e2e2e}
+html[data-theme="dark"] .erp-filter-input:focus,
+html[data-theme="dark"] .erp-input:focus{border-color:#3b82f6;background:#1a1a1a}
+html[data-theme="dark"] .erp-filter-icon{color:#2e2e2e}
+/* Select dark — seta clara */
+html[data-theme="dark"] .erp-select{background-color:#111111;border-color:#2e2e2e;color:#f0f0f0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+html[data-theme="dark"] .erp-select:focus{border-color:#3b82f6;background-color:#1a1a1a}
+html[data-theme="dark"] .erp-select option{background:#1a1a1a;color:#f0f0f0}
+html[data-theme="dark"] .erp-import-filename{color:#444444}
+
+/* Tabela */
+html[data-theme="dark"] .erp-table-wrap{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .erp-table thead tr{background:#111111;border-bottom-color:#2e2e2e}
+html[data-theme="dark"] .erp-table thead th{color:#444444}
+html[data-theme="dark"] .erp-table tbody tr{border-bottom-color:#1a1a1a}
+html[data-theme="dark"] .erp-table tbody tr:hover{background:#273549}
+html[data-theme="dark"] .erp-table tbody tr.selected{background:rgba(59,130,246,.12)}
+html[data-theme="dark"] .erp-table tbody td{color:#cccccc}
+html[data-theme="dark"] .erp-cell-primary{color:#f0f0f0}
+html[data-theme="dark"] .erp-cell-id{color:#444444}
+html[data-theme="dark"] .erp-td-desc{color:#aaaaaa}
+html[data-theme="dark"] .erp-td-mono{color:#666666}
+html[data-theme="dark"] .erp-empty{color:#444444}
+
+/* Status */
+html[data-theme="dark"] .erp-status-paid{color:#4ade80}
+html[data-theme="dark"] .erp-dot-paid{background:#22c55e}
+html[data-theme="dark"] .erp-status-open{color:#666666}
+html[data-theme="dark"] .erp-dot-open{background:#444444}
+
+/* Badges */
+html[data-theme="dark"] .erp-badge-gasto{background:#1a1a1a;color:#aaaaaa;border:1px solid #2e2e2e}
+html[data-theme="dark"] .erp-badge-invest{background:rgba(59,130,246,.15);color:#93c5fd}
+
+/* Vencimento */
+html[data-theme="dark"] .erp-venc{color:#666666}
+html[data-theme="dark"] .erp-venc-hoje{color:#f87171}
+html[data-theme="dark"] .erp-venc-amanha{color:#fbbf24}
+
+/* File pills */
+html[data-theme="dark"] .erp-file-orcamento{background:rgba(59,130,246,.18);color:#93c5fd}
+html[data-theme="dark"] .erp-file-nf{background:rgba(74,222,128,.12);color:#4ade80}
+html[data-theme="dark"] .erp-file-boleto{background:rgba(251,191,36,.12);color:#fbbf24}
+
+/* Venc popup */
+
+</style>
+<script>
+// ── Modal Parcelar lançamento existente ──────────────────────
+(function initParcelar(){
+  let _prcRid = null;
+  let _prcModo = 'duplicar';
+  let _prcAPartir = 'atual';
+  let _prcValor = 0;
+
+  const el = id => document.getElementById(id);
+
+  function parseBR(s){
+    s = String(s||'').replace(/[R$\s]/g,'');
+    if(s.includes(',') && s.includes('.')) s = s.replace(/\./g,'').replace(',','.');
+    else if(s.includes(',')) s = s.replace(',','.');
+    return parseFloat(s) || 0;
+  }
+  function fmtBR(n){
+    return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+
+  function updatePrcPreview(){
+    const n = parseInt(el('prc_meses')?.value||'0')||0;
+    const preview = el('prc_preview');
+    const btn = el('prc_confirmar_btn');
+    const aviso = el('prc_aviso_wrap');
+    const avisoTxt = el('prc_aviso_txt');
+
+    if(n < 2){ if(preview) preview.style.display='none'; if(btn) btn.disabled=true; if(aviso) aviso.style.display='none'; return; }
+
+    if(_prcModo === 'dividir'){
+      const parcela = _prcValor / n;
+      if(preview){ preview.innerHTML = `<i class="bi bi-scissors me-1"></i><strong>${n}x</strong> de R$&nbsp;${fmtBR(parcela)}`; preview.style.display='flex'; }
+      if(aviso && avisoTxt){
+        avisoTxt.textContent = `O valor deste lançamento será alterado de R$ ${fmtBR(_prcValor)} para R$ ${fmtBR(parcela)} (parcela 1/${n}).`;
+        aviso.style.display = '';
+      }
+    } else {
+      if(preview){ preview.innerHTML = `<i class="bi bi-copy me-1"></i><strong>${n}</strong> cópias de R$&nbsp;${fmtBR(_prcValor)}`; preview.style.display='flex'; }
+      if(aviso) aviso.style.display='none';
+    }
+    if(btn) btn.disabled = false;
+  }
+
+  // Chips modo
+  el('prc_modo_duplicar')?.addEventListener('click', () => {
+    _prcModo = 'duplicar';
+    el('prc_modo_duplicar').classList.add('active');
+    el('prc_modo_dividir').classList.remove('active');
+    updatePrcPreview();
+  });
+  el('prc_modo_dividir')?.addEventListener('click', () => {
+    _prcModo = 'dividir';
+    el('prc_modo_dividir').classList.add('active');
+    el('prc_modo_duplicar').classList.remove('active');
+    updatePrcPreview();
+  });
+
+  // Chips a partir de
+  ['atual','proximo','custom'].forEach(val => {
+    el(`prc_apartir_${val}`)?.addEventListener('click', () => {
+      _prcAPartir = val;
+      ['atual','proximo','custom'].forEach(v => el(`prc_apartir_${v}`)?.classList.toggle('active', v===val));
+      el('prc_custom_wrap').style.display = val==='custom' ? '' : 'none';
+      if(val!=='custom') el('prc_mes_custom').value='';
+    });
+  });
+
+  el('prc_meses')?.addEventListener('input', updatePrcPreview);
+
+  // Botão "Parcelar" no modal de edição
+  el('pagParcelarBtn')?.addEventListener('click', () => {
+    _prcRid = el('pagamentos_id')?.value;
+    if(!_prcRid) return;
+    _prcValor = parseBR(el('pagamentos_valor')?.value || '0');
+    const fornecedor = el('pagamentos_fornecedor')?.value || '';
+    const mes = el('pagamentos_pagamento_mes')?.value || '';
+
+    // Reset mini-modal
+    _prcModo = 'duplicar'; _prcAPartir = 'atual';
+    el('prc_modo_duplicar').classList.add('active');
+    el('prc_modo_dividir').classList.remove('active');
+    ['atual','proximo','custom'].forEach(v => el(`prc_apartir_${v}`)?.classList.toggle('active', v==='atual'));
+    el('prc_custom_wrap').style.display = 'none';
+    el('prc_mes_custom').value = '';
+    el('prc_meses').value = '';
+    el('prc_preview').style.display = 'none';
+    el('prc_aviso_wrap').style.display = 'none';
+    el('prc_confirmar_btn').disabled = true;
+    el('pagParcelarModal').querySelector('.modal-subtitle').textContent =
+      `${fornecedor}${mes ? ' · ' + mes : ''} · R$ ${fmtBR(_prcValor)}`;
+
+    bootstrap.Modal.getOrCreateInstance(el('pagModal')).hide();
+    setTimeout(() => bootstrap.Modal.getOrCreateInstance(el('pagParcelarModal')).show(), 300);
+  });
+
+  // Confirmar parcelamento
+  el('prc_confirmar_btn')?.addEventListener('click', async () => {
+    const meses = parseInt(el('prc_meses')?.value||'0')||0;
+    if(meses < 2 || !_prcRid){ return; }
+
+    el('prc_confirmar_btn').disabled = true;
+    el('prc_confirmar_btn').innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processando…';
+
+    const payload = {
+      meses,
+      modo_valor: _prcModo,
+      a_partir:   _prcAPartir,
+      mes_inicio: el('prc_mes_custom')?.value || '',
+    };
+
+    try {
+      const resp = await fetch(`/api/pagamentos/${_prcRid}/parcelar`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json', 'X-CSRF-Token': window.IRIS_CSRF_TOKEN||''},
+        body: JSON.stringify(payload),
+      });
+      const data = await resp.json().catch(()=>({}));
+      bootstrap.Modal.getOrCreateInstance(el('pagParcelarModal')).hide();
+      if(data.ok){
+        showToast(`✅ ${data.criados} lançamentos criados — ${data.label}`);
+        setTimeout(() => window.location.href = '/pagamentos/lancamentos?mes=' + (data.mes_base||''), 900);
+      } else {
+        showToast(data.error || 'Não foi possível parcelar.','error');
+        el('prc_confirmar_btn').disabled = false;
+        el('prc_confirmar_btn').innerHTML = '<i class="bi bi-scissors me-1"></i>Confirmar parcelamento';
+      }
+    } catch(err){
+      showToast('Erro de rede. Tente novamente.','error');
+      el('prc_confirmar_btn').disabled = false;
+      el('prc_confirmar_btn').innerHTML = '<i class="bi bi-scissors me-1"></i>Confirmar parcelamento';
+    }
+  });
+
+  // Mostrar/esconder botão Parcelar conforme é edição ou novo
+  document.getElementById('pagModal')?.addEventListener('show.bs.modal', () => {
+    setTimeout(() => {
+      const rid = el('pagamentos_id')?.value || '';
+      el('pagParcelarBtn').style.display = rid ? '' : 'none';
+    }, 50);
+  });
+})();
+
+// ── Import customizado ────────────────────────────────────
+(function(){
+  const trigger  = document.getElementById('erp-import-trigger');
+  const input    = document.getElementById('erp-import-input');
+  const form     = document.getElementById('erp-import-form');
+  const fname    = document.getElementById('erp-import-filename');
+  const mesPick  = document.getElementById('erp-import-mes-picker');
+  const mesHid   = document.getElementById('erp-import-mes');
+  if(!trigger || !input || !form) return;
+  trigger.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => {
+    if(!input.files.length) return;
+    if(fname) fname.textContent = input.files[0].name;
+    // Converter AAAA-MM → MM/AAAA para enviar ao backend
+    if(mesPick && mesPick.value) {
+      const [ano, mes] = mesPick.value.split('-');
+      if(mesHid) mesHid.value = `${mes}/${ano}`;
+    }
+    form.submit();
+  });
+})();
+
+// ── Livesearch no campo Mês ───────────────────────────────
+(function(){
+  const mesInput = document.getElementById('pagFiltroMes');
+  if(!mesInput) return;
+  mesInput.addEventListener('input', () => {
+    const val = (mesInput.value || '').trim();
+    // normaliza: aceita "05/2026", "5/2026", "052026"
+    let norm = val;
+    const m = val.match(/^(\d{1,2})\/?(\d{4})?$/);
+    if(m && m[2]) norm = `${m[1].padStart(2,'0')}/${m[2]}`;
+    else if(m && !m[2] && val.length >= 6) norm = `${val.slice(0,2)}/${val.slice(2)}`;
+
+    document.querySelectorAll('#pagamentosTable tbody tr[data-id]').forEach(row => {
+      if(!norm){ row.style.display = ''; return; }
+      const rowMonth = row.dataset.month || '';
+      row.style.display = rowMonth.startsWith(norm) || !norm ? '' : 'none';
+    });
+    if(typeof updateCardsFromVisibleRows === 'function') updateCardsFromVisibleRows();
+  });
+  // Enter ainda aplica o período completo (reload)
+  mesInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ e.preventDefault(); reloadPaymentPeriod(); }
+  });
+})();
+</script>
+
+<script>
+// ── irisConfirm premium — roda por último para sobrescrever o base.html ──
+setTimeout(function() {
+
+window.irisConfirm = function({ title='', message='', icon='', danger=false, btnOk='Confirmar', btnCancel='Cancelar' } = {}) {
+  return new Promise(resolve => {
+    document.getElementById('_irisConfirmOverlay')?.remove();
+
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const overlay = document.createElement('div');
+    overlay.id = '_irisConfirmOverlay';
+    Object.assign(overlay.style, {
+      position:'fixed', inset:'0', zIndex:'99999',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      background:'rgba(0,0,0,.5)', backdropFilter:'blur(4px)',
+      animation:'_icFadeIn .18s ease both',
+    });
+
+    const card = document.createElement('div');
+    Object.assign(card.style, {
+      background: isDark ? '#1a1a1a' : '#ffffff',
+      borderRadius:'18px',
+      padding:'32px 28px 24px',
+      width:'min(380px,calc(100vw - 40px))',
+      boxShadow: isDark
+        ? '0 32px 80px rgba(0,0,0,.6), 0 4px 16px rgba(0,0,0,.3)'
+        : '0 24px 64px rgba(0,0,0,.18), 0 4px 16px rgba(0,0,0,.08)',
+      textAlign:'center',
+      animation:'_icSlideUp .26s cubic-bezier(.34,1.56,.64,1) both',
+      position:'relative', overflow:'hidden',
+    });
+
+    // Faixa topo
+    const stripe = document.createElement('div');
+    Object.assign(stripe.style, {
+      position:'absolute', top:'0', left:'0', right:'0', height:'4px',
+      background: danger
+        ? 'linear-gradient(90deg,#ef4444,#dc2626)'
+        : 'linear-gradient(90deg,#1d4ed8,#3b82f6)',
+      borderRadius:'18px 18px 0 0',
+    });
+    card.appendChild(stripe);
+
+    // Ícone SVG animado
+    const icWrap = document.createElement('div');
+    Object.assign(icWrap.style, {
+      display:'flex', justifyContent:'center',
+      marginTop:'8px', marginBottom:'16px',
+    });
+
+    if(danger) {
+      icWrap.innerHTML = `
+        <svg id="_icTrash" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="28" cy="28" r="28" fill="#fef2f2"/>
+          <!-- alça -->
+          <rect x="22" y="13" width="12" height="4" rx="2" fill="#dc2626"
+            style="transform-origin:28px 15px;animation:_icLidHandle .45s cubic-bezier(.34,1.56,.64,1) .15s both"/>
+          <!-- tampa -->
+          <rect x="14" y="17" width="28" height="4" rx="2" fill="#ef4444"
+            style="transform-origin:28px 19px;animation:_icLidOpen .45s cubic-bezier(.34,1.56,.64,1) .2s both"/>
+          <!-- corpo -->
+          <rect x="18" y="23" width="20" height="18" rx="3" fill="#ef4444"
+            style="animation:_icBodyPop .4s cubic-bezier(.34,1.56,.64,1) .1s both"/>
+          <!-- linhas -->
+          <rect x="23" y="26" width="2" height="12" rx="1" fill="#fca5a5"/>
+          <rect x="27" y="26" width="2" height="12" rx="1" fill="#fca5a5"/>
+          <rect x="31" y="26" width="2" height="12" rx="1" fill="#fca5a5"/>
+        </svg>`;
+      // Float loop depois das animações de entrada
+      setTimeout(() => {
+        const el = document.getElementById('_icTrash');
+        if(el) el.style.animation = '_icFloat 2s ease-in-out infinite';
+      }, 700);
+    } else {
+      icWrap.innerHTML = `
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"
+             style="animation:_icCheckBounce .45s cubic-bezier(.34,1.56,.64,1) .1s both">
+          <circle cx="28" cy="28" r="28" fill="#eff6ff"/>
+          <path d="M17 28l8 8 14-14" stroke="#1d4ed8" stroke-width="2.8"
+                stroke-linecap="round" stroke-linejoin="round"
+                stroke-dasharray="34" stroke-dashoffset="34"
+                style="animation:_icCheckDraw .4s ease .3s forwards"/>
+        </svg>`;
+    }
+    card.appendChild(icWrap);
+
+    // Título
+    const t = document.createElement('div');
+    Object.assign(t.style, {
+      fontSize:'1rem', fontWeight:'700', letterSpacing:'-.01em',
+      color: danger ? '#991b1b' : (isDark ? '#f0f0f0' : 'var(--text)'),
+      marginBottom:'8px',
+    });
+    t.textContent = title;
+    card.appendChild(t);
+
+    // Mensagem
+    const m = document.createElement('div');
+    Object.assign(m.style, {
+      fontSize:'.84rem', color: isDark ? '#666666' : '#6b7280',
+      lineHeight:'1.5', marginBottom:'24px',
+    });
+    m.textContent = message;
+    card.appendChild(m);
+
+    // Botões
+    const btns = document.createElement('div');
+    Object.assign(btns.style, { display:'flex', gap:'10px' });
+
+    const cancel = document.createElement('button');
+    cancel.textContent = btnCancel;
+    Object.assign(cancel.style, {
+      flex:'1', padding:'10px 16px', borderRadius:'8px',
+      fontSize:'.84rem', fontWeight:'600', cursor:'pointer',
+      border: isDark ? '1px solid #2e2e2e' : '1px solid #e5e7eb',
+      background: isDark ? '#111111' : '#fff',
+      color: isDark ? '#cccccc' : '#333333',
+      transition:'background .12s',
+    });
+    cancel.addEventListener('mouseenter', () => cancel.style.background = isDark ? '#1a1a1a' : '#f9fafb');
+    cancel.addEventListener('mouseleave', () => cancel.style.background = isDark ? '#111111' : '#fff');
+    cancel.addEventListener('click', () => { _close(); resolve(false); });
+
+    const ok = document.createElement('button');
+    ok.id = '_irisConfirmOk';
+    ok.textContent = btnOk;
+    Object.assign(ok.style, {
+      flex:'1', padding:'10px 16px', borderRadius:'8px',
+      fontSize:'.84rem', fontWeight:'700', cursor:'pointer',
+      border:'none',
+      background: danger
+        ? 'linear-gradient(135deg,#ef4444,#dc2626)'
+        : 'linear-gradient(135deg,#1d4ed8,#2563eb)',
+      color:'#fff',
+      boxShadow: danger
+        ? '0 4px 14px rgba(239,68,68,.4)'
+        : '0 4px 14px rgba(29,78,216,.4)',
+      transition:'opacity .12s, transform .1s',
+    });
+    ok.addEventListener('mouseenter', () => ok.style.opacity = '.88');
+    ok.addEventListener('mouseleave', () => ok.style.opacity = '1');
+    ok.addEventListener('click', () => {
+      ok.style.transform = 'scale(.96)';
+      setTimeout(() => { _close(); resolve(true); }, 100);
+    });
+
+    btns.appendChild(cancel);
+    btns.appendChild(ok);
+    card.appendChild(btns);
+    overlay.appendChild(card);
+
+    // Fechar clicando fora
+    overlay.addEventListener('click', e => {
+      if(e.target === overlay){ _close(); resolve(false); }
+    });
+
+    // Enter confirma, Escape cancela
+    function _keyHandler(e) {
+      if(e.key === 'Enter'){ e.preventDefault(); ok.click(); }
+      if(e.key === 'Escape'){ _close(); resolve(false); }
+    }
+    document.addEventListener('keydown', _keyHandler);
+
+    function _close() {
+      overlay.style.animation = '_icFadeOut .15s ease forwards';
+      card.style.animation = '_icSlideDown .15s ease forwards';
+      setTimeout(() => overlay.remove(), 160);
+      document.removeEventListener('keydown', _keyHandler);
+    }
+
+    document.body.appendChild(overlay);
+    setTimeout(() => ok.focus(), 60);
+  });
+};
+
+// Keyframes — injeta uma vez
+if(!document.getElementById('_irisConfirmStyles')) {
+  const s = document.createElement('style');
+  s.id = '_irisConfirmStyles';
+  s.textContent = `
+    @keyframes _icFadeIn    { from{opacity:0} to{opacity:1} }
+    @keyframes _icFadeOut   { from{opacity:1} to{opacity:0} }
+    @keyframes _icSlideUp   { from{opacity:0;transform:translateY(28px) scale(.93)} to{opacity:1;transform:none} }
+    @keyframes _icSlideDown { from{opacity:1;transform:none} to{opacity:0;transform:translateY(14px) scale(.96)} }
+    @keyframes _icBodyPop   { from{opacity:0;transform:scaleY(.5);transform-origin:top} to{opacity:1;transform:scaleY(1)} }
+    @keyframes _icLidOpen   { 0%{transform:rotate(0) translate(0,0)} 100%{transform:rotate(-22deg) translate(-3px,-4px)} }
+    @keyframes _icLidHandle { 0%{transform:rotate(0)} 100%{transform:rotate(-22deg) translate(-5px,-4px)} }
+    @keyframes _icFloat     { 0%,100%{transform:translateY(0) rotate(0)} 50%{transform:translateY(-6px) rotate(-3deg)} }
+    @keyframes _icCheckBounce { from{opacity:0;transform:scale(.4)} to{opacity:1;transform:scale(1)} }
+    @keyframes _icCheckDraw { to{stroke-dashoffset:0} }
+  `;
+  document.head.appendChild(s);
+}
+
+}, 0); // setTimeout 0 — garante que roda depois do base.html
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// DRAWER LATERAL — Detalhes do pagamento
+// ══════════════════════════════════════════════════════════════
+(function(){
+  const panel   = document.getElementById('pagDrawer');
+  const overlay = document.getElementById('pagDrawerOverlay');
+  let currentId = null;
+
+  function brMoney(v) {
+    if(typeof v === 'string') v = v.replace(/[R$\s]/g,'').replace(/\./g,'').replace(',','.');
+    return 'R$ ' + parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+
+  function abrirDrawer(id) {
+    if(!id) return;
+    // Remove highlight anterior
+    document.querySelectorAll('#pagamentosTable tr.drw-active').forEach(r => r.classList.remove('drw-active'));
+    // Destaca linha ativa
+    const row = document.querySelector(`#pagamentosTable tr[data-id="${id}"]`);
+    if(row) row.classList.add('drw-active');
+    currentId = id;
+    panel.classList.add('open');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    carregarDrawer(id);
+  }
+
+  window.fecharDrawer = function() {
+    document.querySelectorAll('#pagamentosTable tr.drw-active').forEach(r => r.classList.remove('drw-active'));
+    panel.classList.remove('open');
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    currentId = null;
+  };
+
+  overlay.addEventListener('click', fecharDrawer);
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && currentId) fecharDrawer(); });
+
+  async function carregarDrawer(id) {
+    // Reset
+    document.getElementById('drwBody').innerHTML =
+      '<div class="drw-loading"><i class="bi bi-arrow-repeat drw-spin"></i> Carregando…</div>';
+    document.getElementById('drwFornecedor').textContent = '…';
+    document.getElementById('drwId').textContent = '';
+    document.getElementById('drwValor').textContent = '—';
+    document.getElementById('drwMes').textContent = '';
+    document.getElementById('drwStatus').innerHTML = '';
+    document.getElementById('drwActions').innerHTML = '';
+    document.getElementById('drwAvatar').textContent = '';
+
+    const resp = await fetch(`/api/pagamentos/${encodeURIComponent(id)}`,
+      { headers: { 'Accept': 'application/json' } });
+    const d = await resp.json().catch(() => ({}));
+    if(!resp.ok || d.error) {
+      document.getElementById('drwBody').innerHTML =
+        `<div class="drw-loading">Erro ao carregar: ${d.error || 'tente novamente'}</div>`;
+      return;
+    }
+    renderDrawer(d);
+  }
+
+  function renderDrawer(d) {
+    const pago     = (d.status || '').toLowerCase() === 'sim';
+    const tipo     = d.tipo_lancamento || 'Gasto';
+    const hoje     = new Date().toLocaleDateString('pt-BR');
+    const venc     = d.data_vencimento || '';
+    const vencido  = venc && !pago && venc < hoje;
+    const fornec   = d.fornecedor || 'Sem fornecedor';
+    const iniciais = fornec.split(' ').slice(0,2).map(p=>p[0]||'').join('').toUpperCase();
+    const valor    = brMoney(d.valor_num || d.valor);
+
+    // Header
+    document.getElementById('drwAvatar').textContent = iniciais;
+    document.getElementById('drwFornecedor').textContent = fornec;
+    document.getElementById('drwId').textContent = `#${d.id}`;
+    document.getElementById('drwValor').textContent = valor;
+    document.getElementById('drwMes').textContent = d.pagamento_mes || '';
+
+    // Status badge
+    const statusEl = document.getElementById('drwStatus');
+    if(pago) {
+      statusEl.innerHTML = `<span class="drw-badge drw-badge-pago"><span class="drw-status-dot" style="background:#16a34a"></span>Pago</span>`;
+    } else if(vencido) {
+      statusEl.innerHTML = `<span class="drw-badge drw-badge-vencido"><span class="drw-status-dot" style="background:#ef4444;animation:drwPulse 1.2s ease-in-out infinite"></span>Vencido</span>`;
+    } else {
+      statusEl.innerHTML = `<span class="drw-badge drw-badge-aberto"><span class="drw-status-dot"></span>Em aberto</span>`;
+    }
+
+    // Tipo badge cor
+    const tipoCores = {Gasto:'drw-badge-gasto', Investimento:'drw-badge-invest', Terceiros:'drw-badge-terceiros'};
+    const tipoBadge = `<span class="drw-badge ${tipoCores[tipo]||'drw-badge-gasto'}">${tipo}${tipo==='Terceiros'&&d.terceiro_nome?' · '+d.terceiro_nome:''}</span>`;
+
+    // Ações
+    const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+    const actionsEl = document.getElementById('drwActions');
+    let actionsHTML = `<button class="drw-btn drw-btn-primary" onclick="fecharDrawer();window.pagamentosEdit('${d.id}')"><i class="bi bi-pencil"></i> Editar</button>`;
+    if(!pago) {
+      actionsHTML += `<button class="drw-btn drw-btn-green" onclick="marcarPagoDrawer('${d.id}')"><i class="bi bi-check-circle"></i> Marcar pago</button>`;
+    }
+    actionsHTML += `<a class="drw-btn" href="/pagamentos/lancamentos?todos=1" style="margin-left:auto"><i class="bi bi-arrow-right"></i></a>`;
+    actionsEl.innerHTML = actionsHTML;
+
+    // Body — seções
+    const anexos = d.attachments_all || [];
+    const anexosHTML = anexos.length ? anexos.map(a =>
+      `<a href="${a.url}" target="_blank" class="drw-file-pill drw-file-${a.group}">
+        <i class="bi ${a.icon}"></i> ${a.name || a.label}
+      </a>`
+    ).join('') : '<span style="color:#9ca3af;font-size:.8rem">Nenhum anexo</span>';
+
+    document.getElementById('drwBody').innerHTML = `
+      <!-- Classificação -->
+      <div class="drw-section">
+        <div class="drw-section-title">Classificação</div>
+        <div class="drw-grid">
+          <div class="drw-field">
+            <span class="drw-field-label">Tipo</span>
+            <span class="drw-field-value">${tipoBadge}</span>
+          </div>
+          <div class="drw-field">
+            <span class="drw-field-label">Vencimento</span>
+            <span class="drw-field-value" style="color:${vencido?'#991b1b':(!pago&&venc?'#92400e':'inherit')}">${venc || '—'}</span>
+          </div>
+          <div class="drw-field">
+            <span class="drw-field-label">Mês de referência</span>
+            <span class="drw-field-value">${d.pagamento_mes || '—'}</span>
+          </div>
+          <div class="drw-field">
+            <span class="drw-field-label">Aprovação</span>
+            <span class="drw-field-value">${d.aprovado || 'Aguardando'}</span>
+          </div>
+        </div>
+      </div>
+      <!-- Descrição -->
+      <div class="drw-section">
+        <div class="drw-section-title">Descrição</div>
+        <div class="drw-field">
+          <span class="drw-field-value">${d.descricao_servico || '—'}</span>
+        </div>
+        ${d.nf_proposta ? `<div class="drw-field"><span class="drw-field-label">NF / Proposta</span><span class="drw-field-value">${d.nf_proposta}</span></div>` : ''}
+      </div>
+      <!-- Documentação -->
+      <div class="drw-section">
+        <div class="drw-section-title">Documentação</div>
+        <div class="drw-grid">
+          ${d.numero_documento ? `<div class="drw-field"><span class="drw-field-label">SC / Documento</span><span class="drw-field-value">${d.numero_documento}</span></div>` : ''}
+          ${d.sc_pedido ? `<div class="drw-field"><span class="drw-field-label">Pedido</span><span class="drw-field-value">${d.sc_pedido}</span></div>` : ''}
+          ${d.tipo_documento ? `<div class="drw-field"><span class="drw-field-label">Tipo doc.</span><span class="drw-field-value">${d.tipo_documento}</span></div>` : ''}
+          ${d.fluxo_status ? `<div class="drw-field"><span class="drw-field-label">Fluxo</span><span class="drw-field-value">${d.fluxo_status}</span></div>` : ''}
+        </div>
+      </div>
+      <!-- Anexos -->
+      <div class="drw-section">
+        <div class="drw-section-title">Anexos (${anexos.length})</div>
+        <div class="drw-files">${anexosHTML}</div>
+      </div>
+    `;
+  }
+
+  async function marcarPagoDrawer(id) {
+    const ok = await irisConfirm({
+      title: 'Marcar como pago',
+      message: 'Confirmar pagamento deste lançamento?',
+      danger: false,
+      btnOk: 'Marcar pago',
+    });
+    if(!ok) return;
+    const resp = await fetch('/api/pagamentos/mark-paid', {
+      method: 'POST',
+      headers: csrfJson(),
+      body: JSON.stringify({ids: [parseInt(id)]})
+    });
+    const data = await resp.json().catch(()=>({}));
+    if(data.ok) {
+      showToast('Marcado como pago');
+      // Atualiza badge na tabela
+      const row = document.querySelector(`#pagamentosTable tr[data-id="${id}"]`);
+      if(row) {
+        row.dataset.status = 'Sim';
+        const statusEl = row.querySelector('.erp-status');
+        if(statusEl) { statusEl.className='erp-status erp-status-paid'; statusEl.innerHTML='<span class="erp-dot erp-dot-paid"></span>Pago'; }
+      }
+      // Recarrega drawer atualizado
+      carregarDrawer(id);
+    } else {
+      showToast(data.error || 'Erro ao marcar pago.', 'error');
+    }
+  }
+
+  // ── Interceptar clique simples na tabela para abrir drawer ───
+  const table = document.getElementById('pagamentosTable');
+  table?.addEventListener('click', e => {
+    // Ignora checkbox, botões, links
+    if(e.target.closest('a,button,label,.erp-checkbox')) return;
+    const row = e.target.closest('tbody tr[data-id]');
+    if(!row || row.style.display === 'none') return;
+    const id = row.dataset.id;
+    if(!id || id === 'None' || !window.isValidPaymentId?.(id)) return;
+
+    // Ctrl+click ou Shift+click = selecionar (comportamento antigo)
+    if(e.ctrlKey || e.metaKey || e.shiftKey) return;
+
+    // Clique simples = abre drawer
+    e.stopPropagation();
+    abrirDrawer(id);
+  });
+
+  // Duplo clique ainda abre modal de edição
+  table?.addEventListener('dblclick', e => {
+    if(e.target.closest('a,button,input,label')) return;
+    const row = e.target.closest('tbody tr[data-id]');
+    if(!row) return;
+    fecharDrawer();
+    window.pagamentosEdit?.(row.dataset.id);
+  });
+})();
+</script>
+{% endblock %}

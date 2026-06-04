@@ -1,0 +1,561 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.inv-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:28px 0 20px;flex-wrap:wrap}
+.inv-title h1{margin:0;font-size:1.35rem;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.inv-title p{margin:4px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .inv-title h1{color:#f0f0f0}
+html[data-theme="dark"] .inv-title p{color:#666666}
+.inv-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:background .12s;white-space:nowrap;line-height:1.4}
+.inv-btn-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.inv-btn-primary:hover{background:#1e40af;color:#fff}
+.inv-btn-ghost{background:#fff;color:#333333;border-color:#e5e7eb}
+.inv-btn-ghost:hover{background:#f9fafb;border-color:#d1d5db}
+html[data-theme="dark"] .inv-btn-ghost{background:#1a1a1a;color:#cccccc;border-color:#2e2e2e}
+html[data-theme="dark"] .inv-btn-ghost:hover{background:#273549}
+/* KPIs */
+.inv-kpi-row{display:flex;gap:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px 24px;margin-bottom:20px}
+.inv-kpi{flex:1;display:flex;flex-direction:column;gap:2px;padding:0 16px}
+.inv-kpi:first-child{padding-left:0}
+.inv-kpi:last-child{padding-right:0}
+.inv-kpi-div{width:1px;height:36px;background:#e5e7eb;flex-shrink:0}
+.inv-kpi-label{font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+.inv-kpi-value{font-size:1.2rem;font-weight:700;color:var(--text)}
+.inv-kpi-value.amber{color:#92400e}
+.inv-kpi-value.red{color:#991b1b}
+.inv-kpi-value.green{color:#166534}
+html[data-theme="dark"] .inv-kpi-row{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .inv-kpi-label{color:#666666}
+html[data-theme="dark"] .inv-kpi-value{color:#f0f0f0}
+html[data-theme="dark"] .inv-kpi-div{background:#2e2e2e}
+/* Filtros */
+.inv-filter-bar{display:flex;align-items:flex-end;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px 18px;margin-bottom:16px;flex-wrap:wrap}
+.inv-filter-field{display:flex;flex-direction:column;gap:3px}
+.inv-filter-label{font-size:.68rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.inv-filter-input,.inv-filter-select{padding:7px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;color:var(--text);background:#fff;outline:none}
+.inv-filter-input:focus,.inv-filter-select:focus{border-color:#1d4ed8}
+.inv-search-wrap{position:relative;flex:1;min-width:200px}
+.inv-search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.78rem;pointer-events:none}
+.inv-search-input{padding-left:28px!important;width:100%}
+html[data-theme="dark"] .inv-filter-bar{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .inv-filter-input,html[data-theme="dark"] .inv-filter-select{background:#111111;border-color:#2e2e2e;color:#f0f0f0}
+/* Tabela */
+.inv-table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.inv-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.inv-table thead tr{border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.inv-table thead th{padding:10px 14px;font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;text-align:left}
+.inv-table tbody tr{border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .08s}
+.inv-table tbody tr:last-child{border-bottom:none}
+.inv-table tbody tr:hover{background:#f9fafb}
+.inv-table tbody tr.inv-active{background:#eff6ff!important;outline:2px solid #1d4ed8;outline-offset:-1px}
+.inv-table tbody td{padding:11px 14px;color:var(--text);vertical-align:middle}
+html[data-theme="dark"] .inv-table-wrap{background:#1a1a1a;border-color:#2e2e2e}
+html[data-theme="dark"] .inv-table thead tr{background:#111111;border-color:#2e2e2e}
+html[data-theme="dark"] .inv-table thead th{color:#444444}
+html[data-theme="dark"] .inv-table tbody tr{border-color:#1a1a1a}
+html[data-theme="dark"] .inv-table tbody tr:hover{background:#273549}
+html[data-theme="dark"] .inv-table tbody td{color:#cccccc}
+html[data-theme="dark"] .inv-table tbody tr.inv-active{background:rgba(29,78,216,.12)!important;outline-color:#3b82f6}
+.inv-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:.72rem;font-weight:600}
+.inv-badge-ok{background:#dcfce7;color:#166534}
+.inv-badge-low{background:#fef3c7;color:#92400e}
+.inv-badge-empty{background:#fef2f2;color:#991b1b}
+.inv-badge-pedido{background:#dbeafe;color:#1e40af}
+html[data-theme="dark"] .inv-badge-ok{background:rgba(22,163,74,.15);color:#4ade80}
+html[data-theme="dark"] .inv-badge-low{background:rgba(245,158,11,.12);color:#fbbf24}
+html[data-theme="dark"] .inv-badge-empty{background:rgba(239,68,68,.12);color:#f87171}
+html[data-theme="dark"] .inv-badge-pedido{background:rgba(29,78,216,.15);color:#60a5fa}
+.inv-empty{padding:40px;text-align:center;color:#9ca3af;font-size:.84rem}
+/* Drawer */
+.inv-drw-overlay{position:fixed;inset:0;z-index:1040;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .25s}
+.inv-drw-overlay.open{opacity:1;pointer-events:auto}
+.inv-drw-panel{position:fixed;top:0;right:0;bottom:0;z-index:1041;width:min(460px,95vw);background:#fff;box-shadow:-8px 0 40px rgba(0,0,0,.14);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.inv-drw-panel.open{transform:none}
+html[data-theme="dark"] .inv-drw-panel{background:#1a1a1a;box-shadow:-8px 0 40px rgba(0,0,0,.5)}
+.inv-drw-header{padding:18px 20px 14px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
+html[data-theme="dark"] .inv-drw-header{border-color:#2e2e2e}
+.inv-drw-avatar{width:40px;height:40px;border-radius:10px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:.84rem;font-weight:800;flex-shrink:0}
+html[data-theme="dark"] .inv-drw-avatar{background:rgba(29,78,216,.2);color:#60a5fa}
+.inv-drw-nome{font-size:.95rem;font-weight:700;color:var(--text)}
+.inv-drw-sub{font-size:.72rem;color:#9ca3af;margin-top:1px}
+html[data-theme="dark"] .inv-drw-nome{color:#f0f0f0}
+.inv-drw-close{width:32px;height:32px;border-radius:8px;border:none;background:#f3f4f6;color:#6b7280;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.inv-drw-close:hover{background:#e5e7eb}
+html[data-theme="dark"] .inv-drw-close{background:#2e2e2e;color:#666666}
+.inv-drw-actions{padding:10px 20px;border-bottom:1px solid #f3f4f6;display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0}
+html[data-theme="dark"] .inv-drw-actions{border-color:#2e2e2e}
+.inv-drw-body{flex:1;overflow-y:auto;padding:0}
+.inv-drw-section{padding:16px 20px;border-bottom:1px solid #f3f4f6}
+html[data-theme="dark"] .inv-drw-section{border-color:#2e2e2e}
+.inv-drw-stitle{font-size:.68rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.inv-drw-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.inv-drw-field{display:flex;flex-direction:column;gap:2px}
+.inv-drw-label{font-size:.7rem;color:#9ca3af;font-weight:500}
+.inv-drw-value{font-size:.86rem;color:var(--text);font-weight:500}
+html[data-theme="dark"] .inv-drw-value{color:#e2e8f0}
+.inv-drw-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid #e5e7eb;background:#fff;color:#333333;transition:background .12s}
+.inv-drw-btn:hover{background:#f9fafb}
+.inv-drw-btn-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.inv-drw-btn-primary:hover{background:#1e40af;color:#fff}
+.inv-drw-btn-green{color:#166534;border-color:#86efac}
+.inv-drw-btn-green:hover{background:#f0fdf4}
+.inv-drw-btn-red{color:#991b1b;border-color:#fca5a5}
+.inv-drw-btn-red:hover{background:#fef2f2}
+html[data-theme="dark"] .inv-drw-btn{background:#1a1a1a;border-color:#2e2e2e;color:#cccccc}
+/* Timeline */
+.inv-tl{display:flex;flex-direction:column;padding-left:24px;position:relative}
+.inv-tl::before{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:1px;background:#e5e7eb}
+html[data-theme="dark"] .inv-tl::before{background:#2e2e2e}
+.inv-tl-item{display:flex;gap:10px;position:relative;padding-bottom:14px}
+.inv-tl-dot{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.55rem;flex-shrink:0;position:absolute;left:-24px;top:2px;border:2px solid #fff;box-shadow:0 0 0 2px #e5e7eb}
+html[data-theme="dark"] .inv-tl-dot{border-color:#1a1a1a;box-shadow:0 0 0 2px #2e2e2e}
+.inv-tl-titulo{font-size:.82rem;font-weight:700;color:var(--text)}
+html[data-theme="dark"] .inv-tl-titulo{color:#f0f0f0}
+.inv-tl-sub{font-size:.74rem;color:#9ca3af}
+.inv-tl-det{font-size:.76rem;color:#6b7280;background:#f9fafb;border:1px solid #f3f4f6;border-radius:6px;padding:4px 8px;margin-top:3px}
+html[data-theme="dark"] .inv-tl-det{background:#111111;border-color:#2e2e2e;color:#666666}
+/* Pedidos */
+.inv-pedido-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6}
+.inv-pedido-item:last-child{border-bottom:none}
+html[data-theme="dark"] .inv-pedido-item{border-color:#2e2e2e}
+@media(max-width:768px){.inv-kpi-row{flex-wrap:wrap;gap:14px}.inv-kpi-div{display:none}.inv-kpi{flex:1 1 40%}}
+</style>
+
+<!-- Header -->
+<div class="inv-header">
+  <div class="inv-title">
+    <h1>Inventário</h1>
+    <p>Controle de estoque, entradas, saídas e pedidos de compra</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    {% if can('edit_inventario') %}
+    <button class="inv-btn inv-btn-primary" onclick="invNovoItem()"><i class="bi bi-plus"></i> Novo item</button>
+    {% endif %}
+    <button class="inv-btn inv-btn-ghost" id="invEditBtn"><i class="bi bi-pencil"></i> Editar</button>
+    {% if can('delete_inventario') %}
+    <button class="inv-btn inv-btn-ghost" style="color:#991b1b;border-color:#fca5a5" id="invDeleteBtn"><i class="bi bi-trash"></i> Excluir</button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- KPIs -->
+{% set qtd_baixo = rows|selectattr('quantidade','defined')|selectattr('quantidade_minima','defined')|list %}
+{% set n_baixo = rows|selectattr('quantidade','lt', 5)|list|length %}
+{% set n_pedidos = pedidos|length %}
+<div class="inv-kpi-row">
+  <div class="inv-kpi">
+    <span class="inv-kpi-label">Total de itens</span>
+    <span class="inv-kpi-value">{{ total_itens }}</span>
+  </div>
+  <div class="inv-kpi-div"></div>
+  <div class="inv-kpi">
+    <span class="inv-kpi-label">Valor em estoque</span>
+    <span class="inv-kpi-value">{{ valor_total|br_money }}</span>
+  </div>
+  <div class="inv-kpi-div"></div>
+  <div class="inv-kpi">
+    <span class="inv-kpi-label">Estoque baixo</span>
+    <span class="inv-kpi-value {% if n_baixo %}amber{% endif %}">{{ n_baixo }}</span>
+  </div>
+  <div class="inv-kpi-div"></div>
+  <div class="inv-kpi">
+    <span class="inv-kpi-label">Pedidos pendentes</span>
+    <span class="inv-kpi-value {% if n_pedidos %}red{% endif %}">{{ n_pedidos }}</span>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="inv-filter-bar">
+  <div class="inv-filter-field" style="flex:1;min-width:200px">
+    <label class="inv-filter-label">Buscar</label>
+    <div class="inv-search-wrap">
+      <i class="bi bi-search inv-search-icon"></i>
+      <input class="inv-filter-input inv-search-input" id="invBusca" placeholder="Item, categoria, fornecedor…" value="{{ q }}">
+    </div>
+  </div>
+  <div class="inv-filter-field">
+    <label class="inv-filter-label">Categoria</label>
+    <select class="inv-filter-select" id="invFiltroCategoria" style="min-width:140px">
+      <option value="">Todas</option>
+      {% for c in categorias %}<option value="{{ c }}" {{ 'selected' if categoria==c }}>{{ c }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="inv-filter-field">
+    <label class="inv-filter-label">Situação</label>
+    <select class="inv-filter-select" id="invFiltroSit" style="min-width:130px">
+      <option value="">Todas</option>
+      <option value="ok">Em estoque</option>
+      <option value="low">Estoque baixo</option>
+      <option value="empty">Zerado</option>
+    </select>
+  </div>
+</div>
+
+<!-- Tabela -->
+<div class="inv-table-wrap">
+  <table class="inv-table" id="invTable">
+    <thead>
+      <tr>
+        <th>#</th><th>Item</th><th>Categoria</th><th>Qtd.</th><th>Mín.</th>
+        <th>Situação</th><th>Valor unit.</th><th>Valor total</th><th>Fornecedor</th><th>Local</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+    {% set qtd = r.quantidade|float %}
+    {% set minimo = r.quantidade_minima|float if r.quantidade_minima else 0 %}
+    {% set sit = 'empty' if qtd <= 0 else ('low' if minimo > 0 and qtd <= minimo else 'ok') %}
+    {% set val_unit = r.valor_unitario|float if r.valor_unitario else 0 %}
+    <tr data-id="{{ r.id }}" data-sit="{{ sit }}">
+      <td style="color:#9ca3af;font-size:.76rem">#{{ r.id }}</td>
+      <td style="font-weight:600;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.nome }}</td>
+      <td style="font-size:.78rem;color:#6b7280">{{ r.categoria or '—' }}</td>
+      <td style="font-weight:700;{% if sit=='empty' %}color:#991b1b{% elif sit=='low' %}color:#92400e{% else %}color:#166534{% endif %}">
+        {{ '{:g}'.format(qtd) }} {{ r.unidade or 'un' }}
+      </td>
+      <td style="font-size:.76rem;color:#9ca3af">{{ '{:g}'.format(minimo) if minimo else '—' }}</td>
+      <td>
+        {% if sit == 'ok' %}<span class="inv-badge inv-badge-ok"><i class="bi bi-check-circle-fill" style="font-size:.6rem"></i> OK</span>
+        {% elif sit == 'low' %}<span class="inv-badge inv-badge-low"><i class="bi bi-exclamation-triangle-fill" style="font-size:.6rem"></i> Baixo</span>
+        {% else %}<span class="inv-badge inv-badge-empty"><i class="bi bi-x-circle-fill" style="font-size:.6rem"></i> Zerado</span>{% endif %}
+      </td>
+      <td style="font-size:.8rem;color:#333333">{{ r.valor_unitario or '—' }}</td>
+      <td style="font-size:.8rem;font-weight:500;color:var(--text)">{{ (val_unit * qtd)|br_money if val_unit and qtd else '—' }}</td>
+      <td style="font-size:.78rem;color:#6b7280">{{ r.fornecedor or '—' }}</td>
+      <td style="font-size:.76rem;color:#9ca3af">{{ r.localizacao or '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="10" class="inv-empty">Nenhum item cadastrado.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Drawer -->
+<div class="inv-drw-overlay" id="invDrwOverlay"></div>
+<aside class="inv-drw-panel" id="invDrwPanel">
+  <div class="inv-drw-header">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0">
+      <div class="inv-drw-avatar" id="invDrwAvatar"></div>
+      <div style="min-width:0">
+        <div class="inv-drw-nome" id="invDrwNome"></div>
+        <div class="inv-drw-sub" id="invDrwSub"></div>
+      </div>
+    </div>
+    <button class="inv-drw-close" onclick="fecharInvDrw()"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="inv-drw-actions" id="invDrwActions"></div>
+  <div class="inv-drw-body" id="invDrwBody">
+    <div style="padding:48px;text-align:center;color:#9ca3af">Carregando…</div>
+  </div>
+</aside>
+
+<!-- Modal item -->
+<div class="modal fade" id="invModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg" style="height:calc(100vh - 60px)">
+    <div class="modal-content" style="max-height:calc(100vh - 60px);display:flex;flex-direction:column;overflow:hidden">
+      <form method="post" action="{{ url_for('inventario_save') }}" id="invForm">
+        <div class="modal-header">
+          <div><h5 class="modal-title" id="invModalTitle">Novo item</h5><small class="text-muted">Dados do produto/material</small></div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" style="overflow-y:auto;flex:1 1 auto;min-height:0">
+          <input type="hidden" name="id" id="inv_id">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6"><label class="form-label">Nome *</label><input class="form-control" name="nome" id="inv_nome" required placeholder="Nome do item"></div>
+            <div class="col-md-3"><label class="form-label">Categoria</label><input class="form-control" name="categoria" id="inv_categoria" list="inv_categorias_list" placeholder="Ex: Elétrico, Hidráulico"><datalist id="inv_categorias_list">{% for c in categorias %}<option value="{{ c }}">{% endfor %}</datalist></div>
+            <div class="col-md-3"><label class="form-label">Unidade</label>
+              <select class="form-select" name="unidade" id="inv_unidade">
+                <option value="un">un</option><option value="m">m</option><option value="kg">kg</option>
+                <option value="l">l</option><option value="cx">cx</option><option value="pc">pc</option><option value="par">par</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-3"><label class="form-label">Quantidade inicial</label><input class="form-control" name="quantidade" id="inv_quantidade" type="number" step="any" placeholder="0"></div>
+            <div class="col-md-3"><label class="form-label">Qtd. mínima</label><input class="form-control" name="quantidade_minima" id="inv_quantidade_minima" type="number" step="any" placeholder="0"></div>
+            <div class="col-md-3"><label class="form-label">Valor unitário</label><input class="form-control" name="valor_unitario" id="inv_valor_unitario" placeholder="R$"></div>
+            <div class="col-md-3"><label class="form-label">Fornecedor</label><input class="form-control" name="fornecedor" id="inv_fornecedor" placeholder="Nome"></div>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Localização</label><input class="form-control" name="localizacao" id="inv_localizacao" placeholder="Ex: Prateleira A, Almoxarifado"></div>
+            <div class="col-md-6"><label class="form-label">Observações</label><input class="form-control" name="observacoes" id="inv_observacoes"></div>
+          </div>
+        </div>
+        <div class="modal-footer" style="flex-shrink:0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal entrada -->
+<div class="modal fade" id="invEntradaModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('inventario_movimento') }}">
+        <div class="modal-header"><h5 class="modal-title">Registrar entrada</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <input type="hidden" name="tipo" value="entrada">
+          <input type="hidden" name="item_id" id="entrada_item_id">
+          <div class="mb-3"><label class="form-label">Item</label><div id="entrada_item_nome" style="font-weight:600;font-size:.88rem;color:var(--text);padding:6px 0"></div></div>
+          <div class="mb-3"><label class="form-label">Quantidade *</label><input class="form-control" name="quantidade" type="number" step="any" min="0.01" required placeholder="0"></div>
+          <div class="mb-3"><label class="form-label">Motivo / Origem</label><input class="form-control" name="motivo" placeholder="Ex: Compra NF 1234, Transferência…"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Registrar entrada</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal baixa -->
+<div class="modal fade" id="invBaixaModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('inventario_movimento') }}">
+        <div class="modal-header"><h5 class="modal-title">Registrar baixa</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <input type="hidden" name="tipo" value="saida">
+          <input type="hidden" name="item_id" id="baixa_item_id">
+          <div class="mb-3"><label class="form-label">Item</label><div id="baixa_item_nome" style="font-weight:600;font-size:.88rem;color:var(--text);padding:6px 0"></div></div>
+          <div class="mb-3"><label class="form-label">Quantidade *</label><input class="form-control" name="quantidade" type="number" step="any" min="0.01" required placeholder="0"></div>
+          <div class="mb-3"><label class="form-label">Motivo / Destino</label><input class="form-control" name="motivo" placeholder="Ex: Usado em O.S. 123, Manutenção…"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">Registrar baixa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal pedido de compra -->
+<div class="modal fade" id="invPedidoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('inventario_pedido_save') }}">
+        <div class="modal-header"><h5 class="modal-title">Pedido de compra</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <input type="hidden" name="item_id" id="pedido_item_id">
+          <div class="mb-3"><label class="form-label">Item</label><div id="pedido_item_nome" style="font-weight:600;font-size:.88rem;color:var(--text);padding:6px 0"></div></div>
+          <div class="mb-3"><label class="form-label">Quantidade *</label><input class="form-control" name="quantidade" type="number" step="any" min="0.01" required placeholder="0"></div>
+          <div class="mb-3"><label class="form-label">Fornecedor</label><input class="form-control" name="fornecedor" id="pedido_fornecedor" placeholder="Nome do fornecedor"></div>
+          <div class="mb-3"><label class="form-label">Observações</label><input class="form-control" name="observacoes" placeholder="Urgência, especificações…"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Criar pedido</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const ITENS_DATA = {{ rows|tojson }};
+const MOVIMENTOS_DATA = {{ movimentos|tojson }};
+const PEDIDOS_DATA = {{ pedidos|tojson }};
+
+// ── Drawer ────────────────────────────────────────
+const invPanel = document.getElementById('invDrwPanel');
+const invOverlay = document.getElementById('invDrwOverlay');
+let invCurrentId = null;
+
+function fecharInvDrw(){
+  invPanel.classList.remove('open');
+  invOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+  document.querySelectorAll('#invTable tr.inv-active').forEach(r=>r.classList.remove('inv-active'));
+  invCurrentId = null;
+}
+invOverlay.addEventListener('click', fecharInvDrw);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && invCurrentId) fecharInvDrw(); });
+
+function abrirInvDrw(id){
+  invCurrentId = id;
+  document.querySelectorAll('#invTable tr.inv-active').forEach(r=>r.classList.remove('inv-active'));
+  const row = document.querySelector(`#invTable tr[data-id="${id}"]`);
+  if(row) row.classList.add('inv-active');
+  invPanel.classList.add('open');
+  invOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderInvDrw(id);
+}
+
+function renderInvDrw(id){
+  const item = ITENS_DATA.find(r=>String(r.id)===String(id));
+  if(!item) return;
+  const qtd = parseFloat(item.quantidade)||0;
+  const minimo = parseFloat(item.quantidade_minima)||0;
+  const sit = qtd<=0?'Zerado':(minimo>0&&qtd<=minimo?'Estoque baixo':'Em estoque');
+  const sitCor = qtd<=0?'#991b1b':(minimo>0&&qtd<=minimo?'#92400e':'#166534');
+  const ini = item.nome.slice(0,2).toUpperCase();
+
+  document.getElementById('invDrwAvatar').textContent = ini;
+  document.getElementById('invDrwNome').textContent = item.nome;
+  document.getElementById('invDrwSub').textContent = `${item.categoria||'Sem categoria'} · ${item.unidade||'un'}`;
+
+  document.getElementById('invDrwActions').innerHTML = `
+    <button class="inv-drw-btn inv-drw-btn-green" onclick="abrirEntrada('${id}')"><i class="bi bi-arrow-down-circle"></i> Entrada</button>
+    <button class="inv-drw-btn inv-drw-btn-red" onclick="abrirBaixa('${id}')"><i class="bi bi-arrow-up-circle"></i> Baixa</button>
+    <button class="inv-drw-btn inv-drw-btn-primary" onclick="abrirPedido('${id}')"><i class="bi bi-cart-plus"></i> Pedir compra</button>
+    <button class="inv-drw-btn" onclick="fecharInvDrw();setTimeout(()=>invEditarId('${id}'),350)"><i class="bi bi-pencil"></i> Editar</button>
+  `;
+
+  // Movimentos do item
+  const movs = MOVIMENTOS_DATA.filter(m=>String(m.item_id)===String(id));
+  const movHtml = movs.length ? `<div class="inv-tl">${movs.map(m=>{
+    const entrada = m.tipo==='entrada';
+    const cor = entrada?'#22c55e':'#ef4444';
+    return `<div class="inv-tl-item">
+      <div class="inv-tl-dot" style="background:${cor}"><i class="bi bi-${entrada?'plus':'dash'}-lg"></i></div>
+      <div>
+        <div class="inv-tl-titulo">${entrada?'Entrada':'Saída'} · ${m.quantidade} ${item.unidade||'un'}</div>
+        <div class="inv-tl-sub">${m.quando||''} · ${m.usuario||''}</div>
+        ${m.motivo?`<div class="inv-tl-det">${m.motivo}</div>`:''}
+      </div>
+    </div>`;
+  }).join('')}</div>` : '<span style="color:#9ca3af;font-size:.78rem">Nenhuma movimentação registrada.</span>';
+
+  // Pedidos do item
+  const peds = PEDIDOS_DATA.filter(p=>String(p.item_id)===String(id));
+  const pedHtml = peds.length ? peds.map(p=>`
+    <div class="inv-pedido-item">
+      <div style="flex:1">
+        <div style="font-size:.82rem;font-weight:600;color:var(--text)">${p.quantidade} ${item.unidade||'un'}</div>
+        <div style="font-size:.74rem;color:#6b7280">${p.fornecedor||''} · ${p.solicitado_em||''}</div>
+        ${p.observacoes?`<div style="font-size:.72rem;color:#9ca3af">${p.observacoes}</div>`:''}
+      </div>
+      <span class="inv-badge inv-badge-pedido">Pendente</span>
+      <form method="post" action="/inventario/pedido/receber/${p.id}" style="display:inline">
+        <button class="inv-drw-btn" style="padding:4px 10px;font-size:.74rem" type="submit">Receber</button>
+      </form>
+    </div>`).join('') : '<span style="color:#9ca3af;font-size:.78rem">Nenhum pedido pendente.</span>';
+
+  document.getElementById('invDrwBody').innerHTML = `
+    <div class="inv-drw-section">
+      <div class="inv-drw-stitle">Situação</div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div>
+          <div style="font-size:1.8rem;font-weight:800;color:${sitCor};letter-spacing:-.02em">${'{:g}'.replace ? parseFloat(item.quantidade||0) : item.quantidade||0} <span style="font-size:1rem;font-weight:500">${item.unidade||'un'}</span></div>
+          <div style="font-size:.76rem;font-weight:600;color:${sitCor}">${sit}</div>
+        </div>
+        ${minimo>0?`<div style="font-size:.78rem;color:#9ca3af">mínimo: ${minimo} ${item.unidade||'un'}</div>`:''}
+      </div>
+    </div>
+    <div class="inv-drw-section">
+      <div class="inv-drw-stitle">Detalhes</div>
+      <div class="inv-drw-grid">
+        <div class="inv-drw-field"><span class="inv-drw-label">Valor unitário</span><span class="inv-drw-value">${item.valor_unitario||'—'}</span></div>
+        <div class="inv-drw-field"><span class="inv-drw-label">Fornecedor</span><span class="inv-drw-value">${item.fornecedor||'—'}</span></div>
+        <div class="inv-drw-field"><span class="inv-drw-label">Localização</span><span class="inv-drw-value">${item.localizacao||'—'}</span></div>
+        <div class="inv-drw-field"><span class="inv-drw-label">Cadastrado</span><span class="inv-drw-value">${item.criado_em||'—'}</span></div>
+      </div>
+      ${item.observacoes?`<div style="margin-top:10px;font-size:.8rem;color:#6b7280">${item.observacoes}</div>`:''}
+    </div>
+    <div class="inv-drw-section">
+      <div class="inv-drw-stitle">Pedidos de compra pendentes</div>
+      ${pedHtml}
+    </div>
+    <div class="inv-drw-section">
+      <div class="inv-drw-stitle">Histórico de movimentações</div>
+      ${movHtml}
+    </div>
+  `;
+}
+
+// ── Tabela ───────────────────────────────────────
+const table = document.getElementById('invTable');
+table?.addEventListener('click', e=>{
+  if(e.target.closest('a,button,input,form')) return;
+  const row = e.target.closest('tbody tr[data-id]');
+  if(!row || row.style.display==='none') return;
+  abrirInvDrw(row.dataset.id);
+});
+
+function getSel(){ return table?.querySelector('tbody tr.inv-active')?.dataset.id; }
+
+// ── Editar ───────────────────────────────────────
+function invNovoItem(){
+  document.getElementById('invForm').reset();
+  document.getElementById('inv_id').value='';
+  document.getElementById('invModalTitle').textContent='Novo item';
+  const m=document.getElementById('invModal');
+  try{bootstrap.Modal.getInstance(m)?.dispose();}catch(e){}
+  new bootstrap.Modal(m).show();
+}
+
+function invEditarId(id){
+  const item=ITENS_DATA.find(r=>String(r.id)===String(id));
+  if(!item) return;
+  const fields=['id','nome','categoria','unidade','quantidade','quantidade_minima','valor_unitario','fornecedor','localizacao','observacoes'];
+  fields.forEach(f=>{ const el=document.getElementById('inv_'+f); if(el) el.value=item[f]||''; });
+  document.getElementById('invModalTitle').textContent='Editar item';
+  const m=document.getElementById('invModal');
+  try{bootstrap.Modal.getInstance(m)?.dispose();}catch(e){}
+  setTimeout(()=>new bootstrap.Modal(m).show(),50);
+}
+
+document.getElementById('invEditBtn')?.addEventListener('click',()=>{
+  const id=getSel(); if(id) invEditarId(id); else showToast?.('Selecione um item','error');
+});
+document.getElementById('invDeleteBtn')?.addEventListener('click', async()=>{
+  const id=getSel(); if(!id){showToast?.('Selecione um item','error');return;}
+  const item=ITENS_DATA.find(r=>String(r.id)===String(id));
+  if(!await irisConfirm?.({title:'Excluir item',message:`Excluir "${item?.nome}"? Esta ação remove também o histórico de movimentações.`,danger:true,btnOk:'Excluir'})) return;
+  const r=await fetch('/inventario/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:[Number(id)]})});
+  if(r.ok){fecharInvDrw();location.reload();}
+});
+
+// ── Entrada / Baixa / Pedido ─────────────────────
+function abrirEntrada(id){
+  const item=ITENS_DATA.find(r=>String(r.id)===String(id));
+  document.getElementById('entrada_item_id').value=id;
+  document.getElementById('entrada_item_nome').textContent=item?.nome||'';
+  const m=document.getElementById('invEntradaModal');
+  try{bootstrap.Modal.getInstance(m)?.dispose();}catch(e){}
+  new bootstrap.Modal(m).show();
+}
+function abrirBaixa(id){
+  const item=ITENS_DATA.find(r=>String(r.id)===String(id));
+  document.getElementById('baixa_item_id').value=id;
+  document.getElementById('baixa_item_nome').textContent=item?.nome||'';
+  const m=document.getElementById('invBaixaModal');
+  try{bootstrap.Modal.getInstance(m)?.dispose();}catch(e){}
+  new bootstrap.Modal(m).show();
+}
+function abrirPedido(id){
+  const item=ITENS_DATA.find(r=>String(r.id)===String(id));
+  document.getElementById('pedido_item_id').value=id;
+  document.getElementById('pedido_item_nome').textContent=item?.nome||'';
+  document.getElementById('pedido_fornecedor').value=item?.fornecedor||'';
+  const m=document.getElementById('invPedidoModal');
+  try{bootstrap.Modal.getInstance(m)?.dispose();}catch(e){}
+  new bootstrap.Modal(m).show();
+}
+
+// ── Filtros ──────────────────────────────────────
+function aplicarFiltros(){
+  const q=(document.getElementById('invBusca')?.value||'').toLowerCase();
+  const cat=document.getElementById('invFiltroCategoria')?.value||'';
+  const sit=document.getElementById('invFiltroSit')?.value||'';
+  table?.querySelectorAll('tbody tr[data-id]').forEach(tr=>{
+    const okQ=!q||tr.textContent.toLowerCase().includes(q);
+    const okC=!cat||(tr.children[2]?.textContent.trim()===cat);
+    const okS=!sit||(tr.dataset.sit===sit);
+    tr.style.display=(okQ&&okC&&okS)?'':'none';
+  });
+}
+document.getElementById('invBusca')?.addEventListener('input',aplicarFiltros);
+document.getElementById('invFiltroCategoria')?.addEventListener('change',aplicarFiltros);
+document.getElementById('invFiltroSit')?.addEventListener('change',aplicarFiltros);
+</script>
+{% endblock %}

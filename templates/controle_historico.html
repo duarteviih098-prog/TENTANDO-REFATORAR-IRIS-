@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.ebh-header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 20px;flex-wrap:wrap;gap:12px}
+.ebh-header h1{margin:0;font-size:1.25rem;font-weight:700;color:#111827}
+.ebh-header p{margin:3px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .ebh-header h1{color:#f1f5f9}
+html[data-theme="dark"] .ebh-header p{color:#64748b}
+.ebh-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:.8rem;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#374151;text-decoration:none;transition:background .12s}
+.ebh-btn:hover{background:#f9fafb}
+html[data-theme="dark"] .ebh-btn{background:#1e293b;border-color:#334155;color:#cbd5e1}
+.ebh-table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.ebh-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.ebh-table thead tr{border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.ebh-table thead th{padding:10px 14px;font-size:.69rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;text-align:left}
+.ebh-table tbody tr{border-bottom:1px solid #f3f4f6;transition:background .08s}
+.ebh-table tbody tr:last-child{border-bottom:none}
+.ebh-table tbody tr:hover{background:#f9fafb}
+.ebh-table tbody td{padding:12px 14px;color:#111827;vertical-align:middle}
+html[data-theme="dark"] .ebh-table-wrap{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .ebh-table thead tr{background:#0f172a;border-color:#334155}
+html[data-theme="dark"] .ebh-table thead th{color:#475569}
+html[data-theme="dark"] .ebh-table tbody tr{border-color:#1e293b}
+html[data-theme="dark"] .ebh-table tbody tr:hover{background:#273549}
+html[data-theme="dark"] .ebh-table tbody td{color:#cbd5e1}
+.ebh-loc-pill{display:inline-flex;align-items:center;gap:5px;font-size:.74rem;font-weight:600;padding:2px 8px;border-radius:20px}
+.ebh-loc-estoque{background:#dcfce7;color:#166534}
+.ebh-loc-conserto{background:#fef3c7;color:#92400e}
+.ebh-loc-retirada{background:#fef2f2;color:#991b1b}
+html[data-theme="dark"] .ebh-loc-estoque{background:rgba(22,163,74,.15);color:#4ade80}
+html[data-theme="dark"] .ebh-loc-conserto{background:rgba(245,158,11,.12);color:#fbbf24}
+html[data-theme="dark"] .ebh-loc-retirada{background:rgba(239,68,68,.12);color:#f87171}
+.ebh-empty{padding:40px;text-align:center;color:#9ca3af;font-size:.84rem}
+.ebh-filter-bar{display:flex;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px 18px;margin-bottom:16px;align-items:flex-end;flex-wrap:wrap}
+html[data-theme="dark"] .ebh-filter-bar{background:#1e293b;border-color:#334155}
+</style>
+
+<div class="ebh-header">
+  <div>
+    <h1>Histórico de Movimentações</h1>
+    <p>Rastreamento de todas as bombas cadastradas</p>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a href="{{ url_for('controle_lista') }}" class="ebh-btn"><i class="bi bi-list-ul"></i> Lançamentos</a>
+    <a href="{{ url_for('controle_hub') }}" class="ebh-btn"><i class="bi bi-grid-3x3-gap"></i> Hub</a>
+  </div>
+</div>
+
+<div class="ebh-filter-bar">
+  <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:200px">
+    <label style="font-size:.68rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em">Buscar</label>
+    <div style="position:relative">
+      <i class="bi bi-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.78rem;pointer-events:none"></i>
+      <input id="ebhBusca" style="padding:7px 10px 7px 28px;border:1px solid #e5e7eb;border-radius:6px;font-size:.82rem;width:100%;outline:none" placeholder="Equipamento, nº série, destino…">
+    </div>
+  </div>
+</div>
+
+<div class="ebh-table-wrap">
+  <table class="ebh-table" id="ebhTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Equipamento</th>
+        <th>Modelo / Marca</th>
+        <th>Nº Série</th>
+        <th>Localização atual</th>
+        <th>Destino</th>
+        <th>Fornecedor</th>
+        <th>Entrada</th>
+        <th>Entrega</th>
+        <th>Recebido em</th>
+        <th>Observações</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+    {% set loc = (r.localizacao or 'estoque')|lower %}
+    <tr>
+      <td style="color:#9ca3af;font-size:.76rem">#{{ r.id }}</td>
+      <td style="font-weight:600;color:#111827;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.equipamento or '—' }}</td>
+      <td style="font-size:.8rem;color:#374151">{{ r.modelo or '—' }}{% if r.marca %}<div style="font-size:.7rem;color:#9ca3af">{{ r.marca }}</div>{% endif %}</td>
+      <td style="font-size:.76rem;color:#6b7280">{{ r.numero_serie or '—' }}</td>
+      <td>
+        {% if loc == 'estoque' %}<span class="ebh-loc-pill ebh-loc-estoque">Estoque</span>
+        {% elif loc == 'conserto' %}<span class="ebh-loc-pill ebh-loc-conserto">Conserto</span>
+        {% else %}<span class="ebh-loc-pill ebh-loc-retirada">Retirada</span>{% endif %}
+      </td>
+      <td style="font-size:.78rem;color:#6b7280">{{ r.destino_retirada or '—' }}</td>
+      <td style="font-size:.78rem;color:#374151">{{ r.fornecedor or '—' }}</td>
+      <td style="font-size:.76rem;color:#6b7280">{{ r.data_abertura or '—' }}</td>
+      <td style="font-size:.76rem;color:#6b7280">{{ r.data_entrega or r.previsao_entrega or '—' }}</td>
+      <td style="font-size:.76rem;color:#6b7280">{{ r.recebido_em or '—' }}</td>
+      <td style="font-size:.76rem;color:#6b7280;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.observacoes or '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="11" class="ebh-empty">Nenhum registro encontrado.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('ebhBusca')?.addEventListener('input', function(){
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#ebhTable tbody tr[data-id], #ebhTable tbody tr:not(.ebh-empty)').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}

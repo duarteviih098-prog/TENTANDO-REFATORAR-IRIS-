@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+.rel-header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 20px;flex-wrap:wrap;gap:12px}
+.rel-header h1{margin:0;font-size:1.25rem;font-weight:700;color:#111827}
+.rel-header p{margin:3px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .rel-header h1{color:#f1f5f9}
+html[data-theme="dark"] .rel-header p{color:#64748b}
+
+/* Grid de blocos */
+.rel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.rel-block{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden}
+.rel-block-full{grid-column:1/-1}
+.rel-block-header{padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:10px}
+.rel-block-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.88rem;flex-shrink:0}
+.rel-block-title{font-size:.9rem;font-weight:700;color:#111827;margin:0}
+.rel-block-sub{font-size:.75rem;color:#6b7280;margin:2px 0 0}
+.rel-block-body{padding:20px}
+html[data-theme="dark"] .rel-block{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .rel-block-header{border-color:#334155}
+html[data-theme="dark"] .rel-block-title{color:#f1f5f9}
+html[data-theme="dark"] .rel-block-sub{color:#64748b}
+
+/* Aging */
+.aging-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.aging-label{font-size:.78rem;font-weight:600;color:#374151;min-width:120px}
+.aging-bar-wrap{flex:1;height:8px;background:#f3f4f6;border-radius:4px;overflow:hidden}
+.aging-bar-fill{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.aging-fill-ok{background:#22c55e}
+.aging-fill-30{background:#f59e0b}
+.aging-fill-60{background:#ef4444}
+.aging-fill-90{background:#dc2626}
+.aging-fill-90plus{background:#7f1d1d}
+.aging-values{font-size:.76rem;color:#6b7280;min-width:90px;text-align:right}
+.aging-count{font-size:.7rem;color:#9ca3af}
+html[data-theme="dark"] .aging-label{color:#cbd5e1}
+html[data-theme="dark"] .aging-bar-wrap{background:#334155}
+
+/* Concentração */
+.conc-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.conc-rank{font-size:.7rem;font-weight:700;color:#9ca3af;min-width:18px}
+.conc-nome{font-size:.8rem;font-weight:600;color:#111827;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conc-bar-wrap{width:80px;height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden;flex-shrink:0}
+.conc-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#1d4ed8,#3b82f6)}
+.conc-perc{font-size:.76rem;font-weight:700;color:#374151;min-width:40px;text-align:right}
+.conc-val{font-size:.72rem;color:#9ca3af;min-width:80px;text-align:right}
+html[data-theme="dark"] .conc-nome{color:#f1f5f9}
+html[data-theme="dark"] .conc-bar-wrap{background:#334155}
+html[data-theme="dark"] .conc-perc{color:#cbd5e1}
+
+/* Tendência — canvas */
+.rel-chart-wrap{position:relative;height:180px}
+
+/* Anomalias */
+.anom-card{border:1px solid #fde68a;background:#fffbeb;border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.anom-card.queda{border-color:#bfdbfe;background:#eff6ff}
+.anom-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.anom-nome{font-size:.84rem;font-weight:700;color:#111827}
+.anom-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:700}
+.anom-badge-alta{background:#fef2f2;color:#991b1b}
+.anom-badge-queda{background:#dbeafe;color:#1e40af}
+.anom-valores{display:flex;gap:16px;font-size:.76rem;color:#6b7280}
+.anom-valores strong{color:#374151}
+.anom-empty{text-align:center;color:#9ca3af;font-size:.82rem;padding:24px}
+html[data-theme="dark"] .anom-card{background:rgba(146,64,14,.1);border-color:rgba(251,191,36,.2)}
+html[data-theme="dark"] .anom-card.queda{background:rgba(29,78,216,.08);border-color:rgba(59,130,246,.2)}
+html[data-theme="dark"] .anom-nome{color:#f1f5f9}
+html[data-theme="dark"] .anom-valores{color:#64748b}
+html[data-theme="dark"] .anom-valores strong{color:#cbd5e1}
+
+/* Ícones dos blocos */
+.icon-blue{background:#dbeafe;color:#1d4ed8}
+.icon-amber{background:#fef3c7;color:#92400e}
+.icon-green{background:#dcfce7;color:#166534}
+.icon-red{background:#fef2f2;color:#991b1b}
+html[data-theme="dark"] .icon-blue{background:rgba(29,78,216,.15);color:#60a5fa}
+html[data-theme="dark"] .icon-amber{background:rgba(146,64,14,.15);color:#fbbf24}
+html[data-theme="dark"] .icon-green{background:rgba(22,101,52,.15);color:#4ade80}
+html[data-theme="dark"] .icon-red{background:rgba(153,27,27,.15);color:#fca5a5}
+
+@media(max-width:768px){.rel-grid{grid-template-columns:1fr}}
+</style>
+
+<div class="rel-header">
+  <div>
+    <h1>Relatórios</h1>
+    <p>Aging de contas a pagar, concentração de fornecedores e anomalias de valor</p>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    {% if can('generate_pdf') %}
+    <a class="erp-btn erp-btn-ghost erp-btn-sm" href="{{ url_for('pagamentos_relatorios_pdf') }}" target="_blank">
+      <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+    </a>
+    {% endif %}
+    <a class="erp-btn erp-btn-ghost erp-btn-sm" href="{{ url_for('pagamentos_hub') }}">
+      <i class="bi bi-grid-3x3-gap"></i> Hub
+    </a>
+  </div>
+</div>
+
+<div class="rel-grid">
+
+  <!-- AGING -->
+  <div class="rel-block">
+    <div class="rel-block-header">
+      <div class="rel-block-icon icon-red"><i class="bi bi-clock-history"></i></div>
+      <div>
+        <div class="rel-block-title">Aging de Contas a Pagar</div>
+        <div class="rel-block-sub">Antiguidade dos pagamentos em aberto</div>
+      </div>
+    </div>
+    <div class="rel-block-body">
+      {% set aging_total_val = (aging_val.corrente + aging_val.ate30 + aging_val.ate60 + aging_val.ate90 + aging_val.acima90) or 1 %}
+      {% for label, key, cls in [
+        ('Corrente / Sem venc.', 'corrente', 'ok'),
+        ('Vencido 1–30 dias', 'ate30', '30'),
+        ('Vencido 31–60 dias', 'ate60', '60'),
+        ('Vencido 61–90 dias', 'ate90', '90'),
+        ('Vencido 90+ dias', 'acima90', '90plus')
+      ] %}
+      {% set val = aging_val[key] %}
+      {% set cnt = aging[key] %}
+      {% set perc = (val / aging_total_val * 100)|round(1) %}
+      <div class="aging-row">
+        <span class="aging-label">{{ label }}</span>
+        <div class="aging-bar-wrap">
+          <div class="aging-bar-fill aging-fill-{{ cls }}" style="width:{{ perc }}%"></div>
+        </div>
+        <div class="aging-values">
+          {{ val|br_money }}
+          <div class="aging-count">{{ cnt }} lançamento(s)</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ANOMALIAS -->
+  <div class="rel-block">
+    <div class="rel-block-header">
+      <div class="rel-block-icon icon-amber"><i class="bi bi-exclamation-triangle"></i></div>
+      <div>
+        <div class="rel-block-title">Anomalias de Valor</div>
+        <div class="rel-block-sub">Fornecedores com variação > 50% da média histórica</div>
+      </div>
+    </div>
+    <div class="rel-block-body">
+      {% if anomalias %}
+        {% for a in anomalias %}
+        <div class="anom-card {{ 'queda' if a.variacao < 0 else '' }}">
+          <div class="anom-card-top">
+            <span class="anom-nome">{{ a.fornecedor }}</span>
+            <span class="anom-badge {{ 'anom-badge-queda' if a.variacao < 0 else 'anom-badge-alta' }}">
+              {{ '+' if a.variacao > 0 else '' }}{{ a.variacao }}%
+            </span>
+          </div>
+          <div class="anom-valores">
+            <span>Média: <strong>{{ a.media|br_money }}</strong></span>
+            <span>Último: <strong>{{ a.ultimo|br_money }}</strong></span>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="anom-empty">
+          <i class="bi bi-check-circle" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.3"></i>
+          Nenhuma anomalia detectada. Os valores estão dentro do padrão histórico.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- CONCENTRAÇÃO -->
+  <div class="rel-block">
+    <div class="rel-block-header">
+      <div class="rel-block-icon icon-blue"><i class="bi bi-building"></i></div>
+      <div>
+        <div class="rel-block-title">Concentração por Fornecedor</div>
+        <div class="rel-block-sub">Top 10 — total: {{ total_geral|br_money }}</div>
+      </div>
+    </div>
+    <div class="rel-block-body">
+      {% for f in concentracao %}
+      <div class="conc-row">
+        <span class="conc-rank">{{ loop.index }}</span>
+        <span class="conc-nome" title="{{ f.nome }}">{{ f.nome }}</span>
+        <div class="conc-bar-wrap">
+          <div class="conc-bar-fill" style="width:{{ f.perc }}%"></div>
+        </div>
+        <span class="conc-perc">{{ f.perc }}%</span>
+        <span class="conc-val">{{ f.total|br_money }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- TENDÊNCIA 6 MESES -->
+  <div class="rel-block">
+    <div class="rel-block-header">
+      <div class="rel-block-icon icon-green"><i class="bi bi-graph-up"></i></div>
+      <div>
+        <div class="rel-block-title">Tendência — Últimos 6 Meses</div>
+        <div class="rel-block-sub">Gasto total vs valor pago por mês</div>
+      </div>
+    </div>
+    <div class="rel-block-body">
+      <div class="rel-chart-wrap">
+        <canvas id="tendenciaChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  const labels = {{ meses_labels|tojson }};
+  const gastos = {{ meses_gastos|tojson }};
+  const pagos  = {{ meses_pagos|tojson }};
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const gridColor = isDark ? 'rgba(148,163,184,.12)' : 'rgba(0,0,0,.06)';
+  const textColor = isDark ? '#64748b' : '#9ca3af';
+
+  function brMoney(v){
+    return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+  }
+
+  new Chart(document.getElementById('tendenciaChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Gasto total',
+          data: gastos,
+          backgroundColor: isDark ? 'rgba(59,130,246,.25)' : 'rgba(29,78,216,.12)',
+          borderColor: isDark ? '#3b82f6' : '#1d4ed8',
+          borderWidth: 1.5,
+          borderRadius: 5,
+        },
+        {
+          label: 'Pago',
+          data: pagos,
+          backgroundColor: isDark ? 'rgba(74,222,128,.25)' : 'rgba(22,163,74,.15)',
+          borderColor: isDark ? '#4ade80' : '#16a34a',
+          borderWidth: 1.5,
+          borderRadius: 5,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 12 } },
+        tooltip: {
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${brMoney(ctx.parsed.y)}` }
+        }
+      },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 } } },
+        y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 }, callback: v => brMoney(v) } }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

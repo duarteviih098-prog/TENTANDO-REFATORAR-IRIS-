@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.ih-header{padding:28px 0 8px}
+.ih-header h1{margin:0;font-size:1.35rem;font-weight:700;color:#111827;letter-spacing:-.02em}
+.ih-header p{margin:4px 0 0;font-size:.84rem;color:#6b7280}
+html[data-theme="dark"] .ih-header h1{color:#f1f5f9}
+html[data-theme="dark"] .ih-header p{color:#64748b}
+.ih-kpis{display:flex;gap:0;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:20px 28px;margin:20px 0}
+.ih-kpi{flex:1;display:flex;flex-direction:column;gap:3px;padding:0 20px}
+.ih-kpi:first-child{padding-left:0}
+.ih-kpi:last-child{padding-right:0}
+.ih-kpi-div{width:1px;background:#e5e7eb;flex-shrink:0}
+.ih-kpi-label{font-size:.7rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+.ih-kpi-value{font-size:1.4rem;font-weight:700;color:#111827;letter-spacing:-.02em}
+.ih-kpi-value.amber{color:#92400e}
+.ih-kpi-value.red{color:#991b1b}
+.ih-kpi-value.green{color:#166534}
+html[data-theme="dark"] .ih-kpis{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .ih-kpi-label{color:#64748b}
+html[data-theme="dark"] .ih-kpi-value{color:#f1f5f9}
+html[data-theme="dark"] .ih-kpi-div{background:#334155}
+.ih-launch{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:16px 20px;text-decoration:none;color:inherit;transition:background .12s;margin-bottom:20px}
+.ih-launch:hover{background:#f1f5f9;border-color:#d1d5db}
+.ih-launch-icon{width:40px;height:40px;border-radius:9px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.ih-launch-title{font-size:.95rem;font-weight:700;color:#111827;margin:0 0 2px}
+.ih-launch-sub{font-size:.78rem;color:#6b7280;margin:0}
+html[data-theme="dark"] .ih-launch{background:#162032;border-color:#334155}
+html[data-theme="dark"] .ih-launch:hover{background:#1e293b}
+html[data-theme="dark"] .ih-launch-title{color:#f1f5f9}
+.ih-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px}
+.ih-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:22px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;transition:box-shadow .15s,border-color .15s,transform .15s;position:relative;overflow:hidden}
+.ih-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+.ih-card-blue::before{background:linear-gradient(90deg,#1d4ed8,#3b82f6)}
+.ih-card-amber::before{background:linear-gradient(90deg,#d97706,#f59e0b)}
+.ih-card-purple::before{background:linear-gradient(90deg,#6b21a8,#a855f7)}
+.ih-card-green::before{background:linear-gradient(90deg,#166534,#22c55e)}
+.ih-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.1);border-color:#d1d5db;transform:translateY(-2px)}
+.ih-card-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.ih-card-icon-blue{background:#dbeafe;color:#1d4ed8}
+.ih-card-icon-amber{background:#fef3c7;color:#d97706}
+.ih-card-icon-purple{background:#f3e8ff;color:#7c3aed}
+.ih-card-icon-green{background:#dcfce7;color:#166534}
+.ih-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.ih-card-title{font-size:.95rem;font-weight:700;color:#111827;margin:0 0 3px}
+.ih-card-desc{font-size:.78rem;color:#6b7280;line-height:1.4;margin:0}
+.ih-card-stat{display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1px solid #f3f4f6}
+.ih-card-stat-num{font-size:1.3rem;font-weight:700;color:#111827}
+.ih-card-stat-label{font-size:.74rem;color:#6b7280}
+.ih-card-arrow{color:#9ca3af;font-size:.9rem;flex-shrink:0;transition:transform .15s}
+.ih-card:hover .ih-card-arrow{transform:translateX(3px);color:#6b7280}
+html[data-theme="dark"] .ih-card{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .ih-card:hover{border-color:#475569;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+html[data-theme="dark"] .ih-card-title{color:#f1f5f9}
+html[data-theme="dark"] .ih-card-desc{color:#64748b}
+html[data-theme="dark"] .ih-card-stat{border-top-color:#334155}
+html[data-theme="dark"] .ih-card-stat-num{color:#f1f5f9}
+html[data-theme="dark"] .ih-card-icon-blue{background:rgba(29,78,216,.15);color:#60a5fa}
+html[data-theme="dark"] .ih-card-icon-amber{background:rgba(217,119,6,.12);color:#fbbf24}
+html[data-theme="dark"] .ih-card-icon-purple{background:rgba(124,58,237,.15);color:#c084fc}
+html[data-theme="dark"] .ih-card-icon-green{background:rgba(22,163,74,.15);color:#4ade80}
+/* Alertas */
+.ih-alertas{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:20px}
+html[data-theme="dark"] .ih-alertas{background:#1e293b;border-color:#334155}
+.ih-alertas-header{padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:8px}
+html[data-theme="dark"] .ih-alertas-header{border-color:#334155}
+.ih-alertas-title{font-size:.84rem;font-weight:700;color:#111827}
+html[data-theme="dark"] .ih-alertas-title{color:#f1f5f9}
+.ih-alerta-item{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid #f3f4f6}
+.ih-alerta-item:last-child{border-bottom:none}
+html[data-theme="dark"] .ih-alerta-item{border-color:#334155}
+.ih-alerta-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ih-alerta-nome{font-size:.82rem;font-weight:600;color:#111827;flex:1}
+html[data-theme="dark"] .ih-alerta-nome{color:#f1f5f9}
+.ih-alerta-qtd{font-size:.78rem;color:#6b7280}
+.ih-alerta-badge{font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.ih-badge-low{background:#fef3c7;color:#92400e}
+.ih-badge-empty{background:#fef2f2;color:#991b1b}
+html[data-theme="dark"] .ih-badge-low{background:rgba(245,158,11,.12);color:#fbbf24}
+html[data-theme="dark"] .ih-badge-empty{background:rgba(239,68,68,.12);color:#f87171}
+@media(max-width:600px){.ih-grid{grid-template-columns:1fr}.ih-kpis{flex-wrap:wrap;gap:16px}.ih-kpi-div{display:none}.ih-kpi{flex:1 1 40%}}
+</style>
+
+<div class="ih-header">
+  <h1>Inventário</h1>
+  <p>Controle de estoque, compras e movimentações</p>
+</div>
+
+<div class="ih-kpis">
+  <div class="ih-kpi">
+    <span class="ih-kpi-label">Itens cadastrados</span>
+    <span class="ih-kpi-value">{{ total_itens }}</span>
+  </div>
+  <div class="ih-kpi-div"></div>
+  <div class="ih-kpi">
+    <span class="ih-kpi-label">Valor em estoque</span>
+    <span class="ih-kpi-value green">{{ valor_total|br_money }}</span>
+  </div>
+  <div class="ih-kpi-div"></div>
+  <div class="ih-kpi">
+    <span class="ih-kpi-label">Estoque baixo</span>
+    <span class="ih-kpi-value {% if n_baixo %}amber{% endif %}">{{ n_baixo }}</span>
+  </div>
+  <div class="ih-kpi-div"></div>
+  <div class="ih-kpi">
+    <span class="ih-kpi-label">Zerados</span>
+    <span class="ih-kpi-value {% if n_zerado %}red{% endif %}">{{ n_zerado }}</span>
+  </div>
+  <div class="ih-kpi-div"></div>
+  <div class="ih-kpi">
+    <span class="ih-kpi-label">Pedidos pendentes</span>
+    <span class="ih-kpi-value {% if n_pedidos %}red{% endif %}">{{ n_pedidos }}</span>
+  </div>
+</div>
+
+<a class="ih-launch" href="{{ url_for('inventario_itens') }}">
+  <div style="display:flex;align-items:center;gap:14px">
+    <div class="ih-launch-icon"><i class="bi bi-list-ul"></i></div>
+    <div>
+      <div class="ih-launch-title">Ver todos os itens</div>
+      <div class="ih-launch-sub">Cadastrar, editar, dar entrada e baixa</div>
+    </div>
+  </div>
+  <i class="bi bi-arrow-right" style="color:#9ca3af"></i>
+</a>
+
+<div class="ih-grid">
+  <a class="ih-card ih-card-blue" href="{{ url_for('inventario_pedidos_page') }}">
+    <div class="ih-card-top">
+      <div class="ih-card-icon ih-card-icon-blue"><i class="bi bi-cart"></i></div>
+      <div style="flex:1">
+        <div class="ih-card-title">Pedidos de compra</div>
+        <div class="ih-card-desc">Acompanhe o que está pendente de receber e dê entrada ao chegar.</div>
+      </div>
+      <i class="bi bi-arrow-right ih-card-arrow"></i>
+    </div>
+    <div class="ih-card-stat">
+      <span class="ih-card-stat-num" style="{% if n_pedidos %}color:#991b1b{% endif %}">{{ n_pedidos }}</span>
+      <span class="ih-card-stat-label">pedido{{ 's' if n_pedidos != 1 }} pendente{{ 's' if n_pedidos != 1 }}</span>
+    </div>
+  </a>
+
+  <a class="ih-card ih-card-purple" href="{{ url_for('inventario_movimentacoes') }}">
+    <div class="ih-card-top">
+      <div class="ih-card-icon ih-card-icon-purple"><i class="bi bi-arrow-left-right"></i></div>
+      <div style="flex:1">
+        <div class="ih-card-title">Movimentações</div>
+        <div class="ih-card-desc">Histórico completo de entradas e saídas com data, usuário e motivo.</div>
+      </div>
+      <i class="bi bi-arrow-right ih-card-arrow"></i>
+    </div>
+    <div class="ih-card-stat">
+      <span class="ih-card-stat-num">{{ n_baixo + n_zerado }}</span>
+      <span class="ih-card-stat-label">ite{{ 'ns' if (n_baixo+n_zerado) != 1 else 'm' }} precisando de atenção</span>
+    </div>
+  </a>
+</div>
+
+{% set alertas = rows|selectattr('quantidade')|list %}
+{% set alertas_low = [] %}
+{% for r in rows %}
+  {% set qtd = r.quantidade|float %}
+  {% set minimo = r.quantidade_minima|float if r.quantidade_minima else 0 %}
+  {% if qtd <= 0 or (minimo > 0 and qtd <= minimo) %}
+    {% set _ = alertas_low.append(r) %}
+  {% endif %}
+{% endfor %}
+
+{% if alertas_low %}
+<div class="ih-alertas">
+  <div class="ih-alertas-header">
+    <i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b"></i>
+    <span class="ih-alertas-title">Itens que precisam de atenção ({{ alertas_low|length }})</span>
+  </div>
+  {% for r in alertas_low[:10] %}
+  {% set qtd = r.quantidade|float %}
+  {% set zerado = qtd <= 0 %}
+  <div class="ih-alerta-item">
+    <div class="ih-alerta-dot" style="background:{% if zerado %}#ef4444{% else %}#f59e0b{% endif %}"></div>
+    <div class="ih-alerta-nome">{{ r.nome }}</div>
+    <span class="ih-alerta-qtd">{{ '{:g}'.format(qtd) }} {{ r.unidade or 'un' }}</span>
+    <span class="ih-alerta-badge {% if zerado %}ih-badge-empty{% else %}ih-badge-low{% endif %}">
+      {% if zerado %}Zerado{% else %}Baixo{% endif %}
+    </span>
+    <a href="{{ url_for('inventario_itens') }}" style="font-size:.74rem;color:#1d4ed8;text-decoration:none">Ver</a>
+  </div>
+  {% endfor %}
+  {% if alertas_low|length > 10 %}
+  <div style="padding:10px 18px;text-align:center;font-size:.76rem;color:#6b7280">
+    + {{ alertas_low|length - 10 }} mais · <a href="{{ url_for('inventario_itens') }}" style="color:#1d4ed8">Ver todos</a>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

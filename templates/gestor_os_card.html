@@ -1,0 +1,29 @@
+{% set st = (r.status or '')|lower %}
+{% set atrasada = r.atrasada %}
+{% set badge_class = 'b-red' if atrasada else ('b-amber' if st == 'pausada' else ('b-green' if st == 'finalizada' else 'b-blue')) %}
+{% set badge_txt = 'Atrasada' if atrasada else (r.status or 'Aberta') %}
+
+<div class="os-card {{ 'atrasada' if atrasada else '' }}">
+  <div class="os-top">
+    <div>
+      <div class="os-num">O.S. #{{ r.numero_visivel or r.numero_os or r.id }}</div>
+      <div class="os-date">{{ r.data or '' }}</div>
+    </div>
+    <span class="badge {{ badge_class }}">{{ badge_txt }}</span>
+  </div>
+  <div class="os-sistema">{{ r.sistema or 'Sistema não informado' }}</div>
+  <div class="os-equip">{{ r.equipamento or 'Equipamento não informado' }}</div>
+  {% if r.responsavel %}
+  <div class="os-resp"><i class="bi bi-person-fill"></i> {{ r.responsavel }}</div>
+  {% endif %}
+  {% if r.motivo_pausa %}
+  <div class="os-motivo"><i class="bi bi-pause-circle"></i> {{ r.motivo_pausa }}</div>
+  {% endif %}
+  {% if r.motivo_atraso %}
+  <div class="os-motivo" style="color:var(--red);background:rgba(239,68,68,.08)"><i class="bi bi-exclamation-triangle"></i> {{ r.motivo_atraso }}</div>
+  {% endif %}
+  <div class="os-actions">
+    <a class="btn-act btn-wpp" href="{{ r.link_campo }}" target="_blank"><i class="bi bi-whatsapp"></i> Avisar</a>
+    <a class="btn-act btn-ghost" href="/os?abrir_os={{ r.id }}"><i class="bi bi-pencil-square"></i> Editar</a>
+  </div>
+</div>

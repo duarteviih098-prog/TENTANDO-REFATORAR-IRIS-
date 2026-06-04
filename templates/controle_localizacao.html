@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.ebl-header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 20px;flex-wrap:wrap;gap:12px}
+.ebl-header h1{margin:0;font-size:1.25rem;font-weight:700;color:#111827}
+.ebl-header p{margin:3px 0 0;font-size:.82rem;color:#6b7280}
+html[data-theme="dark"] .ebl-header h1{color:#f1f5f9}
+html[data-theme="dark"] .ebl-header p{color:#64748b}
+.ebl-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:.8rem;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#374151;text-decoration:none;transition:background .12s}
+.ebl-btn:hover{background:#f9fafb}
+html[data-theme="dark"] .ebl-btn{background:#1e293b;border-color:#334155;color:#cbd5e1}
+.ebl-section{margin-bottom:24px}
+.ebl-section-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.ebl-section-title{font-size:.88rem;font-weight:700;color:#111827}
+html[data-theme="dark"] .ebl-section-title{color:#f1f5f9}
+.ebl-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.74rem;font-weight:700}
+.ebl-badge-green{background:#dcfce7;color:#166534}
+.ebl-badge-amber{background:#fef3c7;color:#92400e}
+.ebl-badge-red{background:#fef2f2;color:#991b1b}
+.ebl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.ebl-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;transition:box-shadow .12s}
+.ebl-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.ebl-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.ebl-card-name{font-size:.88rem;font-weight:700;color:#111827}
+.ebl-card-model{font-size:.76rem;color:#6b7280;margin-top:2px}
+.ebl-card-fields{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.ebl-card-field{display:flex;justify-content:space-between;font-size:.76rem}
+.ebl-card-field-label{color:#9ca3af}
+.ebl-card-field-value{color:#374151;font-weight:500;text-align:right}
+.ebl-empty{padding:32px;text-align:center;color:#9ca3af;font-size:.82rem;background:#fff;border:1px solid #e5e7eb;border-radius:10px}
+html[data-theme="dark"] .ebl-card{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .ebl-card-name{color:#f1f5f9}
+html[data-theme="dark"] .ebl-card-field-value{color:#cbd5e1}
+html[data-theme="dark"] .ebl-empty{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .ebl-badge-green{background:rgba(22,163,74,.15);color:#4ade80}
+html[data-theme="dark"] .ebl-badge-amber{background:rgba(245,158,11,.12);color:#fbbf24}
+html[data-theme="dark"] .ebl-badge-red{background:rgba(239,68,68,.12);color:#f87171}
+</style>
+
+<div class="ebl-header">
+  <div>
+    <h1>Por Localização</h1>
+    <p>Onde está cada bomba agora</p>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a href="{{ url_for('controle_lista') }}" class="ebl-btn"><i class="bi bi-list-ul"></i> Lançamentos</a>
+    <a href="{{ url_for('controle_hub') }}" class="ebl-btn"><i class="bi bi-grid-3x3-gap"></i> Hub</a>
+  </div>
+</div>
+
+<!-- Em estoque -->
+<div class="ebl-section">
+  <div class="ebl-section-header">
+    <span class="ebl-section-title">Em estoque</span>
+    <span class="ebl-badge ebl-badge-green">{{ estoque|length }}</span>
+  </div>
+  {% if estoque %}
+  <div class="ebl-grid">
+    {% for r in estoque %}
+    <div class="ebl-card">
+      <div class="ebl-card-top">
+        <div>
+          <div class="ebl-card-name">{{ r.equipamento or r.nome or '—' }}</div>
+          <div class="ebl-card-model">{{ r.modelo or '' }}{% if r.marca %} · {{ r.marca }}{% endif %}</div>
+        </div>
+      </div>
+      <div class="ebl-card-fields">
+        {% if r.numero_serie %}<div class="ebl-card-field"><span class="ebl-card-field-label">Nº Série</span><span class="ebl-card-field-value">{{ r.numero_serie }}</span></div>{% endif %}
+        {% if r.fornecedor %}<div class="ebl-card-field"><span class="ebl-card-field-label">Fornecedor</span><span class="ebl-card-field-value">{{ r.fornecedor }}</span></div>{% endif %}
+        {% if r.garantia_ate %}<div class="ebl-card-field"><span class="ebl-card-field-label">Garantia até</span><span class="ebl-card-field-value">{{ r.garantia_ate }}</span></div>{% endif %}
+        {% if r.valor %}<div class="ebl-card-field"><span class="ebl-card-field-label">Valor</span><span class="ebl-card-field-value">{{ r.valor }}</span></div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="ebl-empty">Nenhuma bomba em estoque.</div>
+  {% endif %}
+</div>
+
+<!-- Em conserto -->
+<div class="ebl-section">
+  <div class="ebl-section-header">
+    <span class="ebl-section-title">Em conserto</span>
+    <span class="ebl-badge ebl-badge-amber">{{ conserto|length }}</span>
+  </div>
+  {% if conserto %}
+  <div class="ebl-grid">
+    {% for r in conserto %}
+    <div class="ebl-card" style="border-left:3px solid #f59e0b">
+      <div class="ebl-card-top">
+        <div>
+          <div class="ebl-card-name">{{ r.equipamento or r.nome or '—' }}</div>
+          <div class="ebl-card-model">{{ r.modelo or '' }}{% if r.marca %} · {{ r.marca }}{% endif %}</div>
+        </div>
+      </div>
+      <div class="ebl-card-fields">
+        {% if r.numero_serie %}<div class="ebl-card-field"><span class="ebl-card-field-label">Nº Série</span><span class="ebl-card-field-value">{{ r.numero_serie }}</span></div>{% endif %}
+        {% if r.fornecedor %}<div class="ebl-card-field"><span class="ebl-card-field-label">Fornecedor</span><span class="ebl-card-field-value">{{ r.fornecedor }}</span></div>{% endif %}
+        {% if r.previsao_entrega %}<div class="ebl-card-field"><span class="ebl-card-field-label">Previsão retorno</span><span class="ebl-card-field-value">{{ r.previsao_entrega }}</span></div>{% endif %}
+        {% if r.observacoes %}<div class="ebl-card-field"><span class="ebl-card-field-label">Obs</span><span class="ebl-card-field-value" style="max-width:160px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.observacoes }}</span></div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="ebl-empty">Nenhuma bomba em conserto.</div>
+  {% endif %}
+</div>
+
+<!-- Retiradas -->
+<div class="ebl-section">
+  <div class="ebl-section-header">
+    <span class="ebl-section-title">Retiradas</span>
+    <span class="ebl-badge ebl-badge-red">{{ retirada|length }}</span>
+  </div>
+  {% if retirada %}
+  <div class="ebl-grid">
+    {% for r in retirada %}
+    <div class="ebl-card" style="border-left:3px solid #ef4444">
+      <div class="ebl-card-top">
+        <div>
+          <div class="ebl-card-name">{{ r.equipamento or r.nome or '—' }}</div>
+          <div class="ebl-card-model">{{ r.modelo or '' }}{% if r.marca %} · {{ r.marca }}{% endif %}</div>
+        </div>
+      </div>
+      <div class="ebl-card-fields">
+        {% if r.destino_retirada %}<div class="ebl-card-field"><span class="ebl-card-field-label">Destino</span><span class="ebl-card-field-value">{{ r.destino_retirada }}</span></div>{% endif %}
+        {% if r.numero_serie %}<div class="ebl-card-field"><span class="ebl-card-field-label">Nº Série</span><span class="ebl-card-field-value">{{ r.numero_serie }}</span></div>{% endif %}
+        {% if r.sistema %}<div class="ebl-card-field"><span class="ebl-card-field-label">Sistema</span><span class="ebl-card-field-value">{{ r.sistema }}</span></div>{% endif %}
+        {% if r.observacoes %}<div class="ebl-card-field"><span class="ebl-card-field-label">Obs</span><span class="ebl-card-field-value" style="max-width:160px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.observacoes }}</span></div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="ebl-empty">Nenhuma bomba retirada.</div>
+  {% endif %}
+</div>
+
+{% endblock %}
