@@ -1,0 +1,60 @@
+{
+  "dados_bombas": [],
+  "dados_combustivel": [
+    {
+      "data": "01/06/2026",
+      "mes_ref": "06/2026",
+      "modelo_veiculo": "Fiat Uno",
+      "placa": "ABC1D23",
+      "motorista": "João Silva",
+      "km": "12000",
+      "custo": "150,00",
+      "observacoes": "Exemplo fictício"
+    }
+  ],
+  "dados_pagamento": [
+    {
+      "fornecedor": "Fornecedor Exemplo Ltda",
+      "descricao_servico": "Serviço de manutenção preventiva",
+      "nf_proposta": "NF 1001",
+      "valor": "R$ 1.500,00",
+      "acao": "Executado",
+      "pagamento_mes": "JUNHO",
+      "aprovado": "Sim",
+      "tipo_documento": "PD",
+      "numero_documento": "1001",
+      "anexos_orcamento": [],
+      "anexos_nf": [],
+      "anexos_boleto": [],
+      "sc_pedido": "1001",
+      "fluxo_status": "Pronto para enviar ao Contábil"
+    }
+  ],
+  "dados_custo": [],
+  "arquivo_excel": null,
+  "arquivo_excel_combustivel": null,
+  "arquivo_excel_pagamento": null,
+  "arquivo_excel_custo": null,
+  "dados_relatorio": [],
+  "arquivo_excel_relatorio": null,
+  "email_config": {
+    "compras": {
+      "account": "compras@empresa-exemplo.com.br",
+      "to": "aprovador@empresa-exemplo.com.br",
+      "cc": "",
+      "subject": "SOLICITAÇÃO DE COMPRA {numero_sc}",
+      "body": "{saudacao},\n\nSegue solicitação de compra para aprovação.\n\nSC: {numero_sc}\nFornecedor: {fornecedor}\nValor: {valor}\nServiço/Objeto: {descricao}\n\nAtenciosamente,",
+      "send_mode": "Editar antes"
+    },
+    "contabil": {
+      "account": "",
+      "to": "",
+      "cc": "",
+      "subject": "RES: LANÇAMENTO DA NOTA - PEDIDO {numero_pd}",
+      "body": "{saudacao},\n\nSegue documentação para lançamento contábil.\n\nPedido: {numero_pd}\nFornecedor: {fornecedor}\nValor: {valor}\nServiço/Objeto: {descricao}\n\nAtenciosamente,",
+      "send_mode": "Editar antes"
+    }
+  },
+  "email_history": [],
+  "outlook_processed_ids": []
+}
