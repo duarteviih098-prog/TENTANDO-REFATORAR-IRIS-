@@ -1,0 +1,10 @@
+{
+  "name": "Campo GETEC",
+  "short_name": "Campo",
+  "start_url": "/campo/app/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#edf4fb",
+  "theme_color": "#0f2d52",
+  "icons": []
+}

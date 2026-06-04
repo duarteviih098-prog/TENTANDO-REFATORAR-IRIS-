@@ -1,0 +1,13 @@
+Flask==3.0.3
+Pillow==10.4.0
+reportlab==4.2.2
+pypdf==5.4.0
+pdfplumber==0.11.5
+openai>=1.0.0
+python-dotenv>=1.0.0
+gunicorn
+openpyxl
+psycopg2-binary
+pandas
+pywebpush
+anthropic
