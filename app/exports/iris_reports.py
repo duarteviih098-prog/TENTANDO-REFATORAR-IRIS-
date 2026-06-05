@@ -1,26 +1,17 @@
 """Geração de PDF/Excel — relatórios Iris e mensais."""
-import io
-import json
 import os
 import re
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
 from pathlib import Path
-from app.shared.formatters import br_money, br_now, now_str, parse_num
-from app.shared.rows import row_get_value, row_to_dict
 
-import pdfplumber
 from openpyxl import Workbook
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT, TA_RIGHT
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
 from reportlab.platypus import (
     HRFlowable,
-    Image as RLImage,
-    KeepTogether,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -28,23 +19,24 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+from reportlab.platypus import (
+    Image as RLImage,
+)
 
 from app.config import PROJECT_ROOT
 from app.exports.iris_ai import (
-    _iris_build_rich_context,
-    _iris_call_ai,
     _iris_generate_ai_report,
 )
 from app.exports.iris_data import (
     _iris_collect_context,
-    _iris_match_month,
     _iris_month_label,
-    _iris_official_finance,
     _iris_parse_br_float,
     _iris_payment_is_approved,
     _iris_payment_status,
-    _iris_rows,
 )
+from app.os.services import os_is_overdue
+from app.shared.formatters import br_money, br_now
+from app.shared.rows import row_to_dict
 from app.storage import (
     SUPABASE_STORAGE_KEY,
     _upload_pdf_bytes_to_supabase,
@@ -52,6 +44,7 @@ from app.storage import (
     load_company_identity_config,
     slugify_company_name,
 )
+from app.storage.company import company_identity_file
 
 BASE_DIR = PROJECT_ROOT
 
@@ -107,9 +100,7 @@ def ensure_column(table, column, col_type):
 
 def _iris_make_ai_pdf(tipo, month_ref='', year='', sistema='', upload_supabase=False):
     """Gera PDF 100% profissional — capa de diretoria + análise completa da IA."""
-    from reportlab.platypus import KeepTogether, HRFlowable
-    from reportlab.graphics.shapes import Drawing, Rect, String, Circle, Line
-    from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
+    from reportlab.graphics.shapes import Drawing, Rect, String
 
     # ── COLETA DE DADOS ────────────────────────────────────────────────────
     if tipo == 'anual' and year:
@@ -906,7 +897,6 @@ def _iris_make_monthly_pdf(month_ref):
 
 
 def _iris_make_payments_excel(month_ref=''):
-    from openpyxl import Workbook
     ctx = _iris_collect_context(month_ref)
     out_dir = BASE_DIR / 'static' / 'exports'
     out_dir.mkdir(parents=True, exist_ok=True)

@@ -8,28 +8,44 @@ import zipfile
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
-from app.auth import owned_by_current_company, user_has
-from app.auth.decorators import is_mobile_request
-from app.campo.services import _api_campo_guard, campo_numero_visivel, campo_os_atrasada, campo_os_iniciada, campo_status_finalizado, campo_status_pausado, campo_tecnico_for_os_row, campo_token_for
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_money, br_now, elapsed_label, now_str, only_time_str, parse_br_date, parse_num, time_diff_minutes
-from app.shared.months import normalize_month_reference
-from app.shared.queries import fetch_sistemas_map, list_page, reset_sqlite_sequence_if_empty
-from app.shared.rows import row_get_value, row_matches_month, row_to_dict
-from app.storage import backup_company_data
 
 from flask import current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 
-from app.auth.decorators import require_permission
+from app.auth import owned_by_current_company, user_has
+from app.auth.decorators import is_mobile_request, require_permission
+from app.campo.services import (
+    _api_campo_guard,
+    campo_numero_visivel,
+    campo_os_atrasada,
+    campo_os_iniciada,
+    campo_status_finalizado,
+    campo_status_pausado,
+    campo_tecnico_for_os_row,
+    campo_token_for,
+)
 from app.os.pdf import _build_os_pdf
 from app.os.services import (
-    attach_os_display_numbers,
     os_is_overdue,
-    prepare_os_row_for_template,
     save_ativo,
     save_os,
 )
-from app.storage import missing_attachment_response, normalize_storage_path, storage_or_local_response, sync_os_attachments
+from app.shared.cache import clear_view_cache
+from app.shared.formatters import (
+    br_now,
+    elapsed_label,
+    only_time_str,
+    parse_br_date,
+    time_diff_minutes,
+)
+from app.shared.queries import fetch_sistemas_map, list_page
+from app.shared.rows import row_matches_month, row_to_dict
+from app.storage import (
+    backup_company_data,
+    missing_attachment_response,
+    normalize_storage_path,
+    storage_or_local_response,
+    sync_os_attachments,
+)
 from app.storage.attachments import resolve_os_upload_path
 
 
@@ -367,7 +383,6 @@ def os_kanban():
     ])
     rows_db = query_all(f'SELECT {os_cols} FROM os_ordens{where_sql} ORDER BY id DESC LIMIT 200', tuple(params))
 
-    from collections import defaultdict
     colunas = {'Aberta': [], 'Em andamento': [], 'Pausada': [], 'Finalizada': []}
 
     for r in rows_db:
@@ -401,7 +416,6 @@ def os_tecnicos():
     ])
     rows_db = query_all(f'SELECT {os_cols} FROM os_ordens{where_sql} ORDER BY id DESC LIMIT 500', tuple(params))
 
-    from collections import defaultdict
     tecnicos = defaultdict(lambda: {
         'abertas': [], 'andamento': [], 'pausadas': [], 'finalizadas': [],
         'total': 0, 'minutos': 0
@@ -462,7 +476,6 @@ def os_relatorios():
     ])
     rows_db = query_all(f'SELECT {os_cols} FROM os_ordens{where_sql} ORDER BY id DESC LIMIT 1000', tuple(params))
 
-    from collections import defaultdict, Counter
     rows = []
     for r in rows_db:
         item = dict(r)

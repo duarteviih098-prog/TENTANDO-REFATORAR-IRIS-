@@ -3,8 +3,9 @@ import re
 from datetime import datetime
 
 from app.shared.constants import MESES_PT
-from app.shared.formatters import br_now, parse_num, parse_br_date
+from app.shared.formatters import br_now, parse_num
 from app.shared.rows import row_get_value, row_matches_month
+
 
 def normalize_month_reference(raw_value):
     value = str(raw_value or '').strip()

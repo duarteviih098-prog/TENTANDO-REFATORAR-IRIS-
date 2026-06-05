@@ -1,12 +1,12 @@
 """Rotas /custos/*."""
 from flask import flash, redirect, render_template, request, url_for
+
+from app.auth.decorators import require_permission
+from app.custos.services import ensure_custos_valid_ids, import_custos_excel, save_custo
 from app.shared.cache import clear_view_cache
 from app.shared.months import filter_rows_by_month, month_or_current
 from app.shared.queries import list_page
 from app.storage import backup_company_data
-
-from app.auth.decorators import require_permission
-from app.custos.services import ensure_custos_valid_ids, import_custos_excel, save_custo
 
 
 def current_company_id():

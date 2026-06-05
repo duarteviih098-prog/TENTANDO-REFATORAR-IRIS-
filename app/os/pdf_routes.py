@@ -1,18 +1,19 @@
 """Rotas HTTP do PDF de O.S."""
 from datetime import datetime
 
-from flask import flash, jsonify, redirect, request, send_file, session, url_for
+from flask import flash, jsonify, redirect, request, send_file, url_for
 
 from app.auth.decorators import require_permission
 from app.os.pdf_builder import _build_os_pdf, _build_os_pdf_mes_buffer
 from app.os.pdf_common import (
     PDF_MAX_IMAGES_PER_OS,
+    _flask_app,
     company_where,
     current_company_id,
     current_user_is_super_admin,
     query_all,
+    query_one,
     select_existing_columns,
-    _flask_app,
 )
 from app.os.pdf_jobs import (
     _create_pdf_job,
@@ -24,6 +25,7 @@ from app.os.services import attach_os_display_numbers
 from app.shared.formatters import parse_br_date
 from app.shared.rows import row_get_value, row_to_dict
 from app.storage import sync_os_attachments
+
 
 def os_pdf_dia():
     data = (request.args.get('data') or '').strip()

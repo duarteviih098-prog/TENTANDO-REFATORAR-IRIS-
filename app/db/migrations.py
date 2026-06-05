@@ -6,8 +6,8 @@ from app.db.schema import ensure_column
 USE_POSTGRES = settings.USE_POSTGRES
 
 def ensure_db():
-    from app.combustivel.constants import COMBUSTIVEL_VINCULOS
     from app.campo.services import _token_expira_str
+    from app.combustivel.constants import COMBUSTIVEL_VINCULOS
     from app.db.migration_runner import apply_pending_migrations
     from app.shared.formatters import now_str
     from app.shared.rows import row_to_dict

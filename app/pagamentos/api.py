@@ -1,12 +1,6 @@
 """APIs JSON de pagamentos (live search, vencimentos, anexos)."""
 import json
 from datetime import timedelta
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_money, br_now, parse_num
-from app.shared.months import normalize_month_reference
-from app.shared.payments import payment_status_is_paid
-from app.shared.queries import safe_int_id as _safe_int_id
-from app.shared.rows import row_get_value, row_to_dict
 
 from flask import jsonify, request
 
@@ -15,11 +9,16 @@ from app.auth.tenancy import company_where, owned_by_current_company
 from app.db import execute, query_all, query_one
 from app.db.schema import select_existing_columns
 from app.pagamentos.services import build_payment_attachment_items, ensure_pagamentos_valid_ids
+from app.shared.cache import clear_view_cache
+from app.shared.formatters import br_money, br_now, parse_num
+from app.shared.months import normalize_month_reference
+from app.shared.payments import payment_status_is_paid
+from app.shared.queries import safe_int_id as _safe_int_id
+from app.shared.rows import row_get_value, row_to_dict
 from app.storage import (
     ATTACHMENT_GROUPS,
     TENANT_UPLOAD_ROOT,
     UPLOAD_PAG,
-    backup_company_data,
     resolve_local_path,
     sync_payment_attachments,
 )

@@ -1,7 +1,7 @@
 """Apply Module 5 shared UI extraction on current legacy."""
-from pathlib import Path
 import re
 import shutil
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 legacy_path = ROOT / 'app' / 'legacy.py'

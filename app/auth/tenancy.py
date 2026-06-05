@@ -1,13 +1,12 @@
 """Contexto de empresa (multi-tenant)."""
-import json
 import re
 import threading
 
 from flask import g, has_request_context, session
 
+from app.auth.constants import TENANT_TABLES
 from app.db import query_all, query_one, table_has_column
 from app.db.schema import select_existing_columns
-from app.auth.constants import TENANT_TABLES
 from app.shared.formatters import now_str
 from app.shared.rows import row_to_dict
 from app.storage import ensure_company_storage, load_company_identity_config

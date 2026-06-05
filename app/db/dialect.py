@@ -1,7 +1,6 @@
 """Tradução SQLite → PostgreSQL."""
 import re
 
-from app.db import settings
 
 def _replace_sqlite_placeholders(sql):
     """Troca placeholders SQLite (?) por placeholders PostgreSQL (%s), sem mexer em ? dentro de strings.

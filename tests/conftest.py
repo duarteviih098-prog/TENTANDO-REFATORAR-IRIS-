@@ -10,7 +10,8 @@ from werkzeug.security import generate_password_hash
 # Banco isolado por sessão de testes (antes de importar o app).
 _fd, _TEST_DB_PATH = tempfile.mkstemp(suffix='.db')
 os.close(_fd)
-os.environ['IRIS_TEST_DB'] = _TEST_DB_PATH
+if not os.getenv('DATABASE_URL', '').startswith('postgresql'):
+    os.environ['IRIS_TEST_DB'] = _TEST_DB_PATH
 os.environ.setdefault('SECRET_KEY', 'test-secret-key-with-32-chars-minimum-ok')
 
 
@@ -53,7 +54,7 @@ def client(flask_app):
 def admin_session(client):
     """Empresa + usuário admin com todas as permissões."""
     from app.auth.constants import ALL_PERMISSIONS
-    from app.db import execute, query_one
+    from app.db import execute
 
     suffix = uuid.uuid4().hex[:8]
     empresa_id = execute(

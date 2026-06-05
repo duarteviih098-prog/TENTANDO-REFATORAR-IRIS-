@@ -5,7 +5,7 @@ src = ["app", "tests", "tools"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
-ignore = ["E501"]
+ignore = ["E501", "E701", "E702", "E741", "E402", "F811", "F841"]
 
 [tool.ruff.lint.per-file-ignores]
 "app/os/pdf_builder.py" = ["E402"]

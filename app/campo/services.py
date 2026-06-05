@@ -113,25 +113,35 @@ import hmac
 import json
 import os
 import re
-import uuid
 import urllib.parse as urllib_parse
-from datetime import timedelta
-from app.auth import owned_by_current_company, user_has
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_now, elapsed_label, format_phone_br, normalize_phone, now_str, only_time_str, parse_br_date, parse_num, time_diff_minutes
-from app.shared.payments import payment_status_is_paid
-from app.shared.queries import fetch_sistemas_map, list_page, safe_int_id as _safe_int_id
-from app.shared.rows import row_get_value, row_to_dict
-from app.storage import backup_company_data
+import uuid
+from datetime import datetime, timedelta
 
-from flask import request, session, url_for
+from flask import jsonify, request, session, url_for
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 
+from app.auth import user_has
+from app.auth.constants import ROLE_PERMISSIONS, normalize_permissions
+from app.auth.tenancy import normalize_domain, unique_email_for_domain
 from app.db import USE_POSTGRES, ensure_column
 from app.db.schema import _TABLE_COLUMN_CACHE, _TABLE_COLUMNS_CACHE
-from app.os.services import os_is_overdue, prepare_os_row_for_template
+from app.os.services import os_is_overdue
+from app.shared.formatters import (
+    br_now,
+    normalize_phone,
+    now_str,
+    only_time_str,
+    parse_br_date,
+)
+from app.shared.rows import row_get_value, row_to_dict
 from app.storage import active_whatsapp_template
+from app.storage.attachments import _os_attachment_relpath
+
+VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '').strip()
+VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '').strip()
+VAPID_CLAIMS_EMAIL = os.getenv('VAPID_CLAIMS_EMAIL', 'admin@iris.local').strip()
+
 
 def _flask_app():
     from app.runtime import flask_app
@@ -222,7 +232,7 @@ def _send_push(subscription_info, title, body, url='/'):
         print('_send_push: VAPID keys não configuradas.')
         return False
     try:
-        from pywebpush import webpush, WebPushException
+        from pywebpush import webpush
         data = json.dumps({'title': title, 'body': body, 'url': url}, ensure_ascii=False)
         webpush(
             subscription_info=subscription_info,
@@ -1140,8 +1150,9 @@ def _campo_save_images(files, empresa_id):
                 pass
             # Comprime a imagem antes de enviar (reduz tamanho e tempo de upload)
             try:
-                from PIL import Image as _PILImage
                 import io as _io
+
+                from PIL import Image as _PILImage
                 raw = file.stream.read()
                 img = _PILImage.open(_io.BytesIO(raw))
                 # Converte para RGB se necessário (PNG com transparência, etc)

@@ -79,6 +79,7 @@ dialect_path.write_text(text, encoding='utf-8')
 
 connection = grab(3203, 3349)
 import re as _re
+
 for old, new in [
     ('DB_POOL', 'settings.DB_POOL'),
     ('DB_POOL_LOCK', 'settings.DB_POOL_LOCK'),

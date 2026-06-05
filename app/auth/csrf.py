@@ -1,6 +1,7 @@
 """Proteção CSRF."""
 from flask import request, session
 
+
 def _csrf_generate():
     import secrets
     token = secrets.token_hex(32)

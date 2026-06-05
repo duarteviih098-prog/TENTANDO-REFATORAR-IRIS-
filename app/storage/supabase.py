@@ -1,9 +1,10 @@
 """Upload e headers Supabase Storage."""
 import mimetypes
-from urllib import error as urllib_error, parse as urllib_parse, request as urllib_request
+from urllib import error as urllib_error
+from urllib import parse as urllib_parse
+from urllib import request as urllib_request
 
 from app.storage import settings
-from app.storage.paths import normalize_storage_path
 
 SUPABASE_URL = settings.SUPABASE_URL
 SUPABASE_STORAGE_BUCKET = settings.SUPABASE_STORAGE_BUCKET

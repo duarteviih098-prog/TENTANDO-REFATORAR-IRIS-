@@ -3,8 +3,8 @@
 Uses function/route markers instead of fixed line numbers so re-runs stay safe.
 Skips legacy surgery when register_controle is already wired in.
 """
-from pathlib import Path
 import re
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 legacy_path = ROOT / 'app' / 'legacy.py'

@@ -1,13 +1,12 @@
 """Testes P0 extras: cookies, tenant, login."""
-import os
 
-import pytest
 
 
 def test_session_cookie_secure_auto_in_production(monkeypatch):
     monkeypatch.delenv('SESSION_COOKIE_SECURE', raising=False)
     monkeypatch.setenv('RENDER', 'true')
     from importlib import reload
+
     import app.config as cfg
     reload(cfg)
     assert cfg.session_cookie_secure() is True
@@ -17,6 +16,7 @@ def test_session_cookie_secure_respects_explicit_off(monkeypatch):
     monkeypatch.setenv('SESSION_COOKIE_SECURE', '0')
     monkeypatch.setenv('RENDER', 'true')
     from importlib import reload
+
     import app.config as cfg
     reload(cfg)
     assert cfg.session_cookie_secure() is False
@@ -30,6 +30,7 @@ def test_login_page_loads(client):
 
 def test_owned_by_current_company_blocks_cross_tenant(flask_app):
     import uuid
+
     from app.auth.tenancy import owned_by_current_company
     from app.db import execute, query_one
 

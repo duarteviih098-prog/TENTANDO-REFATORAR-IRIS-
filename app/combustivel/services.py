@@ -1,15 +1,15 @@
 """Regras de negócio do módulo combustível."""
 import re
 from datetime import datetime
-from app.exports.excel import excel_rows_from_upload
-from app.shared.formatters import parse_num
-from app.shared.months import month_or_current
-from app.shared.queries import ensure_valid_ids_for_table
-from app.shared.rows import first_of, row_get_value, row_to_dict
 
 from app.auth import company_where, current_company_id
 from app.combustivel.constants import COMBUSTIVEL_VINCULOS
 from app.db import execute, query_all
+from app.exports.excel import excel_rows_from_upload
+from app.shared.formatters import parse_num
+from app.shared.months import month_or_current
+from app.shared.queries import ensure_valid_ids_for_table
+from app.shared.rows import first_of, row_to_dict
 
 
 def _combustivel_payload(data):

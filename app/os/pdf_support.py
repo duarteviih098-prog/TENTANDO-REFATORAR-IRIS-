@@ -1,7 +1,6 @@
 """Formatação, cache, imagens e cabeçalho do PDF de O.S."""
 import io
 import json
-import os
 import re
 import time
 from datetime import datetime
@@ -9,24 +8,22 @@ from pathlib import Path
 
 from PIL import Image as PILImage
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
+from reportlab.platypus import Image as RLImage
 
 from app.os.pdf_common import (
-    PDF_IMAGE_SIZE_PX,
-    PDF_IMAGE_TIMEOUT_SECONDS,
-    PDF_MAX_IMAGES_PER_OS,
     _PDF_BYTES_CACHE,
     _PDF_CACHE_LOCK,
-    _PDF_IMAGE_CACHE,
-    _PDF_IMAGE_CACHE_LOCK,
+    PDF_CACHE_TTL_SECONDS,
+    PDF_IMAGE_SIZE_PX,
     current_company_id,
 )
-from app.shared.formatters import only_time_str, parse_br_date
-from app.storage import company_folder_name, company_identity_dir, company_identity_file, load_company_identity_config
-from app.storage.attachments import read_attachment_bytes_fast, resolve_os_upload_path
+from app.shared.formatters import only_time_str
+from app.storage import company_identity_file
+from app.storage.attachments import read_attachment_bytes_fast
 from app.storage.paths import BASE_DIR, normalize_storage_path
+
 
 def _pdf_safe_text(value, max_len=None):
     """Texto seguro para ReportLab/Helvetica.

@@ -52,6 +52,7 @@ print('module 1 ok')
 
 # 3) Module 2
 import subprocess
+
 subprocess.check_call([str(ROOT / '.venv' / 'Scripts' / 'python.exe'), str(ROOT / 'tools' / 'extract_db.py')])
 
 # 4) Module 3 - run fixed extract_auth

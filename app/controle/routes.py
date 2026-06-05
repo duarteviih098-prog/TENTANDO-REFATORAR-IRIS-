@@ -1,16 +1,13 @@
 """Rotas /controle/* e exportação Excel."""
 from datetime import datetime
-from pathlib import Path
-from app.exports.excel import excel_rows_from_upload
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_now, parse_br_date
-from app.shared.queries import list_page
-from app.shared.rows import first_of, row_get_value, row_matches_month, row_to_dict
 
 from flask import flash, jsonify, redirect, render_template, request, send_file, url_for
 
 from app.auth.decorators import require_permission
 from app.controle.services import fetch_bombas_counts, import_controle_excel, save_bomba
+from app.shared.cache import clear_view_cache
+from app.shared.formatters import br_now
+from app.shared.rows import row_matches_month, row_to_dict
 from app.storage.paths import BASE_DIR
 
 

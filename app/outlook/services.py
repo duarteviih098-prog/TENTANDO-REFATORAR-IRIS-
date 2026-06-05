@@ -1,7 +1,6 @@
 """Outlook / e-mail — envio, monitoramento e integração com Pagamentos."""
 import email
 import imaplib
-import io
 import json
 import mimetypes
 import os
@@ -15,13 +14,13 @@ import urllib.request as urllib_request
 from datetime import datetime
 from email.message import EmailMessage
 from pathlib import Path
-from app.shared.formatters import br_money, br_now, now_str, parse_br_date, parse_num
-from app.shared.rows import row_to_dict
 
 import pdfplumber
 from pypdf import PdfReader
 
 from app.config import PROJECT_ROOT
+from app.shared.formatters import br_money, now_str, parse_br_date
+from app.shared.rows import row_to_dict
 
 try:
     import pythoncom  # type: ignore

@@ -2,9 +2,8 @@
 import json
 import uuid
 
-from werkzeug.security import generate_password_hash
-
 from app.auth.constants import ALL_PERMISSIONS
+from werkzeug.security import generate_password_hash
 
 
 def test_wrong_password_shows_message_on_login_page(client):

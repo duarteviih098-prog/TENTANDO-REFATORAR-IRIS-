@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 def test_wsgi_app_imports():
-    import wsgi  # noqa: WPS433
+    import wsgi  # noqa: F401
 
     assert wsgi.app is not None
     assert wsgi.app.name == 'app.factory'

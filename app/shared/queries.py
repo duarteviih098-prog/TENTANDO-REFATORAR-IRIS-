@@ -1,12 +1,12 @@
 """Queries compartilhadas (list_page, sistemas, IDs)."""
-import json
 import re
 
 from app.db import USE_POSTGRES, execute, get_conn, query_one, table_columns
 from app.db.schema import select_existing_columns
 from app.shared.cache import cached_query_all, clear_view_cache
 from app.shared.constants import SISTEMAS_E_EQUIPAMENTOS
-from app.shared.rows import row_get_value, row_to_dict
+from app.shared.rows import row_get_value
+
 
 def reset_sqlite_sequence_if_empty(table_name):
     if USE_POSTGRES:

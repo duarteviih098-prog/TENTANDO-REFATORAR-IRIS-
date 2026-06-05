@@ -1,17 +1,13 @@
 """APIs Campo / gestor mobile."""
-import json
 import os
-import uuid
 
-from flask import jsonify, request, session
+from flask import jsonify, request
 
 from app.auth.decorators import require_permission
 from app.campo.routes_common import (
     _flask_app,
-    company_where,
     current_company_id,
     execute,
-    get_current_user,
     query_all,
     query_one,
 )
@@ -21,13 +17,17 @@ from app.campo.services import (
     campo_numero_visivel,
     campo_tecnico_por_token,
     ensure_campo_eventos_table,
+    get_tecnico_from_token,
+    table_columns,
 )
 from app.combustivel.services import save_combustivel
 from app.controle.services import save_bomba
 from app.pagamentos.services import save_pagamento
 from app.shared.cache import clear_view_cache
+from app.shared.formatters import br_now
 from app.shared.queries import safe_int_id as _safe_int_id
 from app.shared.rows import row_to_dict
+
 
 def api_campo_feed_state():
     """Estado leve da fila de campo para polling inteligente."""
@@ -246,7 +246,7 @@ def api_campo_tecnicos_mapa():
     """Retorna posições dos técnicos ativos em campo para o mapa do dashboard."""
     try:
         empresa_id = current_company_id()
-        from datetime import datetime as _dt, timedelta as _td
+        from datetime import timedelta as _td
         # Formato ISO para comparação correta no PostgreSQL
         limite_iso = (br_now() - _td(minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
 

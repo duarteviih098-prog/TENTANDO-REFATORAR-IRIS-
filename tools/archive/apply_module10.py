@@ -2,8 +2,8 @@
 
 Lessons from M8: exact route paths, protected bootstrap, stop at section banners.
 """
-from pathlib import Path
 import re
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 legacy_path = ROOT / 'app' / 'legacy.py'

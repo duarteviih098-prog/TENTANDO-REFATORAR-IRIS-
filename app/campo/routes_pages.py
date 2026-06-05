@@ -1,38 +1,27 @@
 """Páginas Campo / PWA / WhatsApp."""
-import json
-import os
 import re
 import uuid
-from datetime import datetime
 
-from flask import flash, jsonify, redirect, render_template, request, send_file, session, url_for
-from werkzeug.security import generate_password_hash
+from flask import flash, redirect, render_template, request, session, url_for
 from werkzeug.utils import secure_filename
 
 from app.auth.decorators import require_permission
+from app.auth.services import user_has
 from app.campo.routes_common import (
-    _flask_app,
-    active_whatsapp_template,
     company_and,
     company_folder_name,
     company_where,
-    current_company,
     current_company_id,
     current_user_is_super_admin,
     ensure_company_storage,
-    ensure_db,
     execute,
     get_current_user,
     load_whatsapp_templates,
-    pagamentos_query_rows,
     query_all,
     query_one,
     save_whatsapp_templates,
     select_existing_columns,
-    table_columns,
-    table_has_column,
     tenant_upload_dir,
-    upload_file_to_supabase,
 )
 from app.campo.services import (
     _token_expirado,
@@ -40,7 +29,6 @@ from app.campo.services import (
     _token_revogar,
     campo_link_com_tecnico,
     campo_link_publico,
-    campo_mesmo_tecnico,
     campo_numero_visivel,
     campo_os_atrasada,
     campo_os_iniciada,
@@ -48,28 +36,23 @@ from app.campo.services import (
     campo_status_pausado,
     campo_tecnico_app_link,
     campo_tecnico_for_os_row,
-    campo_tecnico_por_token,
-    campo_token_for,
     campo_token_para_usuario,
     campo_whatsapp_url,
     campo_whatsapp_url_para_tecnico,
-    ensure_campo_eventos_table,
     ensure_campo_tecnicos_email_column,
     ensure_campo_tecnicos_sync_columns,
-    get_tecnico_from_token,
     perfil_eh_campo,
     resumo_curto,
     sincronizar_tecnico_usuario,
     sincronizar_usuario_campo,
     usuario_eh_campo_operacional,
 )
-from app.os.services import os_is_overdue, prepare_os_row_for_template
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_now, elapsed_label, format_phone_br, normalize_phone, now_str, only_time_str, parse_br_date, parse_num, time_diff_minutes
+from app.os.services import os_is_overdue
+from app.shared.formatters import br_money, br_now, format_phone_br, normalize_phone, now_str, parse_br_date, parse_num
 from app.shared.payments import payment_status_is_paid
 from app.shared.queries import fetch_sistemas_map, list_page
 from app.shared.rows import row_get_value, row_to_dict
-from app.storage import backup_company_data
+
 
 def gestor_app():
     """App mobile do gestor."""

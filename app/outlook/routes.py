@@ -3,12 +3,11 @@ import csv
 import io
 import json
 from datetime import datetime
-from app.shared.formatters import br_money, br_now, now_str, parse_br_date, parse_num
-from app.shared.rows import row_to_dict
 
-from flask import flash, jsonify, redirect, render_template, request, send_file, url_for
+from flask import flash, redirect, render_template, request, send_file, url_for
 
 from app.auth.decorators import require_permission
+from app.config import PROJECT_ROOT
 from app.db import USE_POSTGRES
 from app.outlook.services import (
     analyze_attachment_set,
@@ -25,8 +24,6 @@ from app.outlook.services import (
     list_pending_monitor_alerts,
     load_email_center,
     mark_monitor_event_popup,
-    monitor_credentials_ready,
-    monitor_provider_selected,
     monitor_status_snapshot,
     normalize_email_block,
     process_monitor_payload,
@@ -36,7 +33,8 @@ from app.outlook.services import (
     send_real_email,
     smtp_credentials_ready,
 )
-from app.config import PROJECT_ROOT
+from app.shared.formatters import br_now, now_str
+from app.shared.rows import row_to_dict
 
 BASE_DIR = PROJECT_ROOT
 
@@ -115,7 +113,6 @@ def outlook_monitor_events_export():
         params.extend([token] * 6)
     sql += ' ORDER BY id DESC LIMIT 1000'
     rows = [row_to_dict(r) for r in query_all(sql, tuple(params))]
-    import csv
     sio = io.StringIO()
     writer = csv.writer(sio)
     writer.writerow(['id','quando','evento','status_processamento','popup_status','remetente','assunto','numero_sc','numero_pedido','pagamento_id','sugestao_fluxo','detalhes'])

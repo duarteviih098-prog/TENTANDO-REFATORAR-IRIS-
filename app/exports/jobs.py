@@ -1,12 +1,12 @@
 """Jobs em background para relatórios PDF Iris."""
 import re
 import threading
-from app.shared.formatters import br_money, br_now, now_str, parse_num
-from app.shared.rows import row_get_value, row_to_dict
 
 from flask import session
 
 from app.exports.iris_reports import _iris_make_ai_pdf
+from app.shared.rows import row_get_value, row_to_dict
+
 
 def current_company_id():
     from app.auth import current_company_id as fn

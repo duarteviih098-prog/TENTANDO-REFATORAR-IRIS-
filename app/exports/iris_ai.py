@@ -1,8 +1,9 @@
 """Geração de texto IA para relatórios PDF."""
-import json
 import os
-from app.shared.formatters import br_money, br_now, now_str, parse_num
-from app.shared.rows import row_get_value, row_to_dict
+
+from app.exports.iris_data import _iris_parse_br_float, _iris_rows
+from app.os.services import os_is_overdue
+from app.shared.formatters import br_money
 
 try:
     from openai import OpenAI  # type: ignore

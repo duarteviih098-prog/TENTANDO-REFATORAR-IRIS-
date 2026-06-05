@@ -1,7 +1,5 @@
 """Jobs em background para PDF mensal de O.S."""
-import os
 import threading
-import time
 
 from flask import session
 
@@ -18,6 +16,7 @@ from app.shared.formatters import br_now
 from app.shared.months import normalize_month_reference
 from app.shared.rows import row_get_value, row_to_dict
 from app.storage import _upload_pdf_bytes_to_supabase, company_folder_name
+
 
 def _render_pdf_job_wait_page(job_id, mes_norm):
     """Página simples para aba nova: mostra status e abre o PDF quando ficar pronto."""

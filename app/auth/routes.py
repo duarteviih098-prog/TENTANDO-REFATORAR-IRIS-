@@ -1,17 +1,11 @@
 """Rotas de login, usuários, empresas e auditoria."""
 import json
-from app.auth.decorators import is_mobile_request
-from app.campo.services import campo_token_para_usuario, sincronizar_usuario_campo, usuario_eh_campo_operacional
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_now, normalize_phone, now_str
-from app.shared.rows import row_to_dict
-from app.storage import backup_company_data, ensure_company_storage, load_company_identity_config, save_company_identity_config, save_company_identity_file
 
 from flask import flash, redirect, render_template, request, session, url_for
 from werkzeug.security import generate_password_hash
 
 from app.auth.constants import ALL_PERMISSIONS, PERMISSION_LABELS, ROLE_LABELS, ROLE_PERMISSIONS, normalize_permissions
-from app.auth.decorators import require_permission
+from app.auth.decorators import is_mobile_request
 from app.auth.services import (
     LOGIN_MAX_ATTEMPTS,
     _login_clear,
@@ -23,7 +17,6 @@ from app.auth.services import (
     get_current_user,
     permission_denied_redirect,
     senha_confere,
-    user_has,
 )
 from app.auth.tenancy import (
     create_company_if_needed,
@@ -33,7 +26,18 @@ from app.auth.tenancy import (
     normalize_domain,
     unique_email_for_domain,
 )
+from app.campo.services import campo_token_para_usuario, sincronizar_usuario_campo, usuario_eh_campo_operacional
 from app.db import execute, query_all, query_one, table_has_column
+from app.shared.cache import clear_view_cache
+from app.shared.formatters import br_now, normalize_phone, now_str
+from app.shared.rows import row_to_dict
+from app.storage import (
+    backup_company_data,
+    ensure_company_storage,
+    load_company_identity_config,
+    save_company_identity_config,
+    save_company_identity_file,
+)
 
 
 def owned_by_current_company(table, rid):
@@ -129,7 +133,7 @@ def login():
         count, blocked_until = _login_record_failure(ip)
         restantes = max(0, LOGIN_MAX_ATTEMPTS - count)
         if blocked_until:
-            flash(f'Conta bloqueada por 15 minutos após muitas tentativas incorretas.', 'danger')
+            flash('Conta bloqueada por 15 minutos após muitas tentativas incorretas.', 'danger')
         elif restantes > 0:
             flash(f'E-mail ou senha inválidos. {restantes} tentativa(s) restante(s).', 'danger')
         else:

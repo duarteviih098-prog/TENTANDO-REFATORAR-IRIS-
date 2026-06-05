@@ -1,5 +1,6 @@
 """Leitura, persistência e entrega de anexos."""
 import json
+import mimetypes
 import os
 import re
 import shutil
@@ -7,15 +8,14 @@ import threading
 import uuid
 from datetime import datetime
 from pathlib import Path
-from urllib import error as urllib_error, parse as urllib_parse, request as urllib_request
-from app.db.schema import select_existing_columns
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_now, now_str
-from app.shared.rows import row_to_dict
+from urllib import error as urllib_error
+from urllib import parse as urllib_parse
+from urllib import request as urllib_request
 
 from flask import redirect, send_file
 from werkzeug.utils import secure_filename
 
+from app.shared.rows import row_to_dict
 from app.storage import settings
 from app.storage.paths import (
     BASE_DIR,

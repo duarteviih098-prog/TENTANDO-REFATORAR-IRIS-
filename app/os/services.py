@@ -64,24 +64,24 @@ def select_existing_columns(table, desired, fallback='id'):
     return fn(table, desired, fallback=fallback)
 
 import json
-import os
 import re
 import threading
-from app.auth import owned_by_current_company, user_has
-from app.auth.decorators import is_mobile_request
-from app.campo.push import _ensure_push_subscriptions_table, _send_push
-from app.shared.cache import clear_view_cache
-from app.shared.constants import SISTEMAS_E_EQUIPAMENTOS
-from app.shared.formatters import br_money, br_now, elapsed_label, now_str, only_time_str, parse_br_date, parse_num, time_diff_minutes
-from app.shared.months import normalize_month_reference
-from app.shared.queries import fetch_sistemas_map, list_page, reset_sqlite_sequence_if_empty
-from app.shared.rows import row_get_value, row_matches_month, row_to_dict
-from app.storage import backup_company_data
 
-from app.db.schema import _TABLE_COLUMN_CACHE, _TABLE_COLUMNS_CACHE
-from app.storage.attachments import normalize_os_attachment_list, save_os_files
 from app.auth import get_current_user
-
+from app.campo.push import _ensure_push_subscriptions_table, _send_push
+from app.db.schema import _TABLE_COLUMN_CACHE, _TABLE_COLUMNS_CACHE
+from app.shared.constants import SISTEMAS_E_EQUIPAMENTOS
+from app.shared.formatters import (
+    br_now,
+    elapsed_label,
+    now_str,
+    only_time_str,
+    parse_br_date,
+    time_diff_minutes,
+)
+from app.shared.queries import reset_sqlite_sequence_if_empty
+from app.shared.rows import row_get_value, row_to_dict
+from app.storage.attachments import normalize_os_attachment_list, save_os_files
 
 
 def prepare_os_row_for_template(row):

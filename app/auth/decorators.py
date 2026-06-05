@@ -1,7 +1,7 @@
 """Decorators e gate de autenticação."""
 from functools import wraps
 
-from flask import current_app, flash, redirect, request, session, url_for
+from flask import current_app, redirect, request, session, url_for
 
 from app.auth.services import permission_denied_redirect, user_has
 from app.db import query_one

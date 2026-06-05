@@ -1,14 +1,5 @@
 """Variáveis globais de template (layout compartilhado)."""
 from flask import request
-from app.controle.services import fetch_bombas_counts
-from app.db.schema import select_existing_columns
-from app.os.services import ensure_os_tipo_os_column, os_is_overdue
-from app.shared.cache import cached_result
-from app.shared.formatters import br_money, br_now, parse_num
-from app.shared.months import normalize_month_reference
-from app.shared.payments import compute_payments_totals, payment_status_is_paid
-from app.shared.queries import fetch_sistemas_map
-from app.shared.rows import row_get_value, row_to_dict
 
 from app.auth import (
     PERMISSION_LABELS,
@@ -20,6 +11,8 @@ from app.auth import (
     user_has,
 )
 from app.auth.services import _get_user_permissions
+from app.shared.cache import cached_result
+from app.shared.queries import fetch_sistemas_map
 
 
 def query_one(sql, params=()):

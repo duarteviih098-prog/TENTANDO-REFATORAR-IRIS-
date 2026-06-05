@@ -3,20 +3,18 @@ import json
 import re
 from datetime import datetime
 from pathlib import Path
-from app.exports.excel import excel_rows_from_upload
-from app.os.pdf import _draw_pdf_header, excel_file, table_pdf
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_money, br_now, now_str, parse_br_date, parse_num
-from app.shared.months import month_reference_matches_selected, normalize_month_reference
-from app.shared.payments import payment_status_is_paid
-from app.shared.queries import safe_int_id as _safe_int_id
-from app.shared.rows import first_of, row_get_value, row_to_dict
-from app.storage import backup_company_data
 
 from werkzeug.utils import secure_filename
 
 from app.auth import company_where, current_company_id, owned_by_current_company
 from app.db import USE_POSTGRES, execute, get_conn, query_all, query_one, reset_postgres_id_sequence, table_columns
+from app.exports.excel import excel_rows_from_upload
+from app.shared.cache import clear_view_cache
+from app.shared.formatters import br_now, parse_num
+from app.shared.months import month_reference_matches_selected, normalize_month_reference
+from app.shared.payments import payment_status_is_paid
+from app.shared.queries import safe_int_id as _safe_int_id
+from app.shared.rows import first_of, row_get_value, row_to_dict
 from app.storage import (
     ATTACHMENT_GROUPS,
     PAYMENT_STORAGE_FOLDER,
@@ -26,6 +24,7 @@ from app.storage import (
     tenant_upload_dir,
     upload_file_to_supabase,
 )
+
 
 def query_one(sql, params=()):
     from app.db import query_one as db_query_one

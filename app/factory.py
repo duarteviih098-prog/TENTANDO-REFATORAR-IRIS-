@@ -2,7 +2,7 @@
 from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from app.config import Config, PROJECT_ROOT
+from app.config import PROJECT_ROOT, Config
 
 
 def create_app(config_class=Config):

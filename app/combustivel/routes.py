@@ -1,11 +1,5 @@
 """Rotas /combustivel/*."""
 from flask import flash, jsonify, redirect, render_template, request, send_file, url_for
-from app.os.pdf import excel_file, table_pdf
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_money, now_str, parse_num
-from app.shared.months import filter_rows_by_month, month_or_current
-from app.shared.queries import list_page, safe_int_id as _safe_int_id
-from app.shared.rows import row_get_value, row_to_dict
 
 from app.auth.decorators import require_permission
 from app.combustivel.services import (
@@ -15,6 +9,13 @@ from app.combustivel.services import (
     import_combustivel_excel,
     save_combustivel,
 )
+from app.os.pdf import excel_file, table_pdf
+from app.shared.cache import clear_view_cache
+from app.shared.formatters import br_money, now_str, parse_num
+from app.shared.months import filter_rows_by_month, month_or_current
+from app.shared.queries import list_page
+from app.shared.queries import safe_int_id as _safe_int_id
+from app.shared.rows import row_get_value, row_to_dict
 
 
 def query_all(sql, params=()):

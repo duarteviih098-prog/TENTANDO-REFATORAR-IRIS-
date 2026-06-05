@@ -1,9 +1,9 @@
 """Rotas administrativas de O.S."""
 from flask import jsonify
-from app.shared.cache import clear_view_cache
 
 from app.auth import current_company_id, current_user_is_super_admin
 from app.os.services import renumerar_os_por_mes
+from app.shared.cache import clear_view_cache
 
 
 def admin_renumerar_os():

@@ -4,10 +4,10 @@ import time
 from flask import current_app, flash, has_request_context, jsonify, redirect, request, session, url_for
 from werkzeug.exceptions import HTTPException
 
-from app.config import SESSION_IDLE_MINUTES
 from app.auth.csrf import _csrf_validate
 from app.auth.decorators import ensure_logged_in
-from app.auth.services import user_has, default_landing_url, permission_denied_redirect
+from app.auth.services import permission_denied_redirect
+from app.config import SESSION_IDLE_MINUTES
 
 
 def _render_error(code, title, message, tone='danger'):

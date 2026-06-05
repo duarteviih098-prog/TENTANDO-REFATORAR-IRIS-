@@ -1,6 +1,6 @@
 """Apply Module 3 auth extraction on current legacy (post Module 2)."""
-from pathlib import Path
 import re
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 legacy_path = ROOT / 'app' / 'legacy.py'

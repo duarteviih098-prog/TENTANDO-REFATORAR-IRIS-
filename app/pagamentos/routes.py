@@ -1,42 +1,44 @@
 """Rotas /pagamentos/* e APIs relacionadas."""
+import calendar
 import io
 import re
 from collections import defaultdict
-import calendar
-from app.os.pdf import _draw_pdf_header, excel_file, table_pdf
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_money, br_now, now_str, parse_br_date, parse_num
-from app.shared.months import month_reference_matches_selected, normalize_month_reference
-from app.shared.payments import payment_status_is_paid
-from app.shared.queries import safe_int_id as _safe_int_id
-from app.shared.rows import row_get_value, row_to_dict
-from app.storage import backup_company_data
 
 from flask import flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from app.auth.decorators import require_permission
+from app.os.pdf import _draw_pdf_header, table_pdf
 from app.pagamentos.services import (
-    build_payment_attachment_items,
-    ensure_pagamentos_valid_ids,
     import_pagamentos_excel,
     pagamentos_query_rows,
     pagamentos_totais_from_rows,
     payment_month_or_current,
     save_pagamento,
 )
-from app.storage import ATTACHMENT_GROUPS, missing_attachment_response, storage_or_local_response, sync_payment_attachments
+from app.shared.cache import clear_view_cache
+from app.shared.formatters import br_money, br_now, parse_br_date, parse_num
+from app.shared.months import normalize_month_reference
+from app.shared.payments import payment_status_is_paid
+from app.shared.queries import safe_int_id as _safe_int_id
+from app.shared.rows import row_to_dict
+from app.storage import (
+    ATTACHMENT_GROUPS,
+    backup_company_data,
+    missing_attachment_response,
+    storage_or_local_response,
+    sync_payment_attachments,
+)
 
 
 def _payment_month_or_current(value=''):
-    from app.pagamentos.services import payment_month_or_current
     return payment_month_or_current(value)
 
 def query_one(sql, params=()):
@@ -226,7 +228,7 @@ def pagamentos_save():
                 save_pagamento(data_prox, None, None)
                 criados += 1
             except Exception as exc_rec:
-                app.logger.warning('Pagamento recorrente mês %s falhou: %s', mes_prox, exc_rec)
+                app_logger().warning('Pagamento recorrente mês %s falhou: %s', mes_prox, exc_rec)
             cur_m += 1
             if cur_m > 12:
                 cur_m = 1
@@ -240,7 +242,7 @@ def pagamentos_save():
     clear_view_cache()
     mes_salvo = _payment_month_or_current(request.form.get('pagamento_mes') or '')
     if not (repetir_meses and repetir_meses > 1):
-        flash(f'Pagamento salvo.', 'success')
+        flash('Pagamento salvo.', 'success')
     return redirect(url_for('pagamentos', mes=mes_salvo))
 
 
@@ -326,7 +328,7 @@ def pagamentos_parcelar(rid):
             )
             criados += 1
         except Exception as exc_p:
-            app.logger.warning('Parcela %s falhou: %s', mes_prox, exc_p)
+            app_logger().warning('Parcela %s falhou: %s', mes_prox, exc_p)
         cur_m += 1
         if cur_m > 12:
             cur_m, cur_a = 1, cur_a + 1
@@ -497,8 +499,6 @@ def pagamentos_vencimentos():
     )
 
     # Agrupa por dia do mês
-    from collections import defaultdict
-    import calendar
     dias = defaultdict(list)
     totais_dia = defaultdict(float)
     pagos_dia = defaultdict(float)
@@ -582,7 +582,6 @@ def pagamentos_fornecedores():
     )
 
     # Agrupa por fornecedor
-    from collections import defaultdict
     fornecedores = defaultdict(lambda: {
         'total': 0, 'pago': 0, 'pendente': 0, 'count': 0,
         'meses': set(), 'tipos': set(), 'ultimo_mes': '',
@@ -826,7 +825,6 @@ def pagamentos_relatorios():
         meses_pagos.append(round(sum(parse_num(r.get('valor', 0)) for r in mes_rows if payment_status_is_paid(r.get('status'))), 2))
 
     # ── ANOMALIAS ─────────────────────────────────────────────
-    from collections import defaultdict
     forn_historico = defaultdict(list)
     for r in rows:
         nome = (r.get('fornecedor') or '').strip()
@@ -866,8 +864,6 @@ def pagamentos_relatorios():
 @require_permission('generate_pdf')
 def pagamentos_relatorios_pdf():
     """Gera PDF analítico com aging, concentração e anomalias."""
-    from collections import defaultdict
-    from reportlab.platypus import HRFlowable
     where_sql, params = company_where('pagamentos')
     agora = br_now()
     hoje = agora.date()
@@ -1003,8 +999,6 @@ def pagamentos_pdf():
 
 @require_permission('generate_excel')
 def pagamentos_excel():
-    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, numbers
-    from openpyxl.utils import get_column_letter
 
     todos = str(request.args.get('todos') or '').strip().lower() in ('1', 'true', 'sim', 'yes', 'on')
     mes_inicio = normalize_month_reference(request.args.get('mes') or request.args.get('month') or '')

@@ -1,13 +1,12 @@
 """Regras de negócio do estoque de bombas (controle)."""
 from datetime import datetime, timedelta
-from app.exports.excel import excel_rows_from_upload
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_now, parse_br_date
-from app.shared.queries import list_page
-from app.shared.rows import first_of, row_get_value, row_matches_month, row_to_dict
 
 from app.auth import company_and, company_where, current_company_id
 from app.db import execute, query_all, query_one
+from app.exports.excel import excel_rows_from_upload
+from app.shared.formatters import br_now, parse_br_date
+from app.shared.queries import list_page
+from app.shared.rows import first_of, row_get_value, row_to_dict
 
 
 def query_one(sql, params=()):

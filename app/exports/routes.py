@@ -1,13 +1,9 @@
 """Rotas de exportação — relatório Iris e parse de boleto."""
-import io
-import re
-from app.shared.formatters import br_money, br_now, now_str, parse_num
-from app.shared.rows import row_get_value, row_to_dict
-
 from flask import flash, jsonify, redirect, request, url_for
 
 from app.auth.decorators import require_permission
 from app.exports.jobs import _render_iris_job_wait_page
+from app.shared.rows import row_to_dict
 
 
 def current_company_id():
@@ -64,7 +60,10 @@ def api_boleto_parse_vencimento():
     if not f or not f.filename:
         return jsonify({'ok': False, 'error': 'Nenhum arquivo enviado'}), 400
     try:
-        import pdfplumber, io as _io, re as _re
+        import io as _io
+        import re as _re
+
+        import pdfplumber
         data = f.read()
         vencimento = None
         with pdfplumber.open(_io.BytesIO(data)) as pdf:

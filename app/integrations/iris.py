@@ -3,7 +3,6 @@ import json
 import re
 from datetime import datetime
 from urllib import parse as urllib_parse
-from app.shared.formatters import br_money
 
 from flask import current_app, jsonify, request, session, url_for
 
@@ -24,6 +23,7 @@ from app.exports.iris_reports import (
 )
 from app.exports.jobs import _create_iris_job, _start_iris_job_thread
 from app.os.services import os_is_overdue
+from app.shared.formatters import br_money
 
 
 def current_company_id():
@@ -382,7 +382,7 @@ def _iris_answer(plan, message):
                 "A IA está escrevendo o relatório em 3 chamadas paralelas. Leva cerca de 30 segundos.",
                 next_step="Acompanhe pelo botão abaixo."),
                 'download_url': wu, 'download_label': '📊 Acompanhar geração do PDF'}
-        except Exception as exc:
+        except Exception:
             path = _iris_make_monthly_pdf(ref)
             return {'reply': _iris_reply(f"Relatório mensal — {_iris_month_label(ref)}", "Relatório gerado."), 'download_url': url_for('static', filename='exports/' + path.name), 'download_label': 'Baixar PDF'}
 

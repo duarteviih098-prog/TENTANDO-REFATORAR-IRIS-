@@ -2,6 +2,10 @@
 import re
 from datetime import timedelta
 from pathlib import Path
+
+from flask import jsonify, redirect, render_template, request, send_from_directory, session, url_for
+
+from app.auth.decorators import require_permission
 from app.controle.services import fetch_bombas_counts
 from app.db.schema import select_existing_columns
 from app.os.services import ensure_os_tipo_os_column, os_is_overdue
@@ -9,13 +13,7 @@ from app.shared.cache import cached_result
 from app.shared.formatters import br_money, br_now, parse_num
 from app.shared.months import normalize_month_reference
 from app.shared.payments import compute_payments_totals, payment_status_is_paid
-from app.shared.queries import fetch_sistemas_map
 from app.shared.rows import row_get_value, row_to_dict
-
-from flask import jsonify, redirect, render_template, request, send_from_directory, session, url_for
-
-from app.auth.decorators import require_permission
-from app.config import PROJECT_ROOT
 from app.storage.paths import BASE_DIR
 
 

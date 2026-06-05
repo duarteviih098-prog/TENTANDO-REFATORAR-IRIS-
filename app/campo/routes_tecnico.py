@@ -4,19 +4,20 @@ import json
 
 from flask import render_template, request
 
-from app.campo.routes_common import execute, query_one
+from app.campo.routes_common import execute, get_conn, query_one
 from app.campo.services import (
     _campo_save_images,
     _campo_valid_files,
+    campo_evento_registrar,
     campo_mesmo_tecnico,
-    campo_numero_visivel,
-    campo_os_iniciada,
-    campo_status_finalizado,
     campo_tecnico_por_token,
     campo_token_for,
 )
 from app.os.services import prepare_os_row_for_template
+from app.shared.cache import clear_view_cache
+from app.shared.formatters import br_now, elapsed_label, only_time_str, time_diff_minutes
 from app.shared.rows import row_to_dict
+
 
 def campo_tecnico(rid, token):
     row = row_to_dict(query_one('SELECT * FROM os_ordens WHERE id=?', (rid,)))

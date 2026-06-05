@@ -1,6 +1,6 @@
 """Apply Module 12 — Inventário extraction (marker-based, idempotent)."""
-from pathlib import Path
 import re
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 legacy_path = ROOT / 'app' / 'legacy.py'

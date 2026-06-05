@@ -1,8 +1,5 @@
 """APIs JSON genéricas por módulo (GET registro / DELETE em lote)."""
 import json
-from app.shared.cache import clear_view_cache
-from app.shared.queries import reset_sqlite_sequence_if_empty
-from app.shared.rows import row_to_dict
 
 from flask import jsonify, request
 
@@ -12,6 +9,9 @@ from app.combustivel.services import ensure_combustivel_valid_ids
 from app.custos.services import ensure_custos_valid_ids
 from app.db import execute
 from app.pagamentos.services import build_payment_attachment_items
+from app.shared.cache import clear_view_cache
+from app.shared.queries import reset_sqlite_sequence_if_empty
+from app.shared.rows import row_to_dict
 from app.storage import backup_company_data, sync_os_attachments, sync_payment_attachments
 
 

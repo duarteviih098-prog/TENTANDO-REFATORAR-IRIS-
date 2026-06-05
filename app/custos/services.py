@@ -2,6 +2,7 @@ from app.exports.excel import excel_rows_from_upload
 from app.shared.months import month_or_current
 from app.shared.queries import ensure_valid_ids_for_table
 from app.shared.rows import first_of
+
 """Regras de negócio do módulo custos."""
 
 

@@ -11,8 +11,6 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
 from reportlab.platypus import (
-    HRFlowable,
-    Image as RLImage,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -21,10 +19,23 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from app.os.pdf_common import current_company_id, current_company
+from app.os.pdf_common import (
+    PDF_MAX_IMAGES_PER_OS,
+    PDF_MONTH_MAX_IMAGES_PER_OS,
+    _bg,
+    company_where,
+    current_company,
+    current_company_id,
+    query_all,
+    query_one,
+    select_existing_columns,
+    table_columns,
+)
 from app.os.pdf_support import (
     _draw_pdf_header,
     _img_square_rlimage,
+    _pdf_cache_get,
+    _pdf_cache_set,
     _pdf_clean_row,
     _pdf_collect_hist_dates,
     _pdf_collect_os_image_paths,
@@ -42,18 +53,7 @@ from app.shared.formatters import elapsed_label, parse_br_date
 from app.shared.months import normalize_month_reference
 from app.shared.rows import row_get_value, row_matches_month, row_to_dict
 from app.storage import company_identity_dir, company_identity_file, load_company_identity_config, sync_os_attachments
-from app.os.pdf_common import (
-    PDF_MAX_IMAGES_PER_OS,
-    PDF_MONTH_MAX_IMAGES_PER_OS,
-    _bg,
-    company_where,
-    current_company_id,
-    query_all,
-    query_one,
-    select_existing_columns,
-    table_columns,
-)
-from app.os.pdf_support import _pdf_cache_get, _pdf_cache_set
+
 
 def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
     if ordens:
@@ -83,7 +83,7 @@ def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
         # Se arquivo não existe no disco (Render restart), tenta restaurar do base64 salvo no config
         if not assinatura_path and cfg_pdf.get('assinatura_b64'):
             try:
-                import base64 as _b64, io as _io
+                import base64 as _b64
                 b64data = cfg_pdf['assinatura_b64']
                 if ',' in b64data:
                     b64data = b64data.split(',', 1)[1]

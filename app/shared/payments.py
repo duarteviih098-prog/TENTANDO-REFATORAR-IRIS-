@@ -5,6 +5,7 @@ from app.shared.formatters import parse_num
 from app.shared.months import month_reference_matches_selected, normalize_month_reference
 from app.shared.rows import row_get_value
 
+
 def payment_status_is_paid(value):
     return str(value or '').strip().lower() in ('sim', 'pago', 'paga', 'ok', 'realizado', 'confirmado')
 

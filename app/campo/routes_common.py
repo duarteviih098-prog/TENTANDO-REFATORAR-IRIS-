@@ -1,5 +1,4 @@
 """Helpers compartilhados das rotas Campo."""
-from app.auth import owned_by_current_company, user_has
 
 
 def current_company_id():

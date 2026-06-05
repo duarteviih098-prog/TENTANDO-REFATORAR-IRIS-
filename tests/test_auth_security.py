@@ -1,8 +1,6 @@
 """Testes de configuração e segurança P0."""
-import os
 
 import pytest
-
 from app.config import validate_production_config
 
 

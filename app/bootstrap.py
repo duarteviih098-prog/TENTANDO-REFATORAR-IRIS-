@@ -8,11 +8,11 @@ from app.exports import register_exports
 from app.factory import create_app
 from app.integrations import register_integrations
 from app.inventario import register_inventario
-from app.shared.formatters import br_date, br_money, format_phone_br
 from app.os import register_os
 from app.outlook import register_outlook
 from app.pagamentos import register_pagamentos
 from app.shared import register_shared
+from app.shared.formatters import br_date, br_money, format_phone_br
 from app.storage import register_storage
 
 

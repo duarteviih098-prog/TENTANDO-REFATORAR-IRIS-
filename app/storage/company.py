@@ -4,14 +4,13 @@ import os
 import threading
 import time
 from datetime import datetime
-from pathlib import Path
-from app.db.schema import select_existing_columns
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_now, now_str
-from app.shared.rows import row_to_dict
 
 from app.auth.constants import TENANT_TABLES
+from app.db.schema import select_existing_columns
 from app.exports.company_pdf import ensure_company_pdf_columns
+from app.shared.cache import clear_view_cache
+from app.shared.formatters import now_str
+from app.shared.rows import row_to_dict
 from app.storage.paths import (
     company_identity_config_path,
     company_identity_dir,

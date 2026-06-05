@@ -1,7 +1,6 @@
 """Pool PostgreSQL e conexão SQLite/Postgres."""
 import os
 import sqlite3
-import threading
 
 from app.db import settings
 from app.db.dialect import _normalize_pg_sql

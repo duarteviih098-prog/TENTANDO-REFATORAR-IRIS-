@@ -1,17 +1,14 @@
 """Web Push — VAPID, subscriptions e service worker."""
 import json
 import os
-from app.auth import owned_by_current_company, user_has
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_now, elapsed_label, format_phone_br, normalize_phone, now_str, only_time_str, parse_br_date, parse_num, time_diff_minutes
-from app.shared.payments import payment_status_is_paid
-from app.shared.queries import fetch_sistemas_map, list_page, safe_int_id as _safe_int_id
-from app.shared.rows import row_get_value, row_to_dict
-from app.storage import backup_company_data
 
-from flask import Response, jsonify, request, session
+from flask import Response, jsonify, request
 
 from app.auth.decorators import require_permission
+from app.shared.formatters import (
+    now_str,
+)
+from app.shared.rows import row_to_dict
 
 VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '').strip()
 VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '').strip()
@@ -132,7 +129,7 @@ def _send_push(subscription_info, title, body, url='/'):
         print('_send_push: VAPID keys não configuradas.')
         return False
     try:
-        from pywebpush import webpush, WebPushException
+        from pywebpush import webpush
         data = json.dumps({'title': title, 'body': body, 'url': url}, ensure_ascii=False)
         webpush(
             subscription_info=subscription_info,
@@ -287,17 +284,8 @@ self.addEventListener('notificationclick', function(event) {
   }));
 });
 """
-    from flask import Response
     return Response(sw_code, mimetype='application/javascript',
                     headers={'Service-Worker-Allowed': '/', 'Cache-Control': 'no-cache, no-store'})
-
-
-
-    """Redireciona /pagamentos para o hub."""
-    return redirect(url_for('pagamentos_hub'))
-
-
-
 
 
 def register_push_routes(app):

@@ -1,13 +1,13 @@
 """Rotas /inventario/* e API de inventário."""
 import json
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_now, parse_num
-from app.shared.queries import safe_int_id as _safe_int_id
-from app.shared.rows import row_get_value, row_to_dict
 
 from flask import flash, jsonify, redirect, render_template, request, url_for
 
 from app.auth.decorators import require_permission
+from app.shared.cache import clear_view_cache
+from app.shared.formatters import br_now, parse_num
+from app.shared.queries import safe_int_id as _safe_int_id
+from app.shared.rows import row_get_value, row_to_dict
 
 
 def current_company_id():

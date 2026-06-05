@@ -1,15 +1,11 @@
 """Caminhos locais, normalização e URLs públicas."""
-import os
 import re
 from pathlib import Path
 from urllib import parse as urllib_parse
-from app.db.schema import select_existing_columns
-from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_now, now_str
-from app.shared.rows import row_to_dict
 
 from app.config import PROJECT_ROOT
 from app.db import query_one
+from app.shared.rows import row_to_dict
 from app.storage import settings
 
 BASE_DIR = PROJECT_ROOT

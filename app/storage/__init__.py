@@ -1,6 +1,8 @@
 """Storage local e Supabase (uploads, anexos, identidade)."""
 from app.storage.attachments import (
     ATTACHMENT_GROUPS,
+    _os_attachment_relpath,
+    _payment_attachment_relpath,
     missing_attachment_response,
     normalize_os_attachment_list,
     normalize_payment_attachment_list,
@@ -13,8 +15,6 @@ from app.storage.attachments import (
     storage_or_local_response,
     sync_os_attachments,
     sync_payment_attachments,
-    _os_attachment_relpath,
-    _payment_attachment_relpath,
 )
 from app.storage.company import (
     active_whatsapp_template,
@@ -49,8 +49,6 @@ from app.storage.paths import (
 from app.storage.pdf import _save_pdf_bytes_locally, _upload_pdf_bytes_to_supabase
 from app.storage.routes import register_routes
 from app.storage.settings import (
-    OS_STORAGE_FOLDER as SETTINGS_OS_FOLDER,
-    PAYMENT_STORAGE_FOLDER as SETTINGS_PAYMENT_FOLDER,
     SUPABASE_STORAGE_BUCKET,
     SUPABASE_STORAGE_KEY,
     SUPABASE_URL,
