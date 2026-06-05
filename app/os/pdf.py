@@ -444,6 +444,9 @@ def _draw_pdf_header(canvas, doc, title='', subtitle=''):
 
 
 def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
+    if ordens:
+        workers = int(os.getenv('PDF_PREFETCH_WORKERS', '8') or 8)
+        _prefetch_os_images_parallel(ordens, max_workers=max(1, workers))
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=10*mm, rightMargin=10*mm, topMargin=24*mm, bottomMargin=25*mm)
     styles = getSampleStyleSheet()
