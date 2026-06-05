@@ -117,6 +117,10 @@
   html[data-theme="dark"] .btn-close{filter:invert(1) grayscale(100%) brightness(180%)}
   .table-shell{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:12px;overflow:hidden}.table-gg{margin:0;border-collapse:separate;border-spacing:0;width:100%}.table-gg thead th{background:var(--surface2);border-bottom:1px solid var(--line);color:var(--text);font-size:.82rem;text-transform:uppercase;padding:12px 14px;white-space:nowrap}.table-gg tbody td{padding:11px 14px;border-top:1px solid color-mix(in srgb, var(--line) 75%, transparent);vertical-align:middle}.table-gg tbody tr{cursor:pointer}.table-gg tbody tr:hover{background:var(--surface2)}.table-gg tbody tr.selected{background:#dff0ff!important}.table-gg tbody tr.anchor-selected{outline:2px solid #73aee8;outline-offset:-2px}.table-gg tbody tr.linha-atrasada{background:#ffe5e5 !important;border-left:6px solid #dc2626}.table-gg tbody tr.linha-atrasada:hover{background:#ffd6d6 !important}.table-gg tbody tr.linha-atrasada td{color:#7f1d1d !important;font-weight:600}.table-gg tbody tr.linha-atrasada .badge{color:#fff !important}html[data-theme="dark"] .table-gg tbody tr.linha-atrasada{background:rgba(220,38,38,.12) !important}html[data-theme="dark"] .table-gg tbody tr.linha-atrasada:hover{background:rgba(220,38,38,.18) !important}html[data-theme="dark"] .table-gg tbody tr.linha-atrasada td{color:#fca5a5 !important}html[data-theme="dark"] .os-overdue,html[data-theme="dark"] #osTable tbody tr.os-overdue{background:#1a1a1a !important;border-left:3px solid #ef4444 !important}html[data-theme="dark"] #osTable tbody tr.os-overdue td{background:transparent !important;color:#cccccc !important}.os-scroll-shell{padding-bottom:8px}.os-scroll-area{max-height:62vh;overflow-y:auto;overflow-x:auto;padding-right:4px}.os-scroll-area thead th{position:sticky;top:0;z-index:2}
   html[data-theme="dark"] .table-gg tbody tr.selected{background:#2a2a2a!important}.mini{font-size:.86rem;color:var(--muted)} .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.empty{text-align:center;color:var(--muted);padding:28px}
+  .iris-empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:36px 18px;text-align:center;color:var(--muted)}
+  .iris-empty-state i{font-size:1.75rem;opacity:.45;color:var(--blue)}
+  .iris-empty-title{font-weight:700;color:var(--text);font-size:.92rem}
+  .iris-empty-hint{font-size:.82rem;line-height:1.45;max-width:360px}
   .modal-content{background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:22px}.modal-header,.modal-footer{border-color:var(--line)} .flash-stack .alert{border:none;border-radius:16px;box-shadow:var(--shadow)}
   .attachment-list a{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;margin:0 8px 8px 0;background:var(--surface2);border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--text)}
   .badge-criticidade{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;font-size:.78rem;font-weight:800;letter-spacing:.02em;min-width:78px}
@@ -227,7 +231,7 @@ html[data-theme="dark"] .os-overdue-row td{background:rgba(220,38,38,.14)!import
 <div id="loading-overlay">
   <div class="loader-box">
     <div class="iris-loader" aria-hidden="true"></div>
-    <small style="color:#6b7a90;letter-spacing:.12em;font-size:.8rem">CARREGANDO</small>
+    <small id="loading-overlay-msg" style="color:#6b7a90;letter-spacing:.12em;font-size:.8rem">CARREGANDO</small>
   </div>
 </div>
 <div class="app-shell">
@@ -358,18 +362,21 @@ html[data-theme="dark"] .os-overdue-row td{background:rgba(220,38,38,.14)!import
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 const overlay=document.getElementById('loading-overlay');
+const overlayMsg=document.getElementById('loading-overlay-msg');
 let loadingTimer=null;
 let loadingFailSafe=null;
 const isMobileViewport=()=>window.matchMedia('(max-width: 768px)').matches;
-const showLoading=(delay=150)=>{
+const showLoading=(delay=150, message='CARREGANDO', failSafeMs=8000)=>{
   if(!overlay) return;
+  if(overlayMsg) overlayMsg.textContent=String(message||'CARREGANDO').toUpperCase();
   clearTimeout(loadingTimer);
   clearTimeout(loadingFailSafe);
   loadingTimer=setTimeout(()=>{
     overlay.classList.add('show');
-    loadingFailSafe=setTimeout(hideLoading, 8000);
+    loadingFailSafe=setTimeout(hideLoading, failSafeMs);
   },delay);
 };
+window.irisShowBusy = (message, failSafeMs)=>showLoading(80, message, failSafeMs || 12000);
 const hideLoading=()=>{
   clearTimeout(loadingTimer);
   clearTimeout(loadingFailSafe);
@@ -387,9 +394,31 @@ document.addEventListener('click', (e)=>{
   const href=t.getAttribute('href');
   const hrefLower=(href||'').toLowerCase();
   if(location.pathname.startsWith('/campo/app') || location.pathname.startsWith('/c/')) return;
-  if(href===null || href.startsWith('#') || hrefLower.startsWith('javascript:') || hrefLower.includes('excel') || hrefLower.endsWith('.xlsx') || t.hasAttribute('download') || t.hasAttribute('disabled') || t.getAttribute('target')==='_blank') return;
+  const busyMsg=(t.getAttribute('data-iris-busy')||'').trim();
+  if(busyMsg){
+    showLoading(80, busyMsg, 45000);
+    return;
+  }
+  if(t.hasAttribute('download') || hrefLower.includes('/pdf') || hrefLower.includes('/excel') || hrefLower.includes('excel') || hrefLower.endsWith('.xlsx')){
+    const isPdf=hrefLower.includes('pdf');
+    showLoading(80, isPdf ? 'Gerando PDF…' : 'Gerando arquivo…', isPdf ? 45000 : 20000);
+    return;
+  }
+  if(href===null || href.startsWith('#') || hrefLower.startsWith('javascript:') || t.hasAttribute('disabled') || t.getAttribute('target')==='_blank') return;
   if(isMobileViewport()) return;
   showLoading();
+});
+document.querySelectorAll('form').forEach((form)=>{
+  form.addEventListener('submit', ()=>{
+    const hasExcel=form.querySelector('input[type=file][name*="excel"], input[type=file][accept*=".xlsx"], input[type=file"][accept*=".xls"]');
+    if(hasExcel && hasExcel.files && hasExcel.files.length){
+      showLoading(80, 'Importando planilha…', 120000);
+      return;
+    }
+    if(form.matches('[data-iris-busy-form]')){
+      showLoading(80, form.getAttribute('data-iris-busy-form') || 'Salvando…', 30000);
+    }
+  });
 });
 const savedTheme = localStorage.getItem('iris-theme') || 'light'; document.documentElement.setAttribute('data-theme', savedTheme);
 document.getElementById('themeToggle')?.addEventListener('click', ()=>{const next=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('iris-theme',next);window.dispatchEvent(new CustomEvent('iris-theme-change',{detail:{theme:next}}));fixUnitSelect(next);});
