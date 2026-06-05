@@ -9,6 +9,11 @@ from app.auth.csrf import _csrf_validate
 from app.auth.decorators import ensure_logged_in
 from app.auth.services import user_has, default_landing_url, permission_denied_redirect
 
+
+def _render_error(code, title, message, tone='danger'):
+    from app.shared.errors import render_error_page
+    return render_error_page(code, title, message, tone=tone)
+
 def auth_gate():
     if 'user_id' in session and not request.path.startswith('/static/'):
         if not session.get('_is_permanent', False):
@@ -39,6 +44,13 @@ def handle_not_found(exc):
     if path.startswith('/static/'):
         return 'Arquivo estático não encontrado.', 404
 
+    if session.get('user_id'):
+        return _render_error(
+            404,
+            'Página não encontrada',
+            'O endereço que você abriu não existe ou foi movido.',
+            tone='warn',
+        )
     return permission_denied_redirect('Página ou arquivo não encontrado.')
 
 
@@ -66,4 +78,11 @@ def handle_unexpected_error(exc):
         flash(f'Não foi possível concluir a ação em usuários: {exc}', 'danger')
         return redirect(url_for('usuarios_page'))
 
+    if session.get('user_id'):
+        return _render_error(
+            500,
+            'Algo deu errado',
+            'Ocorreu um erro inesperado. A operação foi interrompida com segurança. Se persistir, contate o suporte.',
+            tone='danger',
+        )
     return permission_denied_redirect('Ocorreu um erro inesperado. A operação foi interrompida com segurança.')
