@@ -44,7 +44,12 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@localhost/iris
           SUPABASE_URL: https://example.supabase.co
           SUPABASE_SERVICE_ROLE_KEY: ci-test-key
-        run: python -c "from app.config import validate_production_config; validate_production_config('x'*40)"
+        run: >
+          python -c "import importlib.util;
+          spec=importlib.util.spec_from_file_location('iris_config','app/config.py');
+          mod=importlib.util.module_from_spec(spec);
+          spec.loader.exec_module(mod);
+          mod.validate_production_config('x'*40)"
 
   postgres:
     runs-on: ubuntu-latest
