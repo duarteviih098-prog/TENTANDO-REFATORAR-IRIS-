@@ -6,7 +6,7 @@ from urllib import parse as urllib_parse
 
 from flask import current_app, jsonify, request, session, url_for
 
-from app.exports.iris_ai import _iris_call_ai, _iris_call_claude
+from app.exports.iris_ai import _iris_call_ai
 from app.exports.iris_data import (
     _iris_collect_context,
     _iris_month_label,
@@ -286,22 +286,37 @@ def _iris_fallback_plan(message):
 
 
 
-def _iris_context_summary():
-    """Gera resumo do contexto atual da empresa para a Iris responder perguntas livres."""
+def _iris_context_summary(month_ref=''):
+    """Contexto rico da empresa para chat Iris (mesmos dados dos relatórios PDF)."""
     try:
-        empresa_id = current_company_id()
         from datetime import datetime as _dt
-        mes_atual = _dt.now().strftime('%m/%Y')
 
-        os_total = (query_one('SELECT COUNT(*) AS c FROM os_ordens WHERE empresa_id=?', (empresa_id,)) or {}).get('c', 0)
-        os_aberta = (query_one("SELECT COUNT(*) AS c FROM os_ordens WHERE empresa_id=? AND status NOT IN ('Finalizada','Cancelada')", (empresa_id,)) or {}).get('c', 0)
-        os_atraso = (query_one("SELECT COUNT(*) AS c FROM os_ordens WHERE empresa_id=? AND status='Atrasada'", (empresa_id,)) or {}).get('c', 0)
-        bombas_estoque = (query_one("SELECT COUNT(*) AS c FROM bombas WHERE empresa_id=? AND em_estoque='Sim'", (empresa_id,)) or {}).get('c', 0)
-        bombas_conserto = (query_one("SELECT COUNT(*) AS c FROM bombas WHERE empresa_id=? AND em_conserto='Sim'", (empresa_id,)) or {}).get('c', 0)
-
-        return f"""Empresa ID: {empresa_id} | Mês: {mes_atual}
-O.S.: {os_total} total, {os_aberta} em aberto, {os_atraso} em atraso
-Bombas: {bombas_estoque} em estoque, {bombas_conserto} em conserto"""
+        if not month_ref:
+            month_ref = _dt.now().strftime('%m/%Y')
+        ctx = _iris_collect_context(month_ref)
+        lines = [
+            f"Período: {_iris_month_label(month_ref)}",
+            f"O.S.: {ctx.get('os_total', 0)} total | {ctx.get('os_finalizadas', 0)} finalizadas | "
+            f"{ctx.get('os_taxa_conclusao', 0)}% conclusão | {ctx.get('os_atrasadas_count', 0)} atrasadas | "
+            f"{ctx.get('trocas_total', 0)} trocas de componentes",
+            f"Gastos: {br_money(ctx.get('gasto_realizado_total', 0))} total | "
+            f"pagamentos {br_money(ctx.get('pagamentos_total', 0))} | "
+            f"pendente {br_money(ctx.get('pagamentos_aberto', 0))} | "
+            f"combustível {br_money(ctx.get('combustivel_total', 0))}",
+        ]
+        if ctx.get('by_system_os'):
+            top = ', '.join(f"{s}({n})" for s, n in ctx['by_system_os'][:5])
+            lines.append(f"Sistemas com mais falhas: {top}")
+        if ctx.get('by_component'):
+            top_c = ', '.join(f"{c[:40]}({n}x)" for c, n in ctx['by_component'][:5])
+            lines.append(f"Componentes mais trocados: {top_c}")
+        if ctx.get('equip_reincidentes'):
+            top_e = ', '.join(f"{e[:30]}({n})" for e, n in ctx['equip_reincidentes'][:5])
+            lines.append(f"Equipamentos reincidentes: {top_e}")
+        if ctx.get('top_fornecedores'):
+            top_f = ', '.join(f"{f[:25]}({br_money(v)})" for f, v in ctx['top_fornecedores'][:5])
+            lines.append(f"Top fornecedores: {top_f}")
+        return '\n'.join(lines)
     except Exception as exc:
         return f'Contexto indisponível: {exc}'
 
@@ -523,8 +538,12 @@ def _iris_answer(plan, message):
     if intent == 'free_answer':
         q_free = (plan or {}).get('message') or message
         ctx = _iris_context_summary()
-        fp = f"Você é a Iris, consultora operacional do IRIS de gestão de saneamento. Responda em português, direto e prático, como gestora experiente. Max 400 palavras. Dados da empresa: {ctx}\n\nPergunta: {q_free}"
-        text, _ = _iris_call_claude(fp, max_tokens=1200)
+        fp = (
+            f"Você é a Iris, consultora sênior do IRIS. Responda em português com análise executiva "
+            f"(falhas, componentes, gastos, riscos, recomendações). Max 500 palavras. "
+            f"Use apenas estes dados:\n{ctx}\n\nPergunta: {q_free}"
+        )
+        text, _ = _iris_call_ai(fp, max_tokens=1500)
         if text:
             return {'reply': {'title': '💡 Iris', 'summary': text, 'sections': []}}
 
@@ -562,26 +581,28 @@ def iris_chat():
         tn = _iris_normalize(effective)
 
         # Tenta resposta direta via IA primeiro (menos engessada)
-        ctx = _iris_context_summary()
+        month_ref = _iris_month_ref(effective) or _iris_month_ref(message)
+        ctx = _iris_context_summary(month_ref)
         hist_ctx = ''
         if history:
             hist_ctx = '\n'.join([f"Usuário: {h.get('user','')}" for h in history[-3:]])
 
         hist_ctx_label = ('Histórico recente:\n' + hist_ctx) if hist_ctx else ''
-        direct_prompt = f"""Você é a Iris, consultora operacional integrada ao sistema IRIS de gestão de saneamento e infraestrutura.
-Responda em português, de forma direta, prática e útil. Máximo 350 palavras.
-Use bullet points quando ajudar a organizar.
-Se o usuário pedir um relatório, diga que está gerando e qual comando usar.
-Se for pergunta sobre dados específicos (pagamentos, O.S., custos), responda com base no contexto abaixo.
+        direct_prompt = f"""Você é a Iris, consultora sênior e o coração inteligente do sistema IRIS (saneamento/infraestrutura).
+Responda em português, como relatório executivo: direto, analítico, com números do contexto.
+Máximo 400 palavras. Use bullet points para rankings e recomendações.
+Cite sistemas que mais quebram, componentes mais trocados, gastos e pendências quando relevante.
+Se pedir relatório PDF, oriente o comando (ex.: "relatório mensal de abril").
+NUNCA invente dados — use só o contexto abaixo.
 
-Contexto atual da empresa:
+Contexto operacional e financeiro da empresa:
 {ctx}
 
 {hist_ctx_label}
 
 Pergunta/comando: {effective}"""
 
-        text, prov = _iris_call_claude(direct_prompt, max_tokens=800)
+        text, prov = _iris_call_ai(direct_prompt, max_tokens=1200)
         if text:
             # Verifica se a mensagem pede algo que precisa de uma intent específica
             keywords_relatorio = ['relatorio', 'relatório', 'pdf', 'gerar', 'baixar', 'exportar', 'excel']

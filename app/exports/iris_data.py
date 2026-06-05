@@ -225,6 +225,84 @@ def _iris_payment_status(row):
 
 
 
+def _iris_aggregate_os_insights(os_rows):
+    """Rankings operacionais para relatórios e IA (falhas, componentes, reincidência)."""
+    from app.os.services import os_is_overdue
+
+    by_system_os = {}
+    by_unit_os = {}
+    by_system_os_cost = {}
+    component_by_system = {}
+    by_component = {}
+    by_responsavel = {}
+    os_custo_total = 0.0
+    trocas_total = 0
+    os_atrasadas_rows = []
+
+    for r in os_rows:
+        sys = (r.get('sistema') or 'Não informado').strip() or 'Não informado'
+        unit = (r.get('equipamento') or r.get('ativo_nome') or 'Não informado').strip() or 'Não informado'
+        by_system_os[sys] = by_system_os.get(sys, 0) + 1
+        by_unit_os[unit] = by_unit_os.get(unit, 0) + 1
+        valor_os = _iris_parse_br_float(r.get('custo_os'))
+        if valor_os:
+            os_custo_total += valor_os
+            by_system_os_cost[sys] = by_system_os_cost.get(sys, 0) + valor_os
+        if os_is_overdue(r):
+            os_atrasadas_rows.append(r)
+        resp = (r.get('responsavel') or '').strip()
+        if resp:
+            by_responsavel[resp] = by_responsavel.get(resp, 0) + 1
+        if _iris_normalize(r.get('troca_componentes') or r.get('componentes') or '') in ('sim', 's', 'yes'):
+            trocas_total += 1
+            component_by_system[sys] = component_by_system.get(sys, 0) + 1
+            comp_raw = (r.get('componentes_descricao') or r.get('componentes') or '').strip()
+            if comp_raw:
+                key = comp_raw[:120]
+                by_component[key] = by_component.get(key, 0) + 1
+
+    equip_count = {}
+    for r in os_rows:
+        unit = (r.get('equipamento') or r.get('ativo_nome') or '').strip()
+        if unit:
+            equip_count[unit] = equip_count.get(unit, 0) + 1
+    equip_reincidentes = sorted(
+        [(u, n) for u, n in equip_count.items() if n >= 2],
+        key=lambda x: x[1],
+        reverse=True,
+    )
+
+    finalizadas = sum(1 for r in os_rows if str(r.get('finalizada') or '').lower() == 'sim')
+    os_total = len(os_rows)
+
+    return {
+        'os_total': os_total,
+        'os_finalizadas': finalizadas,
+        'os_taxa_conclusao': round(finalizadas / os_total * 100, 1) if os_total else 0,
+        'os_atrasadas_count': len(os_atrasadas_rows),
+        'os_atrasadas_rows': os_atrasadas_rows,
+        'trocas_total': trocas_total,
+        'os_custo_total': os_custo_total,
+        'by_system_os': sorted(by_system_os.items(), key=lambda x: x[1], reverse=True),
+        'by_unit_os': sorted(by_unit_os.items(), key=lambda x: x[1], reverse=True),
+        'by_system_os_cost': sorted(by_system_os_cost.items(), key=lambda x: x[1], reverse=True),
+        'component_by_system': sorted(component_by_system.items(), key=lambda x: x[1], reverse=True),
+        'by_component': sorted(by_component.items(), key=lambda x: x[1], reverse=True),
+        'by_responsavel': sorted(by_responsavel.items(), key=lambda x: x[1], reverse=True),
+        'equip_reincidentes': equip_reincidentes,
+    }
+
+
+def _iris_top_fornecedores(pagamentos):
+    por_forn = {}
+    for p in pagamentos:
+        forn = (p.get('fornecedor') or 'Não informado').strip() or 'Não informado'
+        por_forn[forn] = por_forn.get(forn, 0) + _iris_parse_br_float(p.get('valor'))
+    total = sum(por_forn.values())
+    ranked = sorted(por_forn.items(), key=lambda x: x[1], reverse=True)
+    return ranked, total
+
+
 def _iris_collect_context(month_ref=''):
     pagamentos = _iris_rows('pagamentos', limit=1000)
     os_rows = _iris_rows('os_ordens', limit=1000)
@@ -237,8 +315,6 @@ def _iris_collect_context(month_ref=''):
         custos = [r for r in custos if _iris_match_month(r, month_ref, 'mes')]
         combustivel = [r for r in combustivel if _iris_match_month(r, month_ref, 'mes_ref', 'data')]
 
-    # Fonte única de verdade: gasto = pagamentos aprovados + combustível.
-    # O.S. e custos são alocação interna e NÃO entram no gasto.
     finance = _iris_official_finance(month_ref)
     total_pag = finance['pagamentos_total']
     combustivel_total = finance['combustivel_total']
@@ -248,30 +324,14 @@ def _iris_collect_context(month_ref=''):
     aberto_rows = [r for r in pagamentos if _iris_payment_status(r) != 'Pago']
     aberto = sum(_iris_parse_br_float(r.get('valor')) for r in aberto_rows)
 
-    by_system_os = {}
-    by_unit_os = {}
-    by_system_os_cost = {}
-    component_by_system = {}
-    os_custo_total = 0.0
-    for r in os_rows:
-        sys = (r.get('sistema') or 'Não informado').strip() or 'Não informado'
-        unit = (r.get('equipamento') or r.get('ativo_nome') or 'Não informado').strip() or 'Não informado'
-        by_system_os[sys] = by_system_os.get(sys, 0) + 1
-        by_unit_os[unit] = by_unit_os.get(unit, 0) + 1
-        valor_os = _iris_parse_br_float(r.get('custo_os'))
-        if valor_os:
-            os_custo_total += valor_os
-            by_system_os_cost[sys] = by_system_os_cost.get(sys, 0) + valor_os
-        if _iris_normalize(r.get('troca_componentes') or r.get('componentes') or '') in ('sim','s','yes'):
-            component_by_system[sys] = component_by_system.get(sys, 0) + 1
+    os_insights = _iris_aggregate_os_insights(os_rows)
 
     by_system_cost = {}
-    # Mantém este agrupamento para relatórios financeiros específicos de pagamentos,
-    # mas NÃO usa em "quanto gastamos" porque inclui aberto/previsão.
     for p in pagamentos:
         sys = (p.get('sistema') or 'Não informado').strip() or 'Não informado'
         by_system_cost[sys] = by_system_cost.get(sys, 0) + _iris_parse_br_float(p.get('valor'))
 
+    top_fornecedores, fornecedores_total = _iris_top_fornecedores(pagamentos)
     gasto_realizado_total = total_pag + combustivel_total
 
     return {
@@ -285,14 +345,11 @@ def _iris_collect_context(month_ref=''):
         'combustivel_total': combustivel_total,
         'os_rows': os_rows,
         'custos_rows': custos,
-        'os_total': len(os_rows),
-        'os_custo_total': os_custo_total,
         'gasto_realizado_total': gasto_realizado_total,
-        'by_system_os': sorted(by_system_os.items(), key=lambda x:x[1], reverse=True),
-        'by_unit_os': sorted(by_unit_os.items(), key=lambda x:x[1], reverse=True),
-        'by_system_os_cost': sorted(by_system_os_cost.items(), key=lambda x:x[1], reverse=True),
-        'by_system_cost': sorted(by_system_cost.items(), key=lambda x:x[1], reverse=True),
-        'component_by_system': sorted(component_by_system.items(), key=lambda x:x[1], reverse=True),
+        'by_system_cost': sorted(by_system_cost.items(), key=lambda x: x[1], reverse=True),
+        'top_fornecedores': top_fornecedores,
+        'fornecedores_total': fornecedores_total,
+        **os_insights,
     }
 
 

@@ -123,17 +123,31 @@ def _iris_build_rich_context(ctx, tipo='mensal', periodo_label=''):
             if resp:
                 lines.append(f"     Responsável: {resp}")
 
-    # Responsáveis mais ativos
-    resp_count = {}
-    for r in os_rows:
-        resp = (r.get('responsavel') or '').strip()
-        if resp:
-            resp_count[resp] = resp_count.get(resp, 0) + 1
-    if resp_count:
+    if ctx.get('by_responsavel'):
         lines.append("")
         lines.append("   TÉCNICOS / RESPONSÁVEIS:")
-        for resp, qtd in sorted(resp_count.items(), key=lambda x: x[1], reverse=True)[:8]:
+        for resp, qtd in ctx.get('by_responsavel', [])[:10]:
             lines.append(f"   - {resp}: {qtd} O.S.")
+
+    if ctx.get('by_component'):
+        lines.append("")
+        lines.append("   COMPONENTES MAIS TROCADOS (ranking):")
+        for comp, qtd in ctx.get('by_component', [])[:15]:
+            lines.append(f"   - {comp}: {qtd}x")
+
+    if ctx.get('equip_reincidentes'):
+        lines.append("")
+        lines.append("   EQUIPAMENTOS COM REINCIDÊNCIA (2+ O.S.):")
+        for equip, qtd in ctx.get('equip_reincidentes', [])[:12]:
+            lines.append(f"   - {equip}: {qtd} ocorrências")
+
+    if ctx.get('os_atrasadas_count'):
+        lines.append("")
+        lines.append(f"   O.S. EM ATRASO: {ctx.get('os_atrasadas_count')}")
+        for r in (ctx.get('os_atrasadas_rows') or [])[:8]:
+            lines.append(
+                f"   - O.S. {r.get('id')} | {r.get('sistema')} | {r.get('equipamento') or r.get('ativo_nome')} | {r.get('data')}"
+            )
 
     lines.append("")
 
@@ -319,9 +333,12 @@ def _iris_generate_ai_report(tipo, ctx, periodo_label, empresa_nome=''):
     empresa_nome = empresa_nome or (current_company() or {}).get('nome') or 'Empresa'
 
     REGRAS = (
-        "Português brasileiro formal. Use apenas os dados fornecidos. "
+        "Português brasileiro formal. Use APENAS os dados fornecidos — nunca invente números. "
+        "Escreva como relatório executivo de diretoria (estilo dashboard financeiro): "
+        "resumo flash, indicadores-chave, o que mais quebrou, componentes mais trocados, "
+        "gastos por fornecedor, riscos e plano de ação priorizado. "
         "NÃO use tabelas markdown com pipes. Use **negrito** para destaques. "
-        "Seja analítico — interprete, não apenas liste. Sem introduções genéricas."
+        "Seja analítico — interprete causas, impactos e tendências. Sem introduções genéricas."
     )
 
     cabecalho = (

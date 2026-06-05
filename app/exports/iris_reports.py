@@ -168,6 +168,15 @@ def _iris_make_ai_pdf(tipo, month_ref='', year='', sistema='', upload_supabase=F
         pagamentos_aberto = sum(_iris_parse_br_float(p.get('valor')) for p in pags_abertos)
         combustivel_total = sum(_iris_parse_br_float(r.get('custo')) for r in comb_rows)
 
+        from app.exports.iris_data import _iris_aggregate_os_insights, _iris_top_fornecedores
+
+        os_insights = _iris_aggregate_os_insights(os_rows)
+        top_forn, _forn_total = _iris_top_fornecedores(pags_aprovados)
+        by_system_cost = {}
+        for p in pags_aprovados:
+            s = (p.get('sistema') or 'Não informado').strip() or 'Não informado'
+            by_system_cost[s] = by_system_cost.get(s, 0) + _iris_parse_br_float(p.get('valor'))
+
         ctx = {
             'os_rows': os_rows,
             'pagamentos': pags_aprovados,
@@ -179,24 +188,11 @@ def _iris_make_ai_pdf(tipo, month_ref='', year='', sistema='', upload_supabase=F
             'combustivel_total': combustivel_total,
             'gasto_realizado_total': pagamentos_total + combustivel_total,
             'pagamentos_pago': pagamentos_total,
-            'os_total': len(os_rows),
-            'os_custo_total': 0,
-            'by_system_os': [], 'by_unit_os': [],
-            'component_by_system': [], 'by_system_cost': [], 'by_system_os_cost': [],
+            'by_system_cost': sorted(by_system_cost.items(), key=lambda x: x[1], reverse=True),
+            'top_fornecedores': top_forn,
+            'fornecedores_total': _forn_total,
+            **os_insights,
         }
-
-        # Rankings
-        sys_os, unit_os, comp_sys = {}, {}, {}
-        for r in os_rows:
-            s = (r.get('sistema') or 'Não informado').strip()
-            u = (r.get('equipamento') or r.get('ativo_nome') or 'Não informado').strip()
-            sys_os[s] = sys_os.get(s, 0) + 1
-            unit_os[u] = unit_os.get(u, 0) + 1
-            if str(r.get('troca_componentes') or '').lower() == 'sim':
-                comp_sys[s] = comp_sys.get(s, 0) + 1
-        ctx['by_system_os'] = sorted(sys_os.items(), key=lambda x: x[1], reverse=True)
-        ctx['by_unit_os'] = sorted(unit_os.items(), key=lambda x: x[1], reverse=True)
-        ctx['component_by_system'] = sorted(comp_sys.items(), key=lambda x: x[1], reverse=True)
 
         # Período real
         _mes_real = br_now().month
@@ -588,27 +584,51 @@ def _iris_make_ai_pdf(tipo, month_ref='', year='', sistema='', upload_supabase=F
     # ── CONSTRUÇÃO DO CONTEÚDO ────────────────────────────────────────────
     elems_capa = [PageBreak()]  # A capa é desenhada no canvas, não em flowables
 
-    # KPIs — bloco de indicadores
+    # KPIs — bloco de indicadores (dashboard executivo)
     os_total = ctx.get('os_total', 0)
-    finalizadas_n = sum(1 for r in ctx.get('os_rows', []) if str(r.get('finalizada') or '').lower() == 'sim')
-    taxa_conclusao = f"{round(finalizadas_n/os_total*100,1)}%" if os_total else "—"
-    atrasadas_n = sum(1 for r in ctx.get('os_rows', []) if os_is_overdue(r))
+    finalizadas_n = ctx.get('os_finalizadas') or sum(
+        1 for r in ctx.get('os_rows', []) if str(r.get('finalizada') or '').lower() == 'sim'
+    )
+    taxa_conclusao = f"{ctx.get('os_taxa_conclusao', round(finalizadas_n/os_total*100, 1) if os_total else 0)}%"
+    atrasadas_n = ctx.get('os_atrasadas_count') or sum(1 for r in ctx.get('os_rows', []) if os_is_overdue(r))
+    trocas_n = ctx.get('trocas_total', 0)
+    top_sys = ctx['by_system_os'][0][0] if ctx.get('by_system_os') else '—'
+    top_comp = ctx['by_component'][0][0][:35] if ctx.get('by_component') else '—'
 
     kpi_data = [[
         kpi_card(str(os_total), 'O.S. no período'),
         kpi_card(taxa_conclusao, 'Taxa de conclusão', cor_valor=VERDE),
+        kpi_card(str(atrasadas_n), 'O.S. atrasadas', cor_fundo=colors.HexColor('#fde8e8'), cor_valor=colors.HexColor('#b42318')),
+        kpi_card(str(trocas_n), 'Trocas de componentes'),
         kpi_card(br_money(ctx.get('gasto_realizado_total', 0)), 'Gasto total'),
+    ]]
+    kpi_data2 = [[
         kpi_card(br_money(ctx.get('pagamentos_total', 0)), 'Pagamentos'),
+        kpi_card(br_money(ctx.get('pagamentos_aberto', 0)), 'Pendente', cor_fundo=colors.HexColor('#fff4e5'), cor_valor=colors.HexColor('#b54708')),
         kpi_card(br_money(ctx.get('combustivel_total', 0)), 'Combustível'),
+        kpi_card(top_sys[:18], 'Sistema crítico'),
+        kpi_card(top_comp[:18] or '—', 'Componente #1'),
     ]]
     kpi_tbl = Table(kpi_data, colWidths=[34*mm]*5)
-    kpi_tbl.setStyle(TableStyle([
-        ('LEFTPADDING', (0,0), (-1,-1), 1),
-        ('RIGHTPADDING', (0,0), (-1,-1), 1),
-        ('TOPPADDING', (0,0), (-1,-1), 0),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-        ('VALIGN', (0,0), (-1,-1), 'TOP'),
-    ]))
+    kpi_tbl2 = Table(kpi_data2, colWidths=[34*mm]*5)
+    for tbl in (kpi_tbl, kpi_tbl2):
+        tbl.setStyle(TableStyle([
+            ('LEFTPADDING', (0, 0), (-1, -1), 1),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 1),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+
+    flash_rows = [
+        ['Ordens de serviço', str(os_total), f'{finalizadas_n} finalizadas'],
+        ['Taxa de conclusão', taxa_conclusao, f'{atrasadas_n} em atraso'],
+        ['Gasto realizado', br_money(ctx.get('gasto_realizado_total', 0)), 'Pagamentos + combustível'],
+        ['Pagamentos aprovados', br_money(ctx.get('pagamentos_total', 0)), br_money(ctx.get('pagamentos_aberto', 0)) + ' pendente'],
+        ['Combustível', br_money(ctx.get('combustivel_total', 0)), ''],
+        ['Sistema com mais falhas', top_sys[:40], str(ctx['by_system_os'][0][1]) + ' O.S.' if ctx.get('by_system_os') else '—'],
+        ['Componente mais trocado', (ctx['by_component'][0][0][:45] if ctx.get('by_component') else '—'), str(ctx['by_component'][0][1]) + 'x' if ctx.get('by_component') else '—'],
+    ]
 
     elems_content = [
         Spacer(1, 5*mm),
@@ -620,14 +640,43 @@ def _iris_make_ai_pdf(tipo, month_ref='', year='', sistema='', upload_supabase=F
             spaceAfter=5*mm, leading=14)),
         HRFlowable(width='100%', thickness=1.5, color=AZUL_ESCURO, spaceAfter=5*mm),
         kpi_tbl,
+        Spacer(1, 3*mm),
+        kpi_tbl2,
+        Spacer(1, 6*mm),
+        Paragraph('RESUMO EXECUTIVO — UMA PÁGINA', st_h1),
+        make_table(['Indicador', 'Valor', 'Complemento'], flash_rows, col_widths=[70*mm, 50*mm, 50*mm]),
         Spacer(1, 6*mm),
     ]
 
-    # Análise da IA
+    if ctx.get('by_component'):
+        elems_content.append(Paragraph('COMPONENTES MAIS TROCADOS', st_h2))
+        comp_rows = []
+        for comp, qtd in ctx['by_component'][:12]:
+            perc = f"{round(qtd / trocas_n * 100, 1)}%" if trocas_n else '—'
+            comp_rows.append([comp[:55], str(qtd), perc])
+        elems_content.append(make_table(
+            ['Componente', 'Trocas', '% das trocas'],
+            comp_rows,
+            col_widths=[100*mm, 25*mm, 45*mm],
+        ))
+        elems_content.append(Spacer(1, 6*mm))
+
+    if ctx.get('equip_reincidentes'):
+        elems_content.append(Paragraph('EQUIPAMENTOS COM REINCIDÊNCIA', st_h2))
+        reinc_rows = [[e[:50], str(n), 'Revisar manutenção preventiva'] for e, n in ctx['equip_reincidentes'][:10]]
+        elems_content.append(make_table(
+            ['Equipamento', 'O.S.', 'Ação sugerida'],
+            reinc_rows,
+            col_widths=[80*mm, 20*mm, 70*mm],
+        ))
+        elems_content.append(Spacer(1, 6*mm))
+
+    elems_content.append(Paragraph('ANÁLISE INTELIGENTE IRIS', st_h1))
+    elems_content.append(HRFlowable(width='100%', thickness=1.5, color=AZUL_ESCURO, spaceAfter=4*mm))
+
     if texto_ia:
         elems_content.extend(parse_ai_text(texto_ia))
     else:
-        elems_content.append(Paragraph('Análise do período', st_h1))
         elems_content.append(Paragraph(
             f'O período {periodo_label} registrou {os_total} ordens de serviço, '
             f'com gasto total de {br_money(ctx.get("gasto_realizado_total", 0))}.',
