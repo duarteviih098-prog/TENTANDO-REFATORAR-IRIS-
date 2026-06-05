@@ -17,6 +17,9 @@ from app.storage import register_storage
 
 
 def wire_app(application):
+    from app.observability import register_observability
+
+    register_observability(application)
     register_auth(application)
     register_storage(application)
     register_shared(application)
