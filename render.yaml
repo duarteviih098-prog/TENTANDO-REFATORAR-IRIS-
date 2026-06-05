@@ -1,4 +1,4 @@
-# Blueprint Render (opcional) — Web Service IRIS
+# Blueprint Render — alinhado ao painel Getec/IRIS (variáveis secretas: preencher no dashboard)
 services:
   - type: web
     name: iris-web
@@ -14,3 +14,36 @@ services:
         value: "1"
       - key: APP_TIMEZONE
         value: America/Sao_Paulo
+      # Opcional: se omitida, o app deriva de SUPABASE_SERVICE_ROLE_KEY no Render
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: uploads
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MONITOR_IMAP_HOST
+        value: imap.gmail.com
+      - key: MONITOR_IMAP_USER
+        sync: false
+      - key: MONITOR_IMAP_PASS
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_CLAIMS_EMAIL
+        sync: false

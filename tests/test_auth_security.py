@@ -1,12 +1,15 @@
 """Testes de configuração e segurança P0."""
 
 import pytest
-from app.config import validate_production_config
+from app.config import resolve_secret_key, validate_production_config
 
 
 def test_production_rejects_weak_secret_key(monkeypatch):
     monkeypatch.setenv('RENDER', 'true')
     monkeypatch.delenv('IRIS_PRODUCTION', raising=False)
+    monkeypatch.delenv('SECRET_KEY', raising=False)
+    monkeypatch.delenv('FLASK_SECRET_KEY', raising=False)
+    monkeypatch.delenv('SUPABASE_SERVICE_ROLE_KEY', raising=False)
     with pytest.raises(RuntimeError, match='SECRET_KEY'):
         validate_production_config('gg-web-app')
 
@@ -17,6 +20,25 @@ def test_production_accepts_strong_secret_key(monkeypatch):
     monkeypatch.setenv('SUPABASE_URL', 'https://example.supabase.co')
     monkeypatch.setenv('SUPABASE_SERVICE_ROLE_KEY', 'test-key')
     validate_production_config('x' * 40)
+
+
+def test_resolve_secret_key_from_supabase_on_render(monkeypatch):
+    monkeypatch.setenv('RENDER', 'true')
+    monkeypatch.delenv('SECRET_KEY', raising=False)
+    monkeypatch.delenv('FLASK_SECRET_KEY', raising=False)
+    monkeypatch.setenv('SUPABASE_SERVICE_ROLE_KEY', 'sb_secret_' + ('x' * 32))
+    key = resolve_secret_key()
+    assert len(key) >= 32
+    assert key not in {'', 'gg-web-app'}
+
+
+def test_production_rejects_malformed_database_url(monkeypatch):
+    monkeypatch.setenv('RENDER', 'true')
+    monkeypatch.setenv('DATABASE_URL', 'postgresql://user:passhost:5432/db')
+    monkeypatch.setenv('SUPABASE_URL', 'https://example.supabase.co')
+    monkeypatch.setenv('SUPABASE_SERVICE_ROLE_KEY', 'x' * 40)
+    with pytest.raises(RuntimeError, match='DATABASE_URL inválida'):
+        validate_production_config('x' * 40)
 
 
 def test_dev_allows_default_secret_key(monkeypatch):
