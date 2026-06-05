@@ -35,6 +35,16 @@ def validate_production_config(secret_key):
         )
 
 
+def session_cookie_secure():
+    """HTTPS-only cookies em produção, salvo override explícito."""
+    explicit = os.getenv('SESSION_COOKIE_SECURE', '').strip().lower()
+    if explicit in ('0', 'false', 'no', 'off'):
+        return False
+    if explicit in ('1', 'true', 'yes', 'on'):
+        return True
+    return is_production_env()
+
+
 class Config:
     """Defaults carregados de variáveis de ambiente."""
 
@@ -42,9 +52,7 @@ class Config:
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
-    SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', '0').strip().lower() in (
-        '1', 'true', 'yes', 'on',
-    )
+    SESSION_COOKIE_SECURE = session_cookie_secure()
     SESSION_COOKIE_NAME = os.getenv('SESSION_COOKIE_NAME', 'iris_session')
     SESSION_COOKIE_PATH = '/'
     PERMANENT_SESSION_LIFETIME = timedelta(days=int(os.getenv('SESSION_DAYS', '7') or 7))
