@@ -17,6 +17,10 @@ Novas versões: prefixo numérico (`002_...`, `003_...`) + sufixo `.sqlite.sql` 
 2. A tabela `schema_migrations` registra versões já aplicadas.
 3. Depois, `ensure_db()` adiciona colunas/índices incrementais (compatibilidade).
 
+### Banco que já existia (staging/produção)
+
+Se `empresas`/`users`/`os_ordens` já existem mas `schema_migrations` está vazio, a `001` é **registrada sem recriar tabelas** (evita `DuplicateTable` no Postgres).
+
 ## Bootstrap banco vazio (local)
 
 ```bash

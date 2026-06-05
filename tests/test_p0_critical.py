@@ -6,12 +6,20 @@ from app.auth.constants import ALL_PERMISSIONS
 
 def test_migrations_applied_on_empty_db(flask_app):
     from app.db import migration_status, query_one
+    from app.db.migration_runner import apply_pending_migrations
 
     status = migration_status()
     assert '001' in status['applied']
     assert status['pending'] == []
     row = query_one("SELECT name FROM sqlite_master WHERE type='table' AND name='empresas'")
     assert row is not None
+    apply_pending_migrations()
+
+
+def test_baseline_detects_existing_schema(flask_app):
+    from app.db.migration_runner import _database_has_baseline
+
+    assert _database_has_baseline() is True
 
 
 def test_os_save_creates_record(admin_session, client):

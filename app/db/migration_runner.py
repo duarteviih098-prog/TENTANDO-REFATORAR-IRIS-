@@ -9,6 +9,7 @@ from app.db.queries import execute, query_all, query_one
 from app.shared.formatters import now_str
 
 VERSIONS_DIR = Path(__file__).resolve().parents[2] / 'migrations' / 'versions'
+BASELINE_MARKER_TABLES = ('empresas', 'users', 'os_ordens')
 
 
 def _split_sql_file(text):
@@ -76,6 +77,31 @@ def _apply_postgres_file(path):
         execute(pg_sql, params)
 
 
+def _database_has_baseline():
+    """Banco já existia antes das migrations versionadas (ex.: staging Render)."""
+    names = BASELINE_MARKER_TABLES
+    if settings.USE_POSTGRES:
+        row = query_one(
+            "SELECT COUNT(*) AS n FROM information_schema.tables "
+            "WHERE table_schema='public' AND table_name IN (?, ?, ?)",
+            names,
+        )
+    else:
+        row = query_one(
+            "SELECT COUNT(*) AS n FROM sqlite_master "
+            "WHERE type='table' AND name IN (?, ?, ?)",
+            names,
+        )
+    return int((row['n'] if row else 0) or 0) >= 2
+
+
+def _stamp_migration(version):
+    execute(
+        'INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)',
+        (version, now_str()),
+    )
+
+
 def apply_pending_migrations():
     """Aplica arquivos em migrations/versions/*.sql ainda não registrados."""
     applied = _applied_versions()
@@ -83,14 +109,15 @@ def apply_pending_migrations():
         version = path.name.split('_', 1)[0]
         if version in applied:
             continue
+        if version == '001' and _database_has_baseline():
+            _stamp_migration(version)
+            applied.add(version)
+            continue
         if settings.USE_POSTGRES:
             _apply_postgres_file(path)
         else:
             _apply_sqlite_file(path)
-        execute(
-            'INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)',
-            (version, now_str()),
-        )
+        _stamp_migration(version)
         applied.add(version)
 
 
