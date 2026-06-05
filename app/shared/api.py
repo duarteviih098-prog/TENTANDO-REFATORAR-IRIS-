@@ -27,6 +27,7 @@ MODULE_TABLE = {
     'custos': 'custos',
     'os': 'os_ordens',
     'os_ativos': 'os_ativos',
+    'inventario': 'inventario_itens',
 }
 
 DELETE_PERM = {
@@ -36,6 +37,7 @@ DELETE_PERM = {
     'custos': 'delete_custos',
     'os': 'delete_os',
     'os_ativos': 'edit_os',
+    'inventario': 'delete_inventario',
 }
 
 
