@@ -217,7 +217,11 @@
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="10" class="erp-empty">Nenhum registro encontrado para o período selecionado.</td></tr>
+      <tr><td colspan="10">
+        {% with icon='wallet2', title='Nenhum registro encontrado para o período selecionado.', hint='Altere o filtro de mês ou cadastre um novo pagamento.' %}
+          {% include 'partials/empty_state.html' %}
+        {% endwith %}
+      </td></tr>
       {% endfor %}
     </tbody>
   </table>
