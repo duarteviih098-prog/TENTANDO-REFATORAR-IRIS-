@@ -183,11 +183,25 @@ def company_and(table):
 def owned_by_current_company(table, rid):
     if table not in TENANT_TABLES or not table_has_column(table, 'empresa_id'):
         return True
-    if current_user_is_super_admin():
-        return True
     empresa_id = current_company_id()
-    row = query_one(f'SELECT id FROM {table} WHERE id=? AND empresa_id=?', (rid, empresa_id)) if empresa_id else None
-    return bool(row)
+    if not empresa_id:
+        return False
+    row = query_one(f'SELECT id, empresa_id FROM {table} WHERE id=?', (rid,))
+    if not row:
+        return False
+    row_empresa = int(row['empresa_id'] or 0)
+    if row_empresa == int(empresa_id):
+        return True
+    if current_user_is_super_admin():
+        from app.auth.audit import audit_security_event
+        audit_security_event(
+            'super_admin_acesso_negado_outra_empresa',
+            entidade=table,
+            entidade_id=rid,
+            detalhes={'empresa_contexto': int(empresa_id), 'empresa_registro': row_empresa},
+            resultado='bloqueado',
+        )
+    return False
 
 def list_companies(active_only=False):
     from app.exports.company_pdf import ensure_company_pdf_columns
