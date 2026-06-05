@@ -1360,6 +1360,20 @@ if ('caches' in window) {
 <script>
 // CSRF token global para requisições AJAX
 window.IRIS_CSRF_TOKEN = '{{ csrf_token() }}';
+(function(){
+  const _fetch = window.fetch.bind(window);
+  window.fetch = function(input, init){
+    init = init || {};
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const method = String((init.method || 'GET')).toUpperCase();
+    if (window.IRIS_CSRF_TOKEN && method !== 'GET' && url.indexOf('/api/') === 0) {
+      const headers = new Headers(init.headers || {});
+      if (!headers.has('X-CSRF-Token')) headers.set('X-CSRF-Token', window.IRIS_CSRF_TOKEN);
+      init.headers = headers;
+    }
+    return _fetch(input, init);
+  };
+})();
 
 // ── irisConfirm — modal de confirmação animado ──
 window.irisConfirm = function(opts){
