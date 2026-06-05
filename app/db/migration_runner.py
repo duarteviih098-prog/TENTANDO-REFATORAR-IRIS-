@@ -102,8 +102,37 @@ def _stamp_migration(version):
     )
 
 
+_MIGRATION_LOCK_ID = 42420101
+
+
+def _acquire_migration_lock():
+    """Evita corrida quando vários workers Gunicorn sobem juntos (Postgres)."""
+    if not settings.USE_POSTGRES:
+        return True
+    row = query_one('SELECT pg_try_advisory_lock(?) AS ok', (_MIGRATION_LOCK_ID,))
+    return bool(row and row['ok'])
+
+
+def _release_migration_lock():
+    if not settings.USE_POSTGRES:
+        return
+    try:
+        execute('SELECT pg_advisory_unlock(?)', (_MIGRATION_LOCK_ID,))
+    except Exception:
+        pass
+
+
 def apply_pending_migrations():
     """Aplica arquivos em migrations/versions/*.sql ainda não registrados."""
+    if not _acquire_migration_lock():
+        return
+    try:
+        _apply_pending_migrations_locked()
+    finally:
+        _release_migration_lock()
+
+
+def _apply_pending_migrations_locked():
     applied = _applied_versions()
     for path in _migration_files():
         version = path.name.split('_', 1)[0]

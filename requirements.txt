@@ -11,5 +11,4 @@ psycopg2-binary==2.9.10
 pandas==2.2.3
 pywebpush==2.0.3
 anthropic==0.52.0
-pytest==8.3.5
 sentry-sdk[flask]==2.25.1

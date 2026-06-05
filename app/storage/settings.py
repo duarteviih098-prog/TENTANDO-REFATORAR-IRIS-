@@ -1,7 +1,7 @@
 """Configuração Supabase Storage e pastas oficiais."""
 import os
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://njbzfjbponspalirndqj.supabase.co").rstrip("/")
+SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip().rstrip('/')
 SUPABASE_STORAGE_BUCKET = os.getenv("SUPABASE_STORAGE_BUCKET", "uploads").strip() or "uploads"
 SUPABASE_STORAGE_KEY = (
     os.getenv("SUPABASE_SERVICE_ROLE_KEY")

@@ -39,6 +39,17 @@ pytest tests/ -q
 
 Páginas de erro amigáveis (404/403/500) em `templates/errors/page.html`.
 
+## Documentação operacional
+
+| Doc | Conteúdo |
+|---|---|
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Render + Supabase + checklist pós-deploy |
+| [docs/MIGRATIONS.md](docs/MIGRATIONS.md) | Migrations versionadas e bootstrap |
+| [docs/RUNBOOK.md](docs/RUNBOOK.md) | O que fazer quando algo quebra |
+| [tools/README.md](tools/README.md) | Scripts utilitários |
+
+CI: `.github/workflows/ci.yml` (Ruff + pytest).
+
 ## Estrutura modular (refatoração concluída)
 
 ```
@@ -69,10 +80,15 @@ iris-cost/
 ├── templates/
 ├── static/
 ├── seed/
-├── tools/                   # scripts apply_module*.py (histórico da refatoração)
-├── requirements.txt
+├── tools/                   # bootstrap, backup, package (archive/ = histórico)
+├── migrations/versions/     # schema SQL versionado
+├── docs/                    # DEPLOY, MIGRATIONS, RUNBOOK
+├── requirements.txt         # produção
+├── requirements-dev.txt     # pytest + ruff
 ├── Procfile
 ├── runtime.txt
+├── render.yaml              # blueprint Render (opcional)
+├── .gitignore
 ├── .env.example
 └── README.md
 ```

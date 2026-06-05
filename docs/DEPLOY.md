@@ -11,9 +11,11 @@ Guia enxuto para subir o refatorado. **Não migra dados automaticamente.**
 
 ## 2. Render (Web Service)
 
+- **Runtime:** `python-3.11.9` (`runtime.txt`)
 - **Build:** `pip install -r requirements.txt`
-- **Start:** `gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120`
+- **Start:** `gunicorn wsgi:app --bind 0.0.0.0:$PORT --timeout 120` (igual ao `Procfile`)
 - **Health check:** `/health`
+- **Blueprint opcional:** `render.yaml`
 
 ### Variáveis obrigatórias
 
@@ -39,7 +41,7 @@ Copie Outlook, IA, VAPID etc. do ambiente antigo se usar esses módulos.
 
 ## 3. Código no GitHub
 
-Subir o repo refatorado (P0 aplicado). Deploy manual ou auto-deploy do Render.
+Subir o repo refatorado. Deploy manual ou auto-deploy do Render.
 
 ## 4. Primeiro boot
 
@@ -47,7 +49,7 @@ Subir o repo refatorado (P0 aplicado). Deploy manual ou auto-deploy do Render.
 - Banco **vazio** = sem usuários até cadastrar ou importar dados.
 - Login só funciona se existir registro em `users` + `empresas`.
 
-### Bootstrap manual (opcional, antes do deploy)
+### Bootstrap manual (opcional)
 
 ```bash
 python tools/bootstrap_db.py --db-path app.db
@@ -59,13 +61,9 @@ Detalhes: `docs/MIGRATIONS.md`.
 
 ## 5. Backup manual por empresa (P1)
 
-No servidor ou PC com `.env` apontando pro banco:
-
 ```bash
 python tools/export_company_backup.py --empresa-id 1
 ```
-
-Arquivo JSON em `backups/`.
 
 ## 6. Painéis ops (super-admin)
 
@@ -73,21 +71,13 @@ Arquivo JSON em `backups/`.
 - `/ops/jobs` — fila PDF
 - `/historico` — auditoria
 
-## 7. Worker PDF (limitação Render free)
+## 7. CI (GitHub Actions)
 
-- PDFs pesados rodam em fila (`/ops/jobs`). No plano free o processo web pode ser morto em jobs longos.
-- **Staging/produção:** monitorar `/ops/jobs` após gerar PDF mensal.
-- **P2 (futuro):** worker separado no Render ou job externo com mesmas env vars (`DATABASE_URL`, `SUPABASE_*`).
+- `.github/workflows/ci.yml` — `ruff check` + `pytest` em push/PR na `main`.
 
-## 8. CI (GitHub Actions)
-
-- Workflow `.github/workflows/ci.yml` roda `ruff check` + `pytest` em cada push/PR na `main`.
-- Merge só com CI verde.
-
-## 9. Checklist pós-deploy
+## 8. Checklist pós-deploy
 
 - [ ] `/health` retorna `{"status":"ok","db":"ok"}`
 - [ ] Login funciona
 - [ ] Upload/storage ok (teste anexo O.S.)
 - [ ] PDF mensal gera (ver `/ops/jobs`)
-- [ ] Sentry recebe erro de teste (se configurado)
