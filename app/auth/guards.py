@@ -47,6 +47,11 @@ def handle_unexpected_error(exc):
         return exc
 
     current_app.logger.exception('Erro inesperado: %s', exc)
+    try:
+        import sentry_sdk
+        sentry_sdk.capture_exception(exc)
+    except Exception:
+        pass
 
     path = request.path if has_request_context() else ''
 
