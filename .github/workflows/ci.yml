@@ -23,6 +23,8 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -61,6 +63,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
+      PYTHONPATH: .
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/iris_test
       SECRET_KEY: test-secret-key-with-32-chars-minimum-ok-for-ci
       SUPABASE_URL: https://example.supabase.co

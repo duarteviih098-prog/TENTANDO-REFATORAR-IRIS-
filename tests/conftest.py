@@ -1,8 +1,14 @@
 """Fixtures compartilhadas de teste."""
 import json
 import os
+import sys
 import tempfile
 import uuid
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 import pytest
 from werkzeug.security import generate_password_hash
