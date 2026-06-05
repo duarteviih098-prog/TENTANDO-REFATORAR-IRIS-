@@ -321,6 +321,109 @@ def _pdf_collect_os_image_paths(row):
             seen.add(key)
     return out
 
+
+def _pdf_datetime_label(raw, os_date=''):
+    """Data+hora para eventos do histórico (pausa/retomada/finalização)."""
+    text = str(raw or '').strip()
+    if not text:
+        return '-'
+    for fmt in ('%d/%m/%Y %H:%M:%S', '%d/%m/%Y %H:%M', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M'):
+        try:
+            return datetime.strptime(text, fmt).strftime('%d/%m/%Y %H:%M')
+        except Exception:
+            pass
+    hora = only_time_str(text)
+    if hora:
+        base = str(os_date or '').strip()
+        if base:
+            return f'{base} {hora}'
+        return hora
+    return _pdf_safe_text(text, max_len=32)
+
+
+def _pdf_time_label(raw, hist=None):
+    """Só hora (HH:MM) — a data da O.S. já aparece no cabeçalho."""
+    hora = only_time_str(raw)
+    if hora:
+        return hora
+    for ev in hist or []:
+        acao = str(ev.get('acao') or '').strip().lower()
+        if acao in ('iniciado', 'retomado'):
+            hora = only_time_str(ev.get('quando'))
+            if hora:
+                return hora
+    return '-'
+
+
+def _pdf_fim_label(raw, hist=None, finalizada=False):
+    """Hora de término/pausa atual, sem repetir a data do cabeçalho."""
+    hora = only_time_str(raw)
+    if hora:
+        return hora
+    if finalizada:
+        for ev in reversed(hist or []):
+            if str(ev.get('acao') or '').strip().lower() == 'finalizado':
+                hora = only_time_str(ev.get('quando'))
+                if hora:
+                    return hora
+    return '-'
+
+
+def _pdf_logo_candidates(side='left', empresa_id=None):
+    """Candidatos a arquivo de logo — identidade da empresa, depois static/."""
+    empresa_id = empresa_id or current_company_id()
+    static = BASE_DIR / 'static'
+    if side == 'right':
+        names = ('logo_direita.png', 'logo_cliente.png', 'logo.png')
+        static_names = ('logo_direita.png', 'logo_sidebar.png', 'iris_icon.png')
+    else:
+        names = ('logo_esquerda.png', 'logo.png')
+        static_names = ('logo_esquerda.png', 'logo.png', 'iris_icon.png')
+    paths = []
+    for name in names:
+        found = company_identity_file(name, empresa_id)
+        if found:
+            paths.append(found)
+    for name in static_names:
+        paths.append(static / name)
+    return paths
+
+
+def _pdf_draw_logo_in_box(canvas, box_x, box_y, box_w, box_h, candidates):
+    """Desenha a primeira logo válida da lista dentro da caixa do cabeçalho."""
+    for candidate in candidates:
+        path_obj = Path(candidate) if candidate else None
+        if not path_obj or not path_obj.exists():
+            continue
+        try:
+            img = ImageReader(str(path_obj))
+            w, h = img.getSize()
+            if not w or not h:
+                continue
+            scale = min(box_w / w, box_h / h)
+            draw_w = w * scale
+            draw_h = h * scale
+            draw_x = box_x + (box_w - draw_w) / 2
+            draw_y = box_y + (box_h - draw_h) / 2
+            for mask in ('auto', None):
+                try:
+                    canvas.drawImage(
+                        str(path_obj),
+                        draw_x,
+                        draw_y,
+                        width=draw_w,
+                        height=draw_h,
+                        preserveAspectRatio=True,
+                        mask=mask,
+                    )
+                    return True
+                except Exception:
+                    continue
+        except Exception as exc:
+            print(f'PDF logo ignorada ({path_obj.name}):', exc)
+    return False
+
+
 def _img_square_rlimage(path_str, size_px=None):
     raw = str(path_str or '').strip()
     if not raw:
@@ -382,51 +485,17 @@ def _draw_pdf_header(canvas, doc, title='', subtitle=''):
     top_y = page_h - 6 * mm
     logo_box_w = 34 * mm
     logo_box_h = 12 * mm
+    logo_box_y = top_y - logo_box_h
 
-    left_logo = company_identity_file('logo_esquerda.png', current_company_id()) or company_identity_file('logo.png', current_company_id())
-    right_logo = company_identity_file('logo_direita.png', current_company_id())
-
-    fallback_left = BASE_DIR / 'static' / 'logo_esquerda.png'
-    fallback_right = BASE_DIR / 'static' / 'logo_direita.png'
-
-    def _draw_logo(path_obj, box_x, fallback_path):
-        if not path_obj:
-            path_obj = fallback_path
-
-        path_obj = Path(path_obj)
-
-        if not path_obj.exists():
-            path_obj = Path(fallback_path)
-
-        if not path_obj.exists():
-            return
-
-        try:
-            img = ImageReader(str(path_obj))
-            w, h = img.getSize()
-            if not w or not h:
-                return
-
-            scale = min(logo_box_w / w, logo_box_h / h)
-            draw_w = w * scale
-            draw_h = h * scale
-            draw_x = box_x + (logo_box_w - draw_w) / 2
-            draw_y = (top_y - logo_box_h) + (logo_box_h - draw_h) / 2
-
-            canvas.drawImage(
-                str(path_obj),
-                draw_x,
-                draw_y,
-                width=draw_w,
-                height=draw_h,
-                preserveAspectRatio=True,
-                mask='auto'
-            )
-        except Exception:
-            return
-
-    _draw_logo(left_logo, margin_x, fallback_left)
-    _draw_logo(right_logo, right_x - logo_box_w, fallback_right)
+    empresa_id = current_company_id()
+    _pdf_draw_logo_in_box(
+        canvas, margin_x, logo_box_y, logo_box_w, logo_box_h,
+        _pdf_logo_candidates('left', empresa_id),
+    )
+    _pdf_draw_logo_in_box(
+        canvas, right_x - logo_box_w, logo_box_y, logo_box_w, logo_box_h,
+        _pdf_logo_candidates('right', empresa_id),
+    )
 
     if title:
         canvas.setFillColor(colors.black)
@@ -589,12 +658,19 @@ def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
 
         finalizada_pdf = (r.get('finalizada') or ('Sim' if str(r.get('status') or '').strip().lower() == 'finalizada' else 'Não')).strip().title()
 
-        # Dados de data+hora completos (novo formato) ou hora simples (legado)
-        _di_raw = r.get('data_inicio') or ''
-        _df_raw = r.get('data_fim') or ''
-        _di_label = _di_raw if _di_raw else '-'
-        _df_label = _df_raw if _df_raw else '-'
-        _tempo = elapsed_label('', '', r.get('acumulado_minutos') or 0, running=False) or '-'
+        try:
+            _hist = json.loads(r.get('historico_pausas') or '[]')
+        except Exception:
+            _hist = []
+
+        os_data = _pdf_safe_text(row_get_value(r, 'data', '') or '')
+        _di_label = _pdf_time_label(r.get('data_inicio'), _hist)
+        _df_label = _pdf_fim_label(
+            r.get('data_fim'),
+            _hist,
+            finalizada=str(finalizada_pdf).strip().lower() == 'sim',
+        )
+        _tempo = elapsed_label(r.get('data_inicio'), r.get('data_fim'), r.get('acumulado_minutos') or 0, running=False) or '-'
 
         info = [
             ['O.S.', _pdf_safe_text(r.get('numero_os') or r.get('id') or ''), 'Sistema', _pdf_safe_text(row_get_value(r, 'sistema', '') or '')],
@@ -603,18 +679,13 @@ def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
             ['Início', _pdf_safe_text(_di_label), 'Fim', _pdf_safe_text(_df_label)],
         ]
 
-        # Histórico de pausas/retomadas
-        try:
-            _hist = json.loads(r.get('historico_pausas') or '[]')
-        except Exception:
-            _hist = []
-
-        # Adiciona linhas de pausa/retomada/finalizado ao info
         for _ev in _hist:
             _acao = str(_ev.get('acao') or '').strip().lower()
-            _quando = _pdf_safe_text(_ev.get('quando') or '')
+            _quando = _pdf_datetime_label(_ev.get('quando'), os_date=os_data)
             _motivo_ev = _pdf_safe_text(_ev.get('motivo') or '')
-            if _acao == 'pausado':
+            if _acao == 'iniciado':
+                info.append(['Iniciado em', _quando, '', ''])
+            elif _acao == 'pausado':
                 info.append(['Pausado em', _quando, 'Motivo', _motivo_ev or '-'])
             elif _acao == 'retomado':
                 info.append(['Retomado em', _quando, '', ''])
@@ -646,7 +717,9 @@ def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
         for i, row_info in enumerate(info):
             if i >= 4:  # linhas do histórico
                 _acao_row = str(row_info[0]).lower()
-                if 'pausado' in _acao_row:
+                if 'iniciado' in _acao_row:
+                    _info_style.append(('BACKGROUND', (0,i), (-1,i), colors.HexColor('#ecfdf5')))
+                elif 'pausado' in _acao_row:
                     _info_style.append(('BACKGROUND', (0,i), (-1,i), colors.HexColor('#fffbeb')))
                 elif 'retomado' in _acao_row:
                     _info_style.append(('BACKGROUND', (0,i), (-1,i), colors.HexColor('#f0fdf4')))
@@ -894,7 +967,8 @@ def _build_os_pdf_mes_buffer(mes, include_all_images=False, use_cache=False):
     desired = [
         'id', 'data', 'sistema', 'equipamento', 'ativo_nome', 'status', 'finalizada',
         'criticidade', 'responsavel', 'data_inicio', 'data_fim', 'descricao',
-        'servico_executado', 'imagens', 'teve_terceiro', 'quem_foi_terceiro', 'empresa_id'
+        'servico_executado', 'imagens', 'teve_terceiro', 'quem_foi_terceiro', 'empresa_id',
+        'historico_pausas', 'motivo_pausa', 'acumulado_minutos',
     ]
     fields = select_existing_columns('os_ordens', desired, fallback='id')
     where_sql, params = company_where('os_ordens')
@@ -1025,7 +1099,8 @@ def os_pdf_dia():
 
     os_pdf_cols = select_existing_columns('os_ordens', [
         'id','data','sistema','equipamento','ativo_nome','status','finalizada','criticidade','responsavel',
-        'data_inicio','data_fim','descricao','servico_executado','imagens','teve_terceiro','quem_foi_terceiro','empresa_id'
+        'data_inicio','data_fim','descricao','servico_executado','imagens','teve_terceiro','quem_foi_terceiro',
+        'historico_pausas','motivo_pausa','acumulado_minutos','empresa_id'
     ])
     where_sql, params = company_where('os_ordens')
     params = list(params)
