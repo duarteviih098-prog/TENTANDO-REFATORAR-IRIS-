@@ -18,7 +18,9 @@ def test_health_route(flask_app):
     client = flask_app.test_client()
     response = client.get('/health')
     assert response.status_code == 200
-    assert response.get_data(as_text=True).strip().lower() in ('ok', '"ok"')
+    data = response.get_json()
+    assert data.get('status') == 'ok'
+    assert data.get('db') == 'ok'
 
 
 def test_route_count_stable(flask_app):

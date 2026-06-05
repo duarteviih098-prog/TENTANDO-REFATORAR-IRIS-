@@ -33,6 +33,9 @@ def test_owned_by_current_company_blocks_cross_tenant(flask_app):
     from app.auth.tenancy import owned_by_current_company
     from app.db import execute, query_one
 
+    execute('DELETE FROM os_ordens')
+    execute('DELETE FROM empresas')
+
     suffix = uuid.uuid4().hex[:8]
     e1 = execute(
         "INSERT INTO empresas(nome,cidade,dominio_email,ativo,criado_em) VALUES (?,?,?,1,'01/01/2026')",
@@ -48,7 +51,6 @@ def test_owned_by_current_company_blocks_cross_tenant(flask_app):
     )
     with flask_app.test_request_context('/'):
         from flask import session
-        session['user_id'] = 1
         session['empresa_id'] = e1
         session['selected_empresa_id'] = e1
         assert owned_by_current_company('os_ordens', os_id) is False
