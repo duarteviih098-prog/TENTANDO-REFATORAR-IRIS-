@@ -496,7 +496,11 @@ html[data-theme="dark"] .gg-toast.show.error{background:#450a0a;color:#fca5a5;bo
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="11" class="os-empty">Nenhuma O.S. encontrada para os filtros selecionados.</td></tr>
+      <tr><td colspan="11">
+        {% with icon='clipboard-x', title='Nenhuma O.S. encontrada para os filtros selecionados.', hint='Ajuste os filtros ou cadastre uma nova O.S.' %}
+          {% include 'partials/empty_state.html' %}
+        {% endwith %}
+      </td></tr>
       {% endfor %}
       </tbody>
     </table>
@@ -814,6 +818,7 @@ document.getElementById('osPdfDiaBtn')?.addEventListener('click', (e) => {
     v = prompt('Digite a data para o PDF (dd/mm/aaaa):');
     if(!v) return;
   }
+  if(typeof window.irisShowBusy==='function') window.irisShowBusy('Gerando PDF…', 45000);
   window.open('/os/pdf/dia?data=' + encodeURIComponent(v), '_blank');
 });
 document.getElementById('osPdfMesBtn')?.addEventListener('click', (e) => {
@@ -825,6 +830,7 @@ document.getElementById('osPdfMesBtn')?.addEventListener('click', (e) => {
     v = prompt('Digite o mês para o PDF (MM/AAAA):', mesAtual);
     if(!v) return;
   }
+  if(typeof window.irisShowBusy==='function') window.irisShowBusy('Gerando PDF…', 45000);
   window.open('/os/pdf/mes?mes=' + encodeURIComponent(v), '_blank');
 });
 
