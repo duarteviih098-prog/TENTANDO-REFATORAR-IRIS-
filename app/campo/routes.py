@@ -920,6 +920,10 @@ def campo_tecnico(rid, token):
             evento = {'acao': acao_hist, 'quando': now_full}
             if motivo:
                 evento['motivo'] = motivo
+            if acao_hist == 'iniciado' and any(e.get('acao') == 'iniciado' for e in hist):
+                return
+            if acao_hist == 'finalizado' and any(e.get('acao') == 'finalizado' for e in hist):
+                return
             hist.append(evento)
             execute('UPDATE os_ordens SET historico_pausas=? WHERE id=?',
                     (json.dumps(hist, ensure_ascii=False), rid))
@@ -975,13 +979,6 @@ def campo_tecnico(rid, token):
             hist_atual = json.loads(row_atual.get('historico_pausas') or '[]')
             if not any(e.get('acao') == 'iniciado' for e in hist_atual):
                 _hist_add('iniciado', f'Responsável: {responsavel_novo or "não informado"}')
-
-            # Registra no histórico só na primeira vez
-            if '_hist_add' in dir():
-                row_atual = row_to_dict(query_one('SELECT historico_pausas FROM os_ordens WHERE id=?', (rid,))) or {}
-                hist_atual = json.loads(row_atual.get('historico_pausas') or '[]')
-                if not any(e.get('acao') == 'iniciado' for e in hist_atual):
-                    _hist_add('iniciado', f'Responsável: {responsavel_novo or "não informado"}')
             campo_evento_registrar(rid, empresa_id, 'iniciar', f"Responsável: {responsavel_novo or 'não informado'}.")
             clear_view_cache()
             row = row_to_dict(query_one('SELECT * FROM os_ordens WHERE id=?', (rid,)))
@@ -1029,6 +1026,11 @@ def campo_tecnico(rid, token):
             clear_view_cache()
             row = row_to_dict(query_one('SELECT * FROM os_ordens WHERE id=?', (rid,)))
             return render_template('campo_tecnico.html', row=prepare_os_row_for_template(row), token=token, sucesso='Atendimento retomado. O tempo voltou a contar.', erro=None)
+
+        if acao == 'finalizar' or (acao == 'salvar' and request.form.get('campo_problema') and request.form.get('servico_executado')):
+            if finalizada == 'Sim' or str(status).strip().lower() in ('finalizada', 'finalizado'):
+                return render_template('campo_tecnico.html', row=prepare_os_row_for_template(row), token=token, tecnico_token=tecnico_token, erro='Esta O.S. já foi finalizada.')
+            acao = 'finalizar'
 
         if acao == 'finalizar':
             problema = (request.form.get('campo_problema') or '').strip()
