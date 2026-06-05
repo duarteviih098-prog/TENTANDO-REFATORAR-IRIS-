@@ -376,6 +376,12 @@ def ensure_db():
     except Exception as exc:
         print('ensure_db: criar pdf_jobs falhou:', exc)
 
+    try:
+        from app.auth.security_store import ensure_auth_security_tables
+        ensure_auth_security_tables()
+    except Exception as exc:
+        print('ensure_db: auth security tables falhou:', exc)
+
 
 def ensure_indexes():
     """Cria índices nas tabelas principais para acelerar queries frequentes.
