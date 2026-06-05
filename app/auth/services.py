@@ -82,8 +82,22 @@ def default_landing_url():
 
 
 def permission_denied_redirect(message='Você não tem permissão para acessar essa área.'):
-    """Redireciona com segurança quando falta permissão."""
-    from flask import flash, redirect, url_for
+    """Redireciona ou mostra página 403 quando falta permissão."""
+    from flask import flash, redirect, request, session, url_for
+
+    if request.path.startswith('/api/') or (request.is_json and request.method != 'GET'):
+        from flask import jsonify
+        return jsonify({'ok': False, 'error': message}), 403
+
+    if session.get('user_id'):
+        from app.shared.errors import render_error_page
+        return render_error_page(
+            403,
+            'Sem permissão',
+            message,
+            tone='danger',
+            back_label='Voltar ao início',
+        )
 
     flash(message, 'danger')
     landing = default_landing_url()
