@@ -33,6 +33,18 @@ def validate_production_config(secret_key):
             'SECRET_KEY insegura ou ausente em produção. '
             'Defina SECRET_KEY com pelo menos 32 caracteres aleatórios no Render.'
         )
+    if not os.getenv('DATABASE_URL', '').strip():
+        raise RuntimeError(
+            'DATABASE_URL obrigatória em produção. Configure o Postgres/Supabase no Render.'
+        )
+    if not os.getenv('SUPABASE_URL', '').strip():
+        raise RuntimeError(
+            'SUPABASE_URL obrigatória em produção para anexos e storage.'
+        )
+    if not os.getenv('SUPABASE_SERVICE_ROLE_KEY', '').strip():
+        raise RuntimeError(
+            'SUPABASE_SERVICE_ROLE_KEY obrigatória em produção.'
+        )
 
 
 def session_cookie_secure():

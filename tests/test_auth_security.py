@@ -15,6 +15,9 @@ def test_production_rejects_weak_secret_key(monkeypatch):
 
 def test_production_accepts_strong_secret_key(monkeypatch):
     monkeypatch.setenv('RENDER', 'true')
+    monkeypatch.setenv('DATABASE_URL', 'postgresql://user:pass@localhost/db')
+    monkeypatch.setenv('SUPABASE_URL', 'https://example.supabase.co')
+    monkeypatch.setenv('SUPABASE_SERVICE_ROLE_KEY', 'test-key')
     validate_production_config('x' * 40)
 
 
@@ -31,6 +34,9 @@ def test_tenant_tables_include_inventario():
     assert 'inventario_itens' in TENANT_TABLES
     assert 'inventario_pedidos' in TENANT_TABLES
     assert 'campo_tecnicos' in TENANT_TABLES
+    assert 'campo_eventos' in TENANT_TABLES
+    assert 'push_subscriptions' in TENANT_TABLES
+    assert 'audit_logs' in TENANT_TABLES
 
 
 def test_password_reset_token_roundtrip(flask_app):

@@ -48,7 +48,9 @@ Páginas de erro amigáveis (404/403/500) em `templates/errors/page.html`.
 | [docs/RUNBOOK.md](docs/RUNBOOK.md) | O que fazer quando algo quebra |
 | [tools/README.md](tools/README.md) | Scripts utilitários |
 
-CI: `.github/workflows/ci.yml` (Ruff + pytest).
+CI: `.github/workflows/ci.yml` (lint + pytest com coverage + job Postgres + Dependabot).
+
+Segurança: `SECRET_KEY`/Supabase obrigatórios em produção, CSRF em APIs JSON, tenant isolation, login rate-limit no banco — testes em `tests/test_security_complete.py`.
 
 ## Estrutura modular (refatoração concluída)
 

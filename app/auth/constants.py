@@ -79,5 +79,6 @@ TENANT_TABLES = {
     'users', 'bombas', 'combustivel', 'pagamentos', 'custos', 'os_ativos', 'os_ordens',
     'email_history', 'email_monitor_events', 'email_test_history', 'email_monitor_test_runs',
     'recebimentos', 'inventario_itens', 'inventario_movimentos', 'inventario_pedidos',
-    'campo_tecnicos', 'pdf_jobs', 'combustivel_veiculos', 'bombas_locais', 'bombas_movimentacoes',
+    'campo_tecnicos', 'campo_eventos', 'push_subscriptions', 'audit_logs',
+    'pdf_jobs', 'combustivel_veiculos', 'bombas_locais', 'bombas_movimentacoes',
 }
