@@ -269,6 +269,38 @@ def visao_global():
     return render_template('visao_global.html', resumo=resumo)
 
 
+def ops_jobs():
+    """Painel super-admin: fila de jobs PDF e status recentes."""
+    if not current_user_is_super_admin():
+        flash('Somente Administradores Supremos acessam operações.', 'danger')
+        return redirect(url_for('dashboard'))
+    from app.auth.audit import audit_security_event
+    audit_security_event('super_admin_ops_jobs', entidade='pdf_jobs', detalhes={'scope': 'recent'})
+
+    if not table_has_column('pdf_jobs', 'id'):
+        jobs = []
+        stats = {'total': 0, 'gerando': 0, 'erro': 0, 'pronto': 0}
+    else:
+        jobs = [
+            row_to_dict(r)
+            for r in query_all(
+                '''SELECT j.*, e.nome AS empresa_nome, u.nome AS usuario_nome
+                   FROM pdf_jobs j
+                   LEFT JOIN empresas e ON e.id = j.empresa_id
+                   LEFT JOIN users u ON u.id = j.usuario_id
+                   ORDER BY j.id DESC LIMIT 80''',
+                (),
+            )
+        ]
+        stats = {
+            'total': (query_one('SELECT COUNT(*) AS c FROM pdf_jobs') or {'c': 0})['c'],
+            'gerando': (query_one("SELECT COUNT(*) AS c FROM pdf_jobs WHERE status IN ('pendente','gerando')") or {'c': 0})['c'],
+            'erro': (query_one("SELECT COUNT(*) AS c FROM pdf_jobs WHERE status='erro'") or {'c': 0})['c'],
+            'pronto': (query_one("SELECT COUNT(*) AS c FROM pdf_jobs WHERE status='pronto'") or {'c': 0})['c'],
+        }
+    return render_template('ops_jobs.html', jobs=jobs, stats=stats)
+
+
 def usuarios_page():
     if not current_user_is_super_admin():
         return permission_denied_redirect('Somente a Administradora Suprema pode criar empresas, usuários e permissões.')
@@ -566,6 +598,7 @@ def register_routes(app):
         ('/historico', 'historico_page', historico_page, ['GET']),
         ('/empresa/contexto/<int:empresa_id>', 'empresa_contexto', empresa_contexto, ['GET']),
         ('/visao-global', 'visao_global', visao_global, ['GET']),
+        ('/ops/jobs', 'ops_jobs', ops_jobs, ['GET']),
         ('/usuarios', 'usuarios_page', usuarios_page, ['GET']),
         ('/empresas/save', 'empresas_save', empresas_save, ['POST']),
         ('/empresas/update/<int:empresa_id>', 'empresas_update', empresas_update, ['POST']),
