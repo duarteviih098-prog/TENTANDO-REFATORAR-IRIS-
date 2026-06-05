@@ -11,11 +11,13 @@ from app.shared.formatters import br_now, now_str
 from app.shared.rows import row_to_dict
 
 from app.auth.constants import TENANT_TABLES
+from app.exports.company_pdf import ensure_company_pdf_columns
 from app.storage.paths import (
     company_identity_config_path,
     company_identity_dir,
     tenant_upload_dir,
 )
+from app.storage.settings import OS_STORAGE_FOLDER, PAYMENT_STORAGE_FOLDER
 
 
 def query_one(sql, params=()):
