@@ -1,4 +1,4 @@
-"""Rotas compartilhadas: health, loading, intro e dashboard."""
+"""Rotas compartilhadas: health, loading, dashboard e raiz."""
 import re
 from datetime import timedelta
 from pathlib import Path
@@ -12,7 +12,7 @@ from app.shared.payments import compute_payments_totals, payment_status_is_paid
 from app.shared.queries import fetch_sistemas_map
 from app.shared.rows import row_get_value, row_to_dict
 
-from flask import render_template, request, send_from_directory, session
+from flask import redirect, render_template, request, send_from_directory, session, url_for
 
 from app.auth.decorators import require_permission
 from app.config import PROJECT_ROOT
@@ -63,7 +63,12 @@ def campo_loading():
 
 
 def intro():
-    return render_template('intro.html')
+    """Raiz do app — redireciona para a landing do usuário (não usa mais intro.html legado)."""
+    from app.auth.services import default_landing_url
+
+    if not session.get('user_id'):
+        return redirect(url_for('login', next=request.path))
+    return redirect(default_landing_url())
 
 
 @require_permission('view_dashboard')
