@@ -8,8 +8,11 @@ USE_POSTGRES = settings.USE_POSTGRES
 def ensure_db():
     from app.combustivel.constants import COMBUSTIVEL_VINCULOS
     from app.campo.services import _token_expira_str
+    from app.db.migration_runner import apply_pending_migrations
     from app.shared.formatters import now_str
     from app.shared.rows import row_to_dict
+
+    apply_pending_migrations()
     """Garante colunas que podem faltar nas tabelas do módulo Outlook e outros."""
 
     # Colunas do módulo Outlook — evita erro "column does not exist" no PostgreSQL

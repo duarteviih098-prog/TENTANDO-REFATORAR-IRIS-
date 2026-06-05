@@ -296,7 +296,7 @@ def save_pagamento(data, files=None, rid=None):
     # Se tipo for Terceiros mas não tiver nome, limpa; se não for Terceiros, limpa o nome
     if payload.get('tipo_lancamento') != 'Terceiros':
         payload['terceiro_nome'] = ''
-    payload['pagamento_mes'] = _payment_month_or_current(payload.get('pagamento_mes'))
+    payload['pagamento_mes'] = payment_month_or_current(payload.get('pagamento_mes'))
     payload['anexos_orcamento'] = json.dumps(anexos_orc, ensure_ascii=False)
     payload['anexos_nf'] = json.dumps(anexos_nf, ensure_ascii=False)
     payload['anexos_boleto'] = json.dumps(anexos_boleto, ensure_ascii=False)

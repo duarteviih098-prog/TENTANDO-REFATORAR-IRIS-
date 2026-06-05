@@ -1,12 +1,4 @@
 """Smoke tests — import do app e rotas críticas."""
-import pytest
-
-
-@pytest.fixture(scope='module')
-def flask_app():
-    from app import app as application
-    application.config.update(TESTING=True)
-    return application
 
 
 def test_app_imports():

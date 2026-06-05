@@ -273,6 +273,33 @@ def renumerar_os_por_mes(empresa_id=None):
         return False
 
 
+def _push_nova_os_worker(os_id, payload):
+    """Envia Web Push para técnicos da empresa quando uma O.S. nova é criada."""
+    _ensure_push_subscriptions_table()
+    empresa_id = int(payload.get('empresa_id') or current_company_id() or 0)
+    numero = str(payload.get('numero_os') or os_id)
+    sistema = str(payload.get('sistema') or '').strip()
+    equipamento = str(payload.get('equipamento') or '').strip()
+    body_parts = [p for p in (sistema, equipamento) if p]
+    body = ' — '.join(body_parts) if body_parts else 'Nova ordem de serviço disponível.'
+    title = f'Nova O.S. #{numero}'
+    url = f'/campo?os={os_id}'
+    subs = query_all(
+        'SELECT * FROM push_subscriptions WHERE empresa_id=? AND ativo=1',
+        (empresa_id,),
+    )
+    for row in subs:
+        sub = row_to_dict(row)
+        _send_push(
+            {'endpoint': sub['endpoint'], 'keys': {'p256dh': sub['p256dh'], 'auth': sub['auth']}},
+            title,
+            body,
+            url,
+        )
+
+
+def _push_nova_os_async(os_id, payload):
+    threading.Thread(target=_push_nova_os_worker, args=(os_id, payload), daemon=True).start()
 
 
 def save_os(data, image_files=None, orcamento_files=None, rid=None):

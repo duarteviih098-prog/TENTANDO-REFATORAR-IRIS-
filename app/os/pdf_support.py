@@ -23,7 +23,7 @@ from app.os.pdf_common import (
     _PDF_IMAGE_CACHE_LOCK,
     current_company_id,
 )
-from app.shared.formatters import parse_br_date
+from app.shared.formatters import only_time_str, parse_br_date
 from app.storage import company_folder_name, company_identity_dir, company_identity_file, load_company_identity_config
 from app.storage.attachments import read_attachment_bytes_fast, resolve_os_upload_path
 from app.storage.paths import BASE_DIR, normalize_storage_path

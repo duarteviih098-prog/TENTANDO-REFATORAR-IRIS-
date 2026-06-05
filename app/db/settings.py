@@ -1,10 +1,12 @@
 """Configuração de conexão (SQLite local / Postgres Supabase)."""
 import os
 import threading
+from pathlib import Path
 
 from app.config import PROJECT_ROOT
 
-DB_PATH = PROJECT_ROOT / 'app.db'
+_test_db = os.getenv('IRIS_TEST_DB', '').strip()
+DB_PATH = Path(_test_db) if _test_db else PROJECT_ROOT / 'app.db'
 
 DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
 SUPABASE_DB_HOST = os.getenv('SUPABASE_DB_HOST', '').strip()

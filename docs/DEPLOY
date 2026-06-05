@@ -43,9 +43,19 @@ Subir o repo refatorado (P0 aplicado). Deploy manual ou auto-deploy do Render.
 
 ## 4. Primeiro boot
 
-- App roda `ensure_db()` e cria tabelas/colunas faltantes.
+- App roda `ensure_db()` → aplica migrations em `migrations/versions/` e depois colunas/índices incrementais.
 - Banco **vazio** = sem usuários até cadastrar ou importar dados.
 - Login só funciona se existir registro em `users` + `empresas`.
+
+### Bootstrap manual (opcional, antes do deploy)
+
+```bash
+python tools/bootstrap_db.py --db-path app.db
+```
+
+Postgres: defina `DATABASE_URL` e rode `python tools/bootstrap_db.py`.
+
+Detalhes: `docs/MIGRATIONS.md`.
 
 ## 5. Backup manual por empresa (P1)
 
@@ -63,7 +73,18 @@ Arquivo JSON em `backups/`.
 - `/ops/jobs` — fila PDF
 - `/historico` — auditoria
 
-## 7. Checklist pós-deploy
+## 7. Worker PDF (limitação Render free)
+
+- PDFs pesados rodam em fila (`/ops/jobs`). No plano free o processo web pode ser morto em jobs longos.
+- **Staging/produção:** monitorar `/ops/jobs` após gerar PDF mensal.
+- **P2 (futuro):** worker separado no Render ou job externo com mesmas env vars (`DATABASE_URL`, `SUPABASE_*`).
+
+## 8. CI (GitHub Actions)
+
+- Workflow `.github/workflows/ci.yml` roda `ruff check` + `pytest` em cada push/PR na `main`.
+- Merge só com CI verde.
+
+## 9. Checklist pós-deploy
 
 - [ ] `/health` retorna `{"status":"ok","db":"ok"}`
 - [ ] Login funciona

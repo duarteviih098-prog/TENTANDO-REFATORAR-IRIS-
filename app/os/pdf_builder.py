@@ -43,6 +43,7 @@ from app.shared.months import normalize_month_reference
 from app.shared.rows import row_get_value, row_matches_month, row_to_dict
 from app.storage import company_identity_dir, company_identity_file, load_company_identity_config, sync_os_attachments
 from app.os.pdf_common import (
+    PDF_MAX_IMAGES_PER_OS,
     PDF_MONTH_MAX_IMAGES_PER_OS,
     _bg,
     company_where,

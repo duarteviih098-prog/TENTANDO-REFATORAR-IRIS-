@@ -1,7 +1,17 @@
 """Fixtures compartilhadas de teste."""
+import json
 import os
+import tempfile
+import uuid
 
 import pytest
+from werkzeug.security import generate_password_hash
+
+# Banco isolado por sessão de testes (antes de importar o app).
+_fd, _TEST_DB_PATH = tempfile.mkstemp(suffix='.db')
+os.close(_fd)
+os.environ['IRIS_TEST_DB'] = _TEST_DB_PATH
+os.environ.setdefault('SECRET_KEY', 'test-secret-key-with-32-chars-minimum-ok')
 
 
 def _clear_schema_cache(*tables):
@@ -18,42 +28,60 @@ def _clear_schema_cache(*tables):
         db_schema._TABLE_COLUMN_CACHE.clear()
 
 
-def ensure_minimal_test_schema():
-    """Tabelas base para testes de tenancy (SQLite local sem seed)."""
-    from app.db import execute
+def ensure_test_schema():
+    from app.db.migration_runner import apply_pending_migrations
 
-    execute(
-        """CREATE TABLE IF NOT EXISTS empresas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT DEFAULT '',
-            cidade TEXT DEFAULT '',
-            dominio_email TEXT DEFAULT '',
-            ativo INTEGER DEFAULT 1,
-            criado_em TEXT DEFAULT ''
-        )"""
-    )
-    execute(
-        """CREATE TABLE IF NOT EXISTS os_ordens (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            numero_os TEXT DEFAULT '',
-            status TEXT DEFAULT '',
-            finalizada TEXT DEFAULT '',
-            empresa_id INTEGER,
-            data TEXT DEFAULT ''
-        )"""
-    )
-    _clear_schema_cache('empresas', 'os_ordens')
+    apply_pending_migrations()
+    _clear_schema_cache()
 
 
 @pytest.fixture(scope='session')
 def flask_app():
-    os.environ.setdefault('SECRET_KEY', 'test-secret-key-with-32-chars-minimum-ok')
     from app import app as application
+
     application.config.update(TESTING=True)
-    ensure_minimal_test_schema()
+    ensure_test_schema()
     return application
 
 
 @pytest.fixture
 def client(flask_app):
     return flask_app.test_client()
+
+
+@pytest.fixture
+def admin_session(client):
+    """Empresa + usuário admin com todas as permissões."""
+    from app.auth.constants import ALL_PERMISSIONS
+    from app.db import execute, query_one
+
+    suffix = uuid.uuid4().hex[:8]
+    empresa_id = execute(
+        "INSERT INTO empresas(nome,cidade,dominio_email,ativo,criado_em) VALUES (?,?,?,1,'01/01/2026')",
+        (f'Teste-{suffix}', 'Cidade', f'teste-{suffix}.local'),
+    )
+    user_id = execute(
+        """INSERT INTO users(nome,email,senha_hash,perfil,permissions,ativo,criado_em,empresa_id,is_super_admin)
+           VALUES (?,?,?,?,?,1,'01/01/2026',?,0)""",
+        (
+            'Admin Teste',
+            f'admin-{suffix}@teste.local',
+            generate_password_hash('senha-teste-123'),
+            'admin',
+            json.dumps(ALL_PERMISSIONS),
+            empresa_id,
+        ),
+    )
+    with client.session_transaction() as sess:
+        sess['user_id'] = user_id
+        sess['empresa_id'] = empresa_id
+        sess['selected_empresa_id'] = empresa_id
+    client.get('/inventario/hub')
+    with client.session_transaction() as sess:
+        csrf = sess.get('_csrf_token', '')
+    return {
+        'empresa_id': empresa_id,
+        'user_id': user_id,
+        'email': f'admin-{suffix}@teste.local',
+        'csrf_token': csrf,
+    }

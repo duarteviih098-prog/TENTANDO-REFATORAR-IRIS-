@@ -154,6 +154,8 @@ def _send_push(subscription_info, title, body, url='/'):
 
 
 def _ensure_push_subscriptions_table():
+    from app.db import USE_POSTGRES, ensure_column
+
     if USE_POSTGRES:
         execute("""CREATE TABLE IF NOT EXISTS push_subscriptions (
             id SERIAL PRIMARY KEY,
