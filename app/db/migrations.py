@@ -382,6 +382,45 @@ def ensure_db():
     except Exception as exc:
         print('ensure_db: auth security tables falhou:', exc)
 
+    try:
+        if settings.USE_POSTGRES:
+            execute("""CREATE TABLE IF NOT EXISTS audit_logs (
+                id SERIAL PRIMARY KEY,
+                criado_em TEXT DEFAULT '',
+                usuario_id INTEGER,
+                usuario_nome TEXT DEFAULT '',
+                usuario_email TEXT DEFAULT '',
+                acao TEXT DEFAULT '',
+                entidade TEXT DEFAULT '',
+                entidade_id TEXT DEFAULT '',
+                metodo TEXT DEFAULT '',
+                rota TEXT DEFAULT '',
+                endpoint TEXT DEFAULT '',
+                resultado TEXT DEFAULT '',
+                detalhes TEXT DEFAULT '',
+                empresa_id INTEGER
+            )""")
+        else:
+            execute("""CREATE TABLE IF NOT EXISTS audit_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                criado_em TEXT DEFAULT '',
+                usuario_id INTEGER,
+                usuario_nome TEXT DEFAULT '',
+                usuario_email TEXT DEFAULT '',
+                acao TEXT DEFAULT '',
+                entidade TEXT DEFAULT '',
+                entidade_id TEXT DEFAULT '',
+                metodo TEXT DEFAULT '',
+                rota TEXT DEFAULT '',
+                endpoint TEXT DEFAULT '',
+                resultado TEXT DEFAULT '',
+                detalhes TEXT DEFAULT '',
+                empresa_id INTEGER
+            )""")
+        ensure_column('audit_logs', 'empresa_id', 'INTEGER')
+    except Exception as exc:
+        print('ensure_db: audit_logs falhou:', exc)
+
 
 def ensure_indexes():
     """Cria índices nas tabelas principais para acelerar queries frequentes.
