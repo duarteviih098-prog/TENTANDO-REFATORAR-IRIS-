@@ -400,8 +400,8 @@ def _pdf_fim_label(raw, hist=None, finalizada=False):
     return '-'
 
 
-def _pdf_historico_for_display(hist):
-    """Remove eventos repetidos no histórico antes de montar o PDF."""
+def _pdf_historico_for_display(hist, finalizada=False):
+    """Remove eventos repetidos e estados inválidos antes de montar o PDF."""
     cleaned = []
     seen = set()
     for ev in hist or []:
@@ -412,7 +412,7 @@ def _pdf_historico_for_display(hist):
         motivo = str(ev.get('motivo') or '').strip()
         if not acao:
             continue
-        key = (acao, quando, motivo)
+        key = (acao, quando) if acao in ('iniciado', 'finalizado', 'retomado') else (acao, quando, motivo)
         if key in seen:
             continue
         seen.add(key)
@@ -437,7 +437,28 @@ def _pdf_historico_for_display(hist):
             out.append(ev)
         else:
             out.append(ev)
+
+    if not finalizada and out:
+        if out[-1].get('acao') == 'pausado':
+            out = [ev for ev in out if ev.get('acao') != 'finalizado']
+        else:
+            last_pause = max(
+                (i for i, ev in enumerate(out) if ev.get('acao') == 'pausado'),
+                default=-1,
+            )
+            if last_pause >= 0:
+                out = [
+                    ev for i, ev in enumerate(out)
+                    if not (ev.get('acao') == 'finalizado' and i < last_pause)
+                ]
     return out
+
+
+def _pdf_hist_needs_detail_rows(hist, multiday=False):
+    """Histórico detalhado só quando houve pausa/retomada ou a O.S. atravessa dias."""
+    if multiday:
+        return True
+    return any(str(ev.get('acao') or '').lower() in ('pausado', 'retomado') for ev in (hist or []))
 
 
 def _pdf_logo_candidates(side='left', empresa_id=None):
@@ -591,6 +612,7 @@ def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=10*mm, rightMargin=10*mm, topMargin=24*mm, bottomMargin=25*mm)
     styles = getSampleStyleSheet()
     normal = ParagraphStyle('normal', parent=styles['Normal'], fontSize=9, leading=11, leftIndent=0, firstLineIndent=0, spaceBefore=0, spaceAfter=0)
+    cell_para = ParagraphStyle('cell_para', parent=normal, wordWrap='CJK')
     title_style = ParagraphStyle('title', parent=styles['Heading1'], fontSize=14, alignment=1, leading=16, spaceAfter=0)
     subtitle_style = ParagraphStyle('subtitle', parent=styles['Normal'], fontSize=9, alignment=1, textColor=colors.HexColor('#44546a'), leading=11, spaceAfter=0)
     small = ParagraphStyle('small', parent=styles['Normal'], fontSize=8.5, leading=10)
@@ -728,9 +750,13 @@ def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
         elems.append(Spacer(1, 7*mm))
 
         finalizada_pdf = (r.get('finalizada') or ('Sim' if str(r.get('status') or '').strip().lower() == 'finalizada' else 'Não')).strip().title()
+        _finalizada_sim = str(finalizada_pdf).strip().lower() == 'sim'
 
         try:
-            _hist = _pdf_historico_for_display(json.loads(r.get('historico_pausas') or '[]'))
+            _hist = _pdf_historico_for_display(
+                json.loads(r.get('historico_pausas') or '[]'),
+                finalizada=_finalizada_sim,
+            )
         except Exception:
             _hist = []
 
@@ -738,11 +764,12 @@ def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
         _hist_multiday = len(_pdf_collect_hist_dates(
             _hist, r.get('data_inicio'), r.get('data_fim'), os_data,
         )) > 1
+        _show_hist = _pdf_hist_needs_detail_rows(_hist, _hist_multiday)
         _di_label = _pdf_time_label(r.get('data_inicio'), _hist)
         _df_label = _pdf_fim_label(
             r.get('data_fim'),
             _hist,
-            finalizada=str(finalizada_pdf).strip().lower() == 'sim',
+            finalizada=_finalizada_sim,
         )
         _tempo = elapsed_label(r.get('data_inicio'), r.get('data_fim'), r.get('acumulado_minutos') or 0, running=False) or '-'
 
@@ -752,24 +779,36 @@ def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
             ['Criticidade', _pdf_safe_text(row_get_value(r, 'criticidade', '') or ''), 'Responsável', _pdf_safe_text(row_get_value(r, 'responsavel', '') or '')],
             ['Início', _pdf_safe_text(_di_label), 'Fim', _pdf_safe_text(_df_label)],
         ]
+        _motivo_span_rows = []
+        _motivo_no_hist = True
 
-        for _ev in _hist:
-            _acao = str(_ev.get('acao') or '').strip().lower()
-            _quando = _pdf_datetime_label(_ev.get('quando'), os_date=os_data, multiday=_hist_multiday)
-            _motivo_ev = _pdf_safe_text(_ev.get('motivo') or '')
-            if _acao == 'iniciado':
-                info.append(['Iniciado em', _quando, '', ''])
-            elif _acao == 'pausado':
-                info.append(['Pausado em', _quando, 'Motivo', _motivo_ev or '-'])
-            elif _acao == 'retomado':
-                info.append(['Retomado em', _quando, '', ''])
-            elif _acao == 'finalizado':
-                info.append(['Finalizado em', _quando, 'Tempo total', _tempo])
+        if _show_hist:
+            for _ev in _hist:
+                _acao = str(_ev.get('acao') or '').strip().lower()
+                _quando = _pdf_datetime_label(_ev.get('quando'), os_date=os_data, multiday=_hist_multiday)
+                _motivo_ev = _pdf_safe_text(_ev.get('motivo') or '')
+                if _acao == 'iniciado':
+                    info.append(['Iniciado em', _quando, '', ''])
+                elif _acao == 'pausado':
+                    info.append(['Pausado em', _quando, '', ''])
+                    _motivo_show = _motivo_ev or _pdf_safe_text((r.get('motivo_pausa') or '').strip())
+                    if _motivo_show:
+                        _motivo_no_hist = False
+                        info.append([
+                            'Motivo',
+                            Paragraph(_pdf_para_text(_motivo_show, max_len=800), cell_para),
+                            '',
+                            '',
+                        ])
+                        _motivo_span_rows.append(len(info) - 1)
+                elif _acao == 'retomado':
+                    info.append(['Retomado em', _quando, '', ''])
+                elif _acao == 'finalizado':
+                    info.append(['Finalizado em', _quando, 'Tempo total', _tempo])
 
-        # Se não tem histórico de finalizado mas tem tempo acumulado, mostra tempo total
-        _has_finalizado_hist = any(str(e.get('acao','')).lower() == 'finalizado' for e in _hist)
-        if not _has_finalizado_hist and r.get('acumulado_minutos'):
-            info.append(['Tempo total', _tempo, '', ''])
+            _has_finalizado_hist = any(str(e.get('acao', '')).lower() == 'finalizado' for e in _hist)
+            if not _has_finalizado_hist and r.get('acumulado_minutos') and _finalizada_sim:
+                info.append(['Tempo total', _tempo, '', ''])
 
         info_tbl = Table(info, colWidths=[30*mm, 68*mm, 30*mm, 68*mm])
         _info_style = [
@@ -787,13 +826,20 @@ def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
             ('TOPPADDING', (0,0), (-1,-1), 4),
             ('BOTTOMPADDING', (0,0), (-1,-1), 4),
         ]
+        for row_idx in _motivo_span_rows:
+            _info_style.append(('SPAN', (1, row_idx), (3, row_idx)))
+            _info_style.append(('VALIGN', (0, row_idx), (-1, row_idx), 'TOP'))
         # Destaca linha de pausa em amarelo claro
         for i, row_info in enumerate(info):
             if i >= 4:  # linhas do histórico
                 _acao_row = str(row_info[0]).lower()
+                if isinstance(row_info[0], Paragraph):
+                    _acao_row = ''
                 if 'iniciado' in _acao_row:
                     _info_style.append(('BACKGROUND', (0,i), (-1,i), colors.HexColor('#ecfdf5')))
                 elif 'pausado' in _acao_row:
+                    _info_style.append(('BACKGROUND', (0,i), (-1,i), colors.HexColor('#fffbeb')))
+                elif 'motivo' in _acao_row:
                     _info_style.append(('BACKGROUND', (0,i), (-1,i), colors.HexColor('#fffbeb')))
                 elif 'retomado' in _acao_row:
                     _info_style.append(('BACKGROUND', (0,i), (-1,i), colors.HexColor('#f0fdf4')))
@@ -825,9 +871,9 @@ def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
             ]))
             return box
 
-        # Motivo da pausa (se houver)
+        # Motivo da pausa — só se não entrou no histórico da tabela acima
         _motivo_pausa = (r.get('motivo_pausa') or '').strip()
-        if _motivo_pausa:
+        if _motivo_pausa and _motivo_no_hist:
             elems.append(_box_section('Motivo da pausa:', _motivo_pausa, min_height_mm=10))
             elems.append(Spacer(1, 4*mm))
 
