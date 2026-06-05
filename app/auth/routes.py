@@ -240,6 +240,13 @@ def empresa_contexto(empresa_id):
     ensure_company_storage(empresa_id)
     clear_view_cache()
     session.pop('iris_history', None)
+    from app.auth.audit import audit_security_event
+    audit_security_event(
+        'super_admin_troca_unidade',
+        entidade='empresas',
+        entidade_id=empresa_id,
+        detalhes={'empresa_nome': empresa.get('nome'), 'empresa_cidade': empresa.get('cidade')},
+    )
     flash(f'Unidade selecionada: {empresa.get("nome")}. Agora os módulos mostram somente os dados dela.', 'success')
     return redirect(url_for('dashboard'))
 
@@ -248,6 +255,8 @@ def visao_global():
     if not current_user_is_super_admin():
         flash('Somente os Administradores Supremos acessam a visão global.', 'danger')
         return redirect(url_for('dashboard'))
+    from app.auth.audit import audit_security_event
+    audit_security_event('super_admin_visao_global', entidade='empresas', detalhes={'scope': 'all'})
     resumo=[]
     for e in list_companies(active_only=False):
         eid=e['id']
