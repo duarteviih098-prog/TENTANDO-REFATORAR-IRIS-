@@ -509,9 +509,21 @@ function setupSelectableTable(selector, moduleName){
   }
   document.addEventListener('keydown', async (e)=>{
     if(e.key==='Delete' && selected.length && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){
-      if(confirm('Excluir registros selecionados?')){
-        await fetch(`/api/${moduleName}/delete`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:selected.map(Number)})});
+      const n = selected.length;
+      const ok = window.irisConfirm ? await window.irisConfirm({
+        title: 'Excluir registros',
+        message: `Excluir ${n} registro${n>1?'s':''} selecionado${n>1?'s':''}? Esta ação não pode ser desfeita.`,
+        btnOk: 'Excluir',
+        danger: true
+      }) : confirm(`Excluir ${n} registro(s)?`);
+      if(!ok) return;
+      if(typeof showLoading === 'function') showLoading();
+      try {
+        const r = await fetch(`/api/${moduleName}/delete`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:selected.map(Number)})});
+        if(!r.ok){ alert('Não foi possível excluir. Recarregue a página e tente novamente.'); return; }
         location.reload();
+      } finally {
+        if(typeof hideLoading === 'function') hideLoading();
       }
     }
   });
