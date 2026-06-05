@@ -202,14 +202,16 @@ def sync_payment_attachments(row_or_id, persist_db=True):
         if normalized[key] != list(row.get(key, []) or []):
             changed = True
     if changed and persist_db and row.get('id'):
+        from app.auth.tenancy import tenant_scope_sql
+        scope_sql, scope_params = tenant_scope_sql('pagamentos')
         execute(
-            'UPDATE pagamentos SET anexos_orcamento=?, anexos_nf=?, anexos_boleto=? WHERE id=?',
+            'UPDATE pagamentos SET anexos_orcamento=?, anexos_nf=?, anexos_boleto=? WHERE id=?' + scope_sql,
             (
                 json.dumps(normalized['anexos_orcamento'], ensure_ascii=False),
                 json.dumps(normalized['anexos_nf'], ensure_ascii=False),
                 json.dumps(normalized['anexos_boleto'], ensure_ascii=False),
                 row['id'],
-            ),
+            ) + tuple(scope_params),
         )
     row.update(normalized)
     return row
@@ -390,9 +392,15 @@ def sync_os_attachments(row_or_id, persist_db=True):
 
     changed = novas_imagens != list(imagens or []) or novos_orcamentos != list(orcamentos or [])
     if changed and persist_db and row.get('id'):
+        from app.auth.tenancy import tenant_scope_sql
+        scope_sql, scope_params = tenant_scope_sql('os_ordens')
         execute(
-            'UPDATE os_ordens SET imagens=?, orcamentos=? WHERE id=?',
-            (json.dumps(novas_imagens, ensure_ascii=False), json.dumps(novos_orcamentos, ensure_ascii=False), row.get('id'))
+            'UPDATE os_ordens SET imagens=?, orcamentos=? WHERE id=?' + scope_sql,
+            (
+                json.dumps(novas_imagens, ensure_ascii=False),
+                json.dumps(novos_orcamentos, ensure_ascii=False),
+                row.get('id'),
+            ) + tuple(scope_params),
         )
 
     row = dict(row)

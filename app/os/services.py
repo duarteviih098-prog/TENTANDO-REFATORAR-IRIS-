@@ -179,6 +179,8 @@ def os_is_overdue(row, ref_date=None):
 
 
 def save_ativo(data, rid=None):
+    from app.auth.tenancy import assert_owned_by_current_company, tenant_scope_sql
+
     fields = ['nome','tipo','local','descricao','status','criado_em','sistema','equipamento','empresa_id']
     payload = {k:data.get(k,'') for k in fields}
     payload['status'] = (payload.get('status') or 'Não').strip().title()
@@ -186,7 +188,12 @@ def save_ativo(data, rid=None):
     payload['empresa_id'] = current_company_id()
     vals = [payload.get(k,'') for k in fields]
     if rid:
-        execute(f"UPDATE os_ativos SET {','.join(f'{f}=?' for f in fields)} WHERE id=?", vals+[rid])
+        assert_owned_by_current_company('os_ativos', rid)
+        scope_sql, scope_params = tenant_scope_sql('os_ativos')
+        execute(
+            f"UPDATE os_ativos SET {','.join(f'{f}=?' for f in fields)} WHERE id=?" + scope_sql,
+            vals + [rid] + scope_params,
+        )
     else:
         execute(f"INSERT INTO os_ativos({','.join(fields)}) VALUES ({','.join('?'*len(fields))})", vals)
 
@@ -303,6 +310,10 @@ def _push_nova_os_async(os_id, payload):
 
 
 def save_os(data, image_files=None, orcamento_files=None, rid=None):
+    from app.auth.tenancy import assert_owned_by_current_company, tenant_scope_sql
+
+    if rid:
+        assert_owned_by_current_company('os_ordens', rid)
     existing = row_to_dict(query_one('SELECT * FROM os_ordens WHERE id=?', (rid,))) if rid else None
 
     def _existing_json_list_safe(value):
@@ -325,7 +336,11 @@ def save_os(data, image_files=None, orcamento_files=None, rid=None):
     ativo_nome = ''
     ativo_id = data.get('ativo_id') or None
     if ativo_id:
-        r = query_one('SELECT nome FROM os_ativos WHERE id=?', (ativo_id,))
+        empresa_ativo = current_company_id()
+        r = query_one(
+            'SELECT nome FROM os_ativos WHERE id=? AND empresa_id=?',
+            (ativo_id, empresa_ativo),
+        )
         ativo_nome = r['nome'] if r else ''
     ensure_os_tipo_os_column()
     fields = ['numero_os','data','ativo_id','ativo_nome','tipo','tipo_os','status','finalizada','criticidade','descricao','data_inicio','data_fim','responsavel','servico_executado','criado_em','sistema','equipamento','imagens','orcamentos','teve_terceiro','quem_foi_terceiro','troca_componentes','componentes_descricao','custo_os','observacao_custo','acumulado_minutos','empresa_id']
@@ -408,7 +423,11 @@ def save_os(data, image_files=None, orcamento_files=None, rid=None):
             payload['data_fim'] = ''
     vals = [payload.get(k,'') for k in fields]
     if rid:
-        execute(f"UPDATE os_ordens SET {','.join(f'{f}=?' for f in fields)} WHERE id=?", vals+[rid])
+        scope_sql, scope_params = tenant_scope_sql('os_ordens')
+        execute(
+            f"UPDATE os_ordens SET {','.join(f'{f}=?' for f in fields)} WHERE id=?" + scope_sql,
+            vals + [rid] + scope_params,
+        )
         return int(rid)
     else:
         reset_sqlite_sequence_if_empty('os_ordens')

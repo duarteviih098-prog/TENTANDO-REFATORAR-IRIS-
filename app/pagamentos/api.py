@@ -5,7 +5,7 @@ from datetime import timedelta
 from flask import jsonify, request
 
 from app.auth.decorators import require_permission
-from app.auth.tenancy import company_where, owned_by_current_company
+from app.auth.tenancy import company_where, owned_by_current_company, tenant_scope_sql
 from app.db import execute, query_all, query_one
 from app.db.schema import select_existing_columns
 from app.pagamentos.services import build_payment_attachment_items, ensure_pagamentos_valid_ids
@@ -133,7 +133,11 @@ def api_pagamentos_attachment_delete():
     if idx < 0 or idx >= len(anexos):
         return jsonify({'ok': False, 'error': 'Anexo não encontrado.'}), 404
     removed = anexos.pop(idx)
-    execute(f'UPDATE pagamentos SET {key}=? WHERE id=?', (json.dumps(anexos, ensure_ascii=False), rid))
+    scope_sql, scope_params = tenant_scope_sql('pagamentos')
+    execute(
+        f'UPDATE pagamentos SET {key}=? WHERE id=?' + scope_sql,
+        (json.dumps(anexos, ensure_ascii=False), rid) + tuple(scope_params),
+    )
     try:
         full = resolve_local_path(removed)
         if full and full.exists() and full.is_file() and (str(full).startswith(str(UPLOAD_PAG)) or str(full).startswith(str(TENANT_UPLOAD_ROOT))):

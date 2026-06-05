@@ -7,6 +7,7 @@ from pathlib import Path
 from werkzeug.utils import secure_filename
 
 from app.auth import company_where, current_company_id, owned_by_current_company
+from app.auth.tenancy import tenant_scope_sql
 from app.db import USE_POSTGRES, execute, get_conn, query_all, query_one, reset_postgres_id_sequence, table_columns
 from app.exports.excel import excel_rows_from_upload
 from app.shared.cache import clear_view_cache
@@ -303,7 +304,11 @@ def save_pagamento(data, files=None, rid=None):
     vals = [payload.get(k, '') for k in fields]
 
     if rid:
-        execute(f"UPDATE pagamentos SET {','.join(f'{f}=?' for f in fields)} WHERE id=?", vals + [rid])
+        scope_sql, scope_params = tenant_scope_sql('pagamentos')
+        execute(
+            f"UPDATE pagamentos SET {','.join(f'{f}=?' for f in fields)} WHERE id=?" + scope_sql,
+            vals + [rid] + scope_params,
+        )
         saved_id = rid
     else:
         saved_id = execute(f"INSERT INTO pagamentos({','.join(fields)}) VALUES ({','.join('?' * len(fields))})", vals)

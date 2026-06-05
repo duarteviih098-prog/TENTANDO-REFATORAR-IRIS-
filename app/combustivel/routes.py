@@ -117,7 +117,11 @@ def combustivel_save():
             return jsonify({'ok': False, 'duplicado': True, 'message': msg})
         flash('⚠️ ' + msg, 'warning')
         return redirect(url_for('combustivel'))
-    save_combustivel(request.form, rid)
+    try:
+        save_combustivel(request.form, rid)
+    except ValueError as exc:
+        flash(str(exc), 'danger')
+        return redirect(url_for('combustivel'))
     clear_view_cache()
     flash('Lançamento de combustível salvo.', 'success')
     mes_salvo = month_or_current(request.form.get('mes_ref') or '')

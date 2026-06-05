@@ -16,6 +16,7 @@ from app.auth.services import (
 )
 from app.auth.tenancy import (
     _BACKGROUND_COMPANY_CONTEXT,
+    assert_owned_by_current_company,
     company_and,
     company_where,
     create_company_if_needed,
@@ -25,6 +26,7 @@ from app.auth.tenancy import (
     list_companies,
     normalize_domain,
     owned_by_current_company,
+    tenant_scope_sql,
     unique_email_for_domain,
 )
 
@@ -61,7 +63,8 @@ __all__ = [
     'register_auth',
     'ALL_PERMISSIONS', 'PERMISSION_LABELS', 'ROLE_LABELS', 'ROLE_PERMISSIONS', 'TENANT_TABLES',
     'normalize_permissions', 'get_current_user', 'user_has', 'senha_confere', 'current_user_is_super_admin',
-    'current_company_id', 'current_company', 'company_where', 'company_and', 'owned_by_current_company',
+    'current_company_id', 'current_company', 'company_where', 'company_and',
+    'owned_by_current_company', 'assert_owned_by_current_company', 'tenant_scope_sql',
     'list_companies', 'require_permission', 'module_view_permission', 'create_company_if_needed',
     'find_company_by_domain_or_name', 'normalize_domain', 'unique_email_for_domain',
     'set_background_company_id', 'get_background_company_id',

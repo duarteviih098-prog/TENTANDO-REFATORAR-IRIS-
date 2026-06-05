@@ -29,7 +29,11 @@ def custos():
 @require_permission('edit_custos')
 def custos_save():
     rid = request.form.get('id') or None
-    save_custo(request.form, rid)
+    try:
+        save_custo(request.form, rid)
+    except ValueError as exc:
+        flash(str(exc), 'danger')
+        return redirect(url_for('custos'))
     backup_company_data(current_company_id())
     clear_view_cache()
     mes_salvo = month_or_current(request.form.get('mes') or '')

@@ -17,12 +17,19 @@ def current_company_id():
 
 
 def save_custo(data, rid=None):
+    from app.auth.tenancy import assert_owned_by_current_company, tenant_scope_sql
+
     fields = ['sistema', 'equipamento', 'nr_os', 'descricao_os', 'local', 'manutencao', 'mes', 'empresa_id']
     payload = dict(data)
     payload['mes'] = month_or_current(payload.get('mes', ''))
     vals = [(current_company_id() if k == 'empresa_id' else payload.get(k, '')) for k in fields]
     if rid:
-        execute(f"UPDATE custos SET {','.join(f'{f}=?' for f in fields)} WHERE id=?", vals + [rid])
+        assert_owned_by_current_company('custos', rid)
+        scope_sql, scope_params = tenant_scope_sql('custos')
+        execute(
+            f"UPDATE custos SET {','.join(f'{f}=?' for f in fields)} WHERE id=?" + scope_sql,
+            vals + [rid] + scope_params,
+        )
     else:
         execute(f"INSERT INTO custos({','.join(fields)}) VALUES ({','.join('?' * len(fields))})", vals)
 

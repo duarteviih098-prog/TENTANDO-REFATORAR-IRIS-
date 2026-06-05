@@ -116,6 +116,10 @@ def fetch_bombas_counts():
 
 
 def save_bomba(data, rid=None):
+    from app.auth.tenancy import assert_owned_by_current_company, tenant_scope_sql
+
+    if rid:
+        assert_owned_by_current_company('bombas', rid)
     existing = row_to_dict(query_one('SELECT * FROM bombas WHERE id=?', (rid,))) if rid else {}
     raw = data.to_dict(flat=True) if hasattr(data, 'to_dict') else dict(data)
     payload = compute_bomba_delivery(raw, existing)
@@ -129,7 +133,11 @@ def save_bomba(data, rid=None):
     payload['empresa_id'] = current_company_id()
     vals = [payload.get(k,'') for k in fields]
     if rid:
-        execute(f"UPDATE bombas SET {','.join(f'{f}=?' for f in fields)} WHERE id=?", vals+[rid])
+        scope_sql, scope_params = tenant_scope_sql('bombas')
+        execute(
+            f"UPDATE bombas SET {','.join(f'{f}=?' for f in fields)} WHERE id=?" + scope_sql,
+            vals + [rid] + scope_params,
+        )
     else:
         execute(f"INSERT INTO bombas({','.join(fields)}) VALUES ({','.join('?'*len(fields))})", vals)
 

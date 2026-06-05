@@ -217,7 +217,11 @@ def controle_excel():
 @require_permission('edit_controle')
 def controle_save():
     rid = request.form.get('id') or None
-    save_bomba(request.form, rid)
+    try:
+        save_bomba(request.form, rid)
+    except ValueError as exc:
+        flash(str(exc), 'danger')
+        return redirect(url_for('controle'))
     clear_view_cache()
     flash('Registro salvo no controle de estoque de bombas.', 'success')
     destino = request.form.get('localizacao') or request.args.get('localizacao') or ''

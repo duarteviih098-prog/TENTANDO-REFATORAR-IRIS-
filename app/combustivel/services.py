@@ -57,13 +57,20 @@ def combustivel_duplicado(data, rid=None):
 
 
 def save_combustivel(data, rid=None):
+    from app.auth.tenancy import assert_owned_by_current_company, tenant_scope_sql
+
     fields = ['data', 'mes_ref', 'modelo_veiculo', 'placa', 'motorista', 'km', 'custo', 'observacoes', 'empresa_id']
     payload = _combustivel_payload(data)
     payload['mes_ref'] = month_or_current(payload.get('mes_ref') or payload.get('data') or '')
     payload['empresa_id'] = current_company_id()
     vals = [payload.get(k, '') for k in fields]
     if rid:
-        execute(f"UPDATE combustivel SET {','.join(f'{f}=?' for f in fields)} WHERE id=?", vals + [rid])
+        assert_owned_by_current_company('combustivel', rid)
+        scope_sql, scope_params = tenant_scope_sql('combustivel')
+        execute(
+            f"UPDATE combustivel SET {','.join(f'{f}=?' for f in fields)} WHERE id=?" + scope_sql,
+            vals + [rid] + scope_params,
+        )
     else:
         execute(f"INSERT INTO combustivel({','.join(fields)}) VALUES ({','.join('?' * len(fields))})", vals)
 

@@ -124,7 +124,11 @@ def os_ativos():
 @require_permission('edit_os')
 def os_ativos_save():
     rid = request.form.get('id') or None
-    save_ativo(request.form, rid)
+    try:
+        save_ativo(request.form, rid)
+    except ValueError as exc:
+        flash(str(exc), 'danger')
+        return redirect(url_for('os_ativos'))
     backup_company_data(current_company_id())
     clear_view_cache()
     flash('Ativo salvo.', 'success')
@@ -624,12 +628,13 @@ def api_os_historico(rid):
         'detalhe': f'Criada por {criador}' + (f' em {criado_em}' if criado_em else ''),
         'usuario': criador
     })
-    # Busca no audit_logs
+    # Busca no audit_logs (escopo da empresa ativa)
+    empresa_id = current_company_id()
     logs = [row_to_dict(r) for r in query_all(
         """SELECT * FROM audit_logs
-           WHERE entidade='os' AND entidade_id=?
+           WHERE entidade='os' AND entidade_id=? AND (empresa_id=? OR empresa_id IS NULL OR empresa_id=0)
            ORDER BY id ASC LIMIT 100""",
-        (str(rid),)
+        (str(rid), empresa_id),
     )]
 
     tipo_map = {
@@ -688,7 +693,8 @@ def api_os_historico(rid):
 
     # Eventos do campo_eventos
     campo_evs = [row_to_dict(r) for r in query_all(
-        'SELECT * FROM campo_eventos WHERE os_id=? ORDER BY id ASC LIMIT 50', (rid,)
+        'SELECT * FROM campo_eventos WHERE os_id=? AND (empresa_id=? OR empresa_id IS NULL OR empresa_id=0) ORDER BY id ASC LIMIT 50',
+        (rid, empresa_id),
     )]
     campo_tipo_map = {
         'iniciar': ('bi-play-circle-fill', '#2374d9', 'Iniciada pelo técnico'),
@@ -769,6 +775,9 @@ def api_os_detail(rid):
 @require_permission('view_os')
 def os_save():
     rid = request.form.get('id') or None
+    if rid and not owned_by_current_company('os_ordens', int(rid)):
+        flash('O.S. não encontrada na unidade ativa.', 'danger')
+        return _redirect_pos_os()
     if rid and not user_has('edit_os'):
         flash('Você não tem permissão para editar O.S.', 'danger')
         return _redirect_pos_os()
@@ -777,7 +786,11 @@ def os_save():
         return _redirect_pos_os()
     image_files = request.files.getlist('imagens') if user_has('upload_os_photos') or user_has('edit_os') else []
     orcamento_files = request.files.getlist('orcamentos') if user_has('upload_budget_files') else []
-    saved_id = save_os(request.form, image_files, orcamento_files, rid)
+    try:
+        saved_id = save_os(request.form, image_files, orcamento_files, rid)
+    except ValueError as exc:
+        flash(str(exc), 'danger')
+        return _redirect_pos_os()
     backup_company_data(current_company_id())
     clear_view_cache()
 
@@ -849,6 +862,9 @@ def os_imagem_visualizar(rid, idx):
 
 @require_permission('view_budget_files')
 def os_orcamento_download(rid, idx):
+    if not owned_by_current_company('os_ordens', rid):
+        flash('O.S. não encontrada na unidade ativa.', 'danger')
+        return redirect(url_for('os_page'))
     row = sync_os_attachments(row_to_dict(query_one('SELECT * FROM os_ordens WHERE id=?', (rid,))) or {}, persist_db=True)
     orcamentos = list(row.get('orcamentos') or [])
     if idx < 0 or idx >= len(orcamentos):
@@ -882,7 +898,12 @@ def api_os_attachment_delete():
     if idx < 0 or idx >= len(arquivos):
         return jsonify({'ok': False, 'error': 'Anexo não encontrado.'}), 404
     removido = arquivos.pop(idx)
-    execute(f'UPDATE os_ordens SET {kind}=? WHERE id=?', (json.dumps(arquivos, ensure_ascii=False), rid))
+    from app.auth.tenancy import tenant_scope_sql
+    scope_sql, scope_params = tenant_scope_sql('os_ordens')
+    execute(
+        f'UPDATE os_ordens SET {kind}=? WHERE id=?' + scope_sql,
+        (json.dumps(arquivos, ensure_ascii=False), rid) + tuple(scope_params),
+    )
     try:
         full = resolve_os_upload_path(removido)
         if full and full.exists() and full.is_file():
@@ -944,29 +965,44 @@ def os_download_pacote(rid):
 
 @require_permission('edit_os')
 def os_action(action, rid):
+    from app.auth.tenancy import tenant_scope_sql
+
     hora = br_now().strftime('%H:%M')
     where_sql, params = company_and('os_ordens')
     atual = row_to_dict(query_one('SELECT * FROM os_ordens WHERE id=?' + where_sql, tuple([rid] + params))) or {}
     if not atual:
         flash('O.S. não encontrada na unidade ativa.', 'danger')
         return redirect(url_for('os_page'))
+    scope_sql, scope_params = tenant_scope_sql('os_ordens')
     acumulado = int(atual.get('acumulado_minutos') or 0)
     inicio_atual = only_time_str(atual.get('data_inicio'))
     if action == 'iniciar':
         # reinicia a contagem do trecho atual sem apagar o acumulado anterior
-        execute('UPDATE os_ordens SET data_inicio=?, status=?, finalizada=?, data_fim=? WHERE id=?', (hora if str(atual.get('status') or '').strip().lower() == 'pausada' else (inicio_atual or hora), 'Em andamento', 'Não', '', rid))
+        execute(
+            'UPDATE os_ordens SET data_inicio=?, status=?, finalizada=?, data_fim=? WHERE id=?' + scope_sql,
+            (hora if str(atual.get('status') or '').strip().lower() == 'pausada' else (inicio_atual or hora), 'Em andamento', 'Não', '', rid) + tuple(scope_params),
+        )
     elif action == 'pausar':
         if inicio_atual:
             acumulado += time_diff_minutes(inicio_atual, hora) or 0
         motivo_pausa = str(request.form.get('motivo_pausa') or '').strip()
-        execute('UPDATE os_ordens SET status=?, finalizada=?, data_fim=?, acumulado_minutos=?, motivo_pausa=? WHERE id=?', ('Pausada', 'Não', hora, acumulado, motivo_pausa, rid))
+        execute(
+            'UPDATE os_ordens SET status=?, finalizada=?, data_fim=?, acumulado_minutos=?, motivo_pausa=? WHERE id=?' + scope_sql,
+            ('Pausada', 'Não', hora, acumulado, motivo_pausa, rid) + tuple(scope_params),
+        )
     elif action == 'justificar_atraso':
         motivo_atraso = str(request.form.get('motivo_atraso') or '').strip()
-        execute('UPDATE os_ordens SET motivo_atraso=? WHERE id=?', (motivo_atraso, rid))
+        execute(
+            'UPDATE os_ordens SET motivo_atraso=? WHERE id=?' + scope_sql,
+            (motivo_atraso, rid) + tuple(scope_params),
+        )
     elif action == 'finalizar':
         if str(atual.get('status') or '').strip().lower() != 'pausada' and inicio_atual:
             acumulado += time_diff_minutes(inicio_atual, hora) or 0
-        execute('UPDATE os_ordens SET data_inicio=?, data_fim=?, status=?, finalizada=?, acumulado_minutos=? WHERE id=?', (inicio_atual or hora, hora, 'Finalizada', 'Sim', acumulado, rid))
+        execute(
+            'UPDATE os_ordens SET data_inicio=?, data_fim=?, status=?, finalizada=?, acumulado_minutos=? WHERE id=?' + scope_sql,
+            (inicio_atual or hora, hora, 'Finalizada', 'Sim', acumulado, rid) + tuple(scope_params),
+        )
     clear_view_cache()
     flash(f'O.S. {action} com sucesso.', 'success')
     return redirect(url_for('os_page'))

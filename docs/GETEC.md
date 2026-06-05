@@ -23,6 +23,7 @@ Guia de entrega para o cliente. Itens marcados com **código** já estão no rep
 | 10 | Senha mínima 8 chars | **código** — reset de senha |
 | 11 | Sentry + logs JSON | **config** — `SENTRY_DSN`, `IRIS_JSON_LOGS=1` |
 | 12 | CI verde | **código** — GitHub Actions lint + test + postgres |
+| 13 | Isolamento multi-empresa | **código** — `assert_owned_by_current_company` + `tenant_scope_sql` em todos os `save_*` |
 
 ## Pós-deploy (5 min)
 

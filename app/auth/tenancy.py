@@ -202,6 +202,24 @@ def owned_by_current_company(table, rid):
         )
     return False
 
+
+def assert_owned_by_current_company(table, rid):
+    """Bloqueia escrita em registro de outra empresa (raise ValueError)."""
+    if rid is None or rid == '':
+        return
+    if not owned_by_current_company(table, int(rid)):
+        raise ValueError('Registro não encontrado ou sem permissão para editar.')
+
+
+def tenant_scope_sql(table):
+    """Sufixo SQL + params para restringir UPDATE/DELETE à empresa ativa."""
+    if table not in TENANT_TABLES or not table_has_column(table, 'empresa_id'):
+        return '', []
+    empresa_id = current_company_id()
+    if not empresa_id:
+        return ' AND empresa_id IS NULL', []
+    return ' AND empresa_id=?', [empresa_id]
+
 def list_companies(active_only=False):
     from app.exports.company_pdf import ensure_company_pdf_columns
 
