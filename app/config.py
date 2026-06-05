@@ -8,6 +8,32 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 APP_TIMEZONE = os.getenv('APP_TIMEZONE', 'America/Sao_Paulo')
 SESSION_IDLE_MINUTES = int(os.getenv('SESSION_IDLE_MINUTES', '120') or 120)
 
+_INSECURE_SECRET_KEYS = frozenset({'', 'gg-web-app', 'dev', 'change-me', 'changeme'})
+
+
+def is_production_env():
+    """Detecta ambiente de produção (Render, DATABASE_URL remoto, flag explícita)."""
+    if os.getenv('IRIS_PRODUCTION', '').strip().lower() in ('1', 'true', 'yes', 'on'):
+        return True
+    if os.getenv('RENDER', '').strip().lower() in ('true', '1', 'yes'):
+        return True
+    if os.getenv('FLASK_ENV', '').strip().lower() == 'production':
+        return True
+    db_url = os.getenv('DATABASE_URL', '').strip()
+    return bool(db_url and not db_url.startswith('sqlite'))
+
+
+def validate_production_config(secret_key):
+    """Falha cedo se produção estiver com configuração insegura."""
+    if not is_production_env():
+        return
+    key = str(secret_key or '').strip()
+    if key in _INSECURE_SECRET_KEYS or len(key) < 32:
+        raise RuntimeError(
+            'SECRET_KEY insegura ou ausente em produção. '
+            'Defina SECRET_KEY com pelo menos 32 caracteres aleatórios no Render.'
+        )
+
 
 class Config:
     """Defaults carregados de variáveis de ambiente."""
