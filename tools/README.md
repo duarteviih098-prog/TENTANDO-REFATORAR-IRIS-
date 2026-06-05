@@ -7,6 +7,7 @@ Scripts utilitários para operação e manutenção.
 | Script | Uso |
 |---|---|
 | `bootstrap_db.py` | Bootstrap banco vazio com migrations (`--db-path app.db`) |
+| `seed_getec_admin.py` | Cria empresa + admin inicial para primeiro deploy |
 | `export_company_backup.py` | Backup JSON manual por empresa (`--empresa-id N`) |
 | `package_for_github.py` | Gera pacote limpo para publicar no GitHub |
 

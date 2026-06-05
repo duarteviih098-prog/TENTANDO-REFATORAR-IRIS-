@@ -43,6 +43,7 @@ Páginas de erro amigáveis (404/403/500) em `templates/errors/page.html`.
 
 | Doc | Conteúdo |
 |---|---|
+| [docs/GETEC.md](docs/GETEC.md) | Checklist de entrega profissional (Getec) |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Render + Supabase + checklist pós-deploy |
 | [docs/MIGRATIONS.md](docs/MIGRATIONS.md) | Migrations versionadas e bootstrap |
 | [docs/RUNBOOK.md](docs/RUNBOOK.md) | O que fazer quando algo quebra |

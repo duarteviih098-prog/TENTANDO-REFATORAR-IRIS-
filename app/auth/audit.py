@@ -107,6 +107,12 @@ def audit_after_request(response):
     response.headers.setdefault('X-Content-Type-Options', 'nosniff')
     response.headers.setdefault('X-XSS-Protection', '1; mode=block')
     response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+    response.headers.setdefault('Permissions-Policy', 'geolocation=(self), camera=(), microphone=()')
+    try:
+        if request.is_secure:
+            response.headers.setdefault('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    except Exception:
+        pass
     try:
         if request.method not in ('POST','PUT','PATCH','DELETE'):
             return response

@@ -5,7 +5,7 @@ import time
 import uuid
 from email.message import EmailMessage
 
-from flask import flash, redirect, render_template, request, url_for
+from flask import current_app, flash, redirect, render_template, request, url_for
 from werkzeug.security import generate_password_hash
 
 from app.auth.security_store import (
@@ -27,7 +27,7 @@ def _smtp_configured():
 def _send_reset_email(to_email, reset_link):
     """Envia e-mail de recuperação de senha via SMTP configurado no ambiente."""
     if not _smtp_configured():
-        print('_send_reset_email: SMTP_USER/SMTP_PASS não configurados')
+        current_app.logger.warning('password_reset: SMTP_USER/SMTP_PASS não configurados')
         return False
     try:
         smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com').strip()
@@ -59,7 +59,7 @@ Equipe IRIS
             server.send_message(msg)
         return True
     except Exception as exc:
-        print('_send_reset_email falhou:', exc)
+        current_app.logger.exception('password_reset: falha ao enviar e-mail')
         return False
 
 
@@ -109,8 +109,8 @@ def redefinir_senha(token):
     if request.method == 'POST':
         nova_senha = request.form.get('nova_senha') or ''
         confirmar = request.form.get('confirmar_senha') or ''
-        if len(nova_senha) < 6:
-            flash('A senha deve ter pelo menos 6 caracteres.', 'danger')
+        if len(nova_senha) < 8:
+            flash('A senha deve ter pelo menos 8 caracteres.', 'danger')
             return render_template('redefinir_senha.html', token=token)
         if nova_senha != confirmar:
             flash('As senhas não coincidem.', 'danger')

@@ -28,7 +28,7 @@ def auth_gate():
     if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
         if not _csrf_validate():
             current_app.logger.warning('CSRF bloqueado: IP=%s endpoint=%s', request.remote_addr, request.endpoint)
-            if request.path.startswith('/api/'):
+            if request.path.startswith('/api/') or (request.is_json and request.path.startswith('/controle/')):
                 return jsonify({'ok': False, 'error': 'Token de segurança inválido. Recarregue a página.'}), 403
             flash('Token de segurança inválido. Recarregue a página e tente novamente.', 'danger')
             return redirect(request.referrer or url_for('login'))

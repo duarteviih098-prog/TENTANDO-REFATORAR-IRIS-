@@ -92,7 +92,6 @@ def test_api_delete_blocks_without_csrf_even_when_logged_in(admin_session, clien
     assert response.status_code == 403
 
 
-def test_controle_json_accepts_without_csrf_when_logged_in(admin_session, client):
-    """Documenta exceção intencional: /controle/* JSON não exige CSRF (só sessão + permissão)."""
+def test_controle_json_blocks_without_csrf_when_logged_in(admin_session, client):
     response = client.post('/controle/movimentar', json={'bomba_id': 999, 'acao': 'estoque'})
-    assert response.status_code != 403
+    assert response.status_code == 403

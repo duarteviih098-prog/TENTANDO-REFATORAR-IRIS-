@@ -53,9 +53,6 @@ def _csrf_validate():
             return _hmac.compare_digest(str(token_form), str(token_sess))
         if request.is_json:
             return True
-    # Rotas internas que recebem JSON também livres de CSRF
-    if request.is_json and request.path.startswith('/controle/'):
-        return True
     if request.path.startswith('/push/'):
         return True
     token_form = request.form.get('_csrf_token') or request.headers.get('X-CSRF-Token') or ''
