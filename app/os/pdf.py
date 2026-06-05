@@ -23,7 +23,18 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
-from reportlab.platypus import HRFlowable, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import (
+    HRFlowable,
+    Image as RLImage,
+    PageBreak,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
+
+from PIL import Image as PILImage
 
 from app.auth.decorators import require_permission
 from app.os.services import attach_os_display_numbers
@@ -35,7 +46,8 @@ from app.storage import (
     load_company_identity_config,
     sync_os_attachments,
 )
-from app.storage.attachments import resolve_os_upload_path, storage_or_local_response
+from app.storage.attachments import read_attachment_bytes_fast, resolve_os_upload_path, storage_or_local_response
+from app.storage.paths import BASE_DIR, normalize_storage_path
 
 
 def current_company_id():
