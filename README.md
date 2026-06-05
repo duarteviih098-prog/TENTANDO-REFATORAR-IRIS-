@@ -22,18 +22,22 @@ Edite `.env` com `SECRET_KEY` e, se quiser Postgres, `DATABASE_URL`. Sem `DATABA
 ## Executar
 
 ```bash
-# desenvolvimento
-export FLASK_APP=app.py   # set FLASK_APP=app.py no Windows
-flask run
-
-# ou
-python app.py
+# desenvolvimento local
+python run_local.py
 
 # produção (Render)
-gunicorn app:app --bind 0.0.0.0:$PORT
+gunicorn wsgi:app --bind 0.0.0.0:$PORT --timeout 120
 ```
 
-Teste rápido: `GET /health` → `ok`, `GET /login` → tela de login.
+Teste rápido: `GET /health` → `{"status":"ok","db":"ok"}`, `GET /login` → tela de login.
+
+```bash
+# testes
+pip install -r requirements.txt -r requirements-dev.txt
+pytest tests/ -q
+```
+
+Páginas de erro amigáveis (404/403/500) em `templates/errors/page.html`.
 
 ## Estrutura modular (refatoração concluída)
 
@@ -59,8 +63,9 @@ iris-cost/
 │   ├── outlook/
 │   ├── exports/             # PDF/Excel Iris
 │   └── integrations/        # Iris chat, WhatsApp
-├── app.py                   # entry point local (dev)
-├── tests/test_smoke.py      # smoke tests (import, /health, rotas)
+├── run_local.py             # entry point local (dev)
+├── wsgi.py                  # entry point Gunicorn/Render
+├── tests/                   # pytest (smoke, auth, P0, erros)
 ├── templates/
 ├── static/
 ├── seed/
@@ -74,7 +79,7 @@ iris-cost/
 
 Cada domínio expõe `register_<modulo>(app)` chamado em `app/bootstrap.py`. Helpers transversais ficam em `app/shared/*` (fase 2 — `legacy.py` removido). URLs e regras de negócio foram preservadas durante a modularização.
 
-Produção: `gunicorn app:app` (pacote `app/`, não o `app.py` da raiz).
+Produção: `gunicorn wsgi:app` (ver `Procfile`).
 
 ## Dados sensíveis — não commitar
 
