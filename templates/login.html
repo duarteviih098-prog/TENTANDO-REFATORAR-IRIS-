@@ -211,6 +211,35 @@ body::after{
   font-weight:500;
 }
 
+.login-alert{
+  margin-bottom:18px;
+  padding:14px 16px;
+  border-radius:14px;
+  font-size:.88rem;
+  font-weight:700;
+  line-height:1.45;
+}
+.login-alert.danger{
+  background:#fff1f2;
+  color:#be123c;
+  border:1px solid #fecdd3;
+}
+.login-alert.success{
+  background:#ecfdf5;
+  color:#047857;
+  border:1px solid #a7f3d0;
+}
+.login-alert.warning{
+  background:#fffbeb;
+  color:#b45309;
+  border:1px solid #fde68a;
+}
+.login-alert.info{
+  background:#eff6ff;
+  color:#1d4ed8;
+  border:1px solid #bfdbfe;
+}
+
 .field{
   margin-bottom:18px;
 }
@@ -387,6 +416,14 @@ Gestão técnica com clareza, campo e controle.
 <p>Faça login para continuar</p>
 </div>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="login-alert {{ category if category != 'message' else 'info' }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
 <form method="post">
 
 <div class="field">
@@ -394,7 +431,7 @@ Gestão técnica com clareza, campo e controle.
 
 <div class="input-wrap">
 <i class="bi bi-envelope icon"></i>
-<input type="email" name="email" placeholder="voce@empresa.com">
+<input type="email" name="email" placeholder="voce@empresa.com" value="{{ request.form.get('email','') }}" required>
 </div>
 </div>
 
@@ -403,7 +440,7 @@ Gestão técnica com clareza, campo e controle.
 
 <div class="input-wrap">
 <i class="bi bi-lock icon"></i>
-<input id="senha" type="password" name="senha" placeholder="Sua senha">
+<input id="senha" type="password" name="senha" placeholder="Sua senha" required>
 <i class="bi bi-eye toggle" id="toggle"></i>
 </div>
 </div>
@@ -411,11 +448,11 @@ Gestão técnica com clareza, campo e controle.
 <div class="options">
 
 <label class="remember">
-<input type="checkbox">
+<input type="checkbox" name="lembrar" value="1">
 Lembrar de mim
 </label>
 
-<a href="#" class="forgot">
+<a href="{{ url_for('esqueci_senha') }}" class="forgot">
 Esqueci minha senha
 </a>
 

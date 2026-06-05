@@ -70,18 +70,27 @@ def esqueci_senha():
             flash('Informe seu e-mail.', 'danger')
             return render_template('esqueci_senha.html')
 
-        user = query_one('SELECT id, email, ativo FROM users WHERE lower(trim(email))=lower(trim(?)) AND COALESCE(ativo,1)=1', (email,))
+        if not _smtp_configured():
+            flash(
+                'Recuperação por e-mail ainda não está ativa neste servidor. '
+                'Peça ao administrador do sistema para redefinir sua senha.',
+                'warning',
+            )
+            return render_template('esqueci_senha.html')
+
+        user = query_one(
+            'SELECT id, email, ativo FROM users WHERE lower(trim(email))=lower(trim(?)) AND COALESCE(ativo,1)=1',
+            (email,),
+        )
         if user:
             token = uuid.uuid4().hex + uuid.uuid4().hex
             expires_at = time.time() + PASSWORD_RESET_EXPIRY
             save_password_reset_token(token, email, expires_at)
-            if _smtp_configured():
-                try:
-                    base = request.url_root.rstrip('/')
-                    reset_link = f"{base}/redefinir-senha/{token}"
-                    _send_reset_email(email, reset_link)
-                except Exception as exc:
-                    print('Erro ao enviar e-mail de recuperação:', exc)
+            base = request.url_root.rstrip('/')
+            reset_link = f"{base}/redefinir-senha/{token}"
+            if not _send_reset_email(email, reset_link):
+                flash('Não foi possível enviar o e-mail agora. Tente novamente em alguns minutos.', 'danger')
+                return render_template('esqueci_senha.html')
 
         flash('Se esse e-mail estiver cadastrado, você receberá as instruções em instantes.', 'success')
         return render_template('esqueci_senha.html', enviado=True)

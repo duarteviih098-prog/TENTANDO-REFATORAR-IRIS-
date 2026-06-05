@@ -427,7 +427,7 @@ body::after {
     {% endwith %}
 
     <form method="post" novalidate>
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
       <div class="field">
         <label for="email">E-mail</label>
@@ -458,7 +458,7 @@ body::after {
           <input type="checkbox" name="lembrar" value="1">
           Lembrar de mim
         </label>
-        <a class="forgot" href="#">Esqueci minha senha</a>
+        <a class="forgot" href="{{ url_for('esqueci_senha') }}">Esqueci minha senha</a>
       </div>
 
       <button class="btn-submit" type="submit">Entrar</button>
@@ -466,7 +466,7 @@ body::after {
     </form>
 
     <div class="support">
-      <a href="#">Falar com o suporte</a>
+      <a href="mailto:irisgetec@gmail.com?subject=Suporte%20IRIS">Falar com o suporte</a>
     </div>
 
   </section>

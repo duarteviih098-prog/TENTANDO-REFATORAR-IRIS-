@@ -14,6 +14,7 @@ def _csrf_get():
 
 def _csrf_validate():
     public_endpoints = {'login', 'static', 'campo_app', 'campo_app_empty', 'campo_login',
+                        'esqueci_senha', 'redefinir_senha',
                         'os_pdf_dia', 'os_pdf_mes', 'os_pdf_individual', 'iris_relatorio_wait',
                         'os_pdf_job_status', 'api_os_status_updates',
                         # App de campo — usa token próprio, não sessão de browser
@@ -36,6 +37,12 @@ def _csrf_validate():
             return True
         if request.args.get('tecnico_token'):
             return True
+        if session.get('user_id'):
+            token_form = request.form.get('_csrf_token') or request.headers.get('X-CSRF-Token') or ''
+            token_sess = session.get('_csrf_token') or ''
+            if token_form and token_sess:
+                import hmac as _hmac
+                return _hmac.compare_digest(str(token_form), str(token_sess))
         if session.get('user_id') and request.is_json:
             token_form = request.headers.get('X-CSRF-Token') or ''
             token_sess = session.get('_csrf_token') or ''

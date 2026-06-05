@@ -1,9 +1,9 @@
 """Rotas de login, usuários, empresas e auditoria."""
 import json
 from app.auth.decorators import is_mobile_request
-from app.campo.services import campo_token_para_usuario, usuario_eh_campo_operacional
+from app.campo.services import campo_token_para_usuario, sincronizar_usuario_campo, usuario_eh_campo_operacional
 from app.shared.cache import clear_view_cache
-from app.shared.formatters import br_now, now_str
+from app.shared.formatters import br_now, normalize_phone, now_str
 from app.shared.rows import row_to_dict
 from app.storage import backup_company_data, ensure_company_storage, load_company_identity_config, save_company_identity_config, save_company_identity_file
 

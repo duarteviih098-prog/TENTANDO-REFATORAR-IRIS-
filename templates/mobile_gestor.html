@@ -193,6 +193,12 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 /* Toast */
 .toast{position:fixed;left:50%;z-index:999;bottom:calc(var(--nav-h) + var(--safe-bottom) + 12px);transform:translateX(-50%) translateY(8px);background:rgba(7,14,28,.9);color:#fff;border-radius:13px;padding:9px 15px;font-size:.8rem;font-weight:750;opacity:0;pointer-events:none;transition:.2s;white-space:nowrap;backdrop-filter:blur(12px)}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.flash-bar{padding:10px 16px 0}
+.flash-msg{padding:12px 14px;border-radius:14px;font-size:.82rem;font-weight:800;line-height:1.4;margin-bottom:8px}
+.flash-msg.danger{background:#fff1f2;color:#be123c;border:1px solid #fecdd3}
+.flash-msg.success{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}
+.flash-msg.warning{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+.flash-msg.info{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
 
 /* FAB context label */
 .fab-lbl{font-size:.55rem;font-weight:800;color:var(--blue);margin-top:1px}
@@ -216,6 +222,16 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
   </header>
 
   <div class="scroll" id="scroll">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-bar">
+        {% for category, message in messages %}
+          <div class="flash-msg {{ category if category != 'message' else 'info' }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
 
     <!-- ═══ PAINEL: HOME ═══ -->
     <div class="panel active" id="pn-home">
@@ -646,6 +662,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
   <div class="sh-hd"><span class="sh-ttl">Nova O.S.</span><button class="sh-x" onclick="fecharSheets()"><i class="bi bi-x"></i></button></div>
   <div class="sh-body">
     <form method="post" action="/os/save">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="status" value="Aberta">
       <div class="fld"><label>Data</label><input type="text" name="data" id="gs-data" placeholder="dd/mm/aaaa"></div>
       <div class="fld"><label>Sistema</label><select name="sistema" id="gs-sist" onchange="onSistChange()"><option value="">Selecione...</option>{% for s in sistemas_map.keys() %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select></div>
@@ -805,7 +822,30 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 <script>
 const SIST = {{ sistemas_map|tojson }};
 const COMB_VINCULOS = {{ comb_vinculos|tojson }};
+const IRIS_CSRF = '{{ csrf_token() }}';
 let _pausaId = null;
+
+async function irisPost(url, body) {
+  const headers = {'X-CSRF-Token': IRIS_CSRF, 'X-Requested-With': 'XMLHttpRequest'};
+  const init = {method: 'POST', headers, credentials: 'same-origin'};
+  if (body instanceof FormData) {
+    if (!body.has('_csrf_token')) body.append('_csrf_token', IRIS_CSRF);
+    init.body = body;
+  } else {
+    init.body = body || null;
+  }
+  const response = await fetch(url, init);
+  if (!response.ok) {
+    let msg = 'Não foi possível concluir.';
+    try {
+      const data = await response.json();
+      msg = data.error || data.message || msg;
+    } catch (e) {}
+    toast('Erro: ' + msg);
+    return null;
+  }
+  try { return await response.json(); } catch (e) { return {ok: true}; }
+}
 let _currentPanel = 'pn-home';
 const _chipFilters = {};
 
@@ -969,7 +1009,8 @@ async function abrirOSDetalhe(id) {
 // ── Ações O.S. ──
 async function iniciarOS(id) {
   fecharSheets();
-  await fetch(`/os/iniciar/${id}`,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'}});
+  const data = await irisPost(`/os/iniciar/${id}`);
+  if (!data) return;
   toast('O.S. iniciada ✓'); setTimeout(()=>location.reload(),900);
 }
 function pausarOS(id) {
@@ -980,13 +1021,15 @@ async function confirmarPausa() {
   const mot=document.getElementById('mot-pausar').value.trim();
   if(!mot){toast('Informe o motivo');return;}
   const f=new FormData();f.append('motivo_pausa',mot);
-  await fetch(`/os/pausar/${_pausaId}`,{method:'POST',body:f});
+  const data = await irisPost(`/os/pausar/${_pausaId}`, f);
+  if (!data) return;
   fecharSheets();toast('O.S. pausada ⏸');setTimeout(()=>location.reload(),900);
 }
 async function finalizarOS(id) {
   if(!confirm('Finalizar esta O.S.?'))return;
   fecharSheets();
-  await fetch(`/os/finalizar/${id}`,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'}});
+  const data = await irisPost(`/os/finalizar/${id}`);
+  if (!data) return;
   toast('O.S. finalizada ✓');setTimeout(()=>location.reload(),900);
 }
 
@@ -999,10 +1042,8 @@ async function salvarPagamento() {
   fd.append('pagamento_mes', document.getElementById('pag-mes').value);
   fd.append('tipo_lancamento', document.getElementById('pag-tipo').value);
   fd.append('status', document.getElementById('pag-status').value);
-  const r = await fetch('/api/mobile/pagamentos/save',{method:'POST',body:fd});
-  const d = await r.json();
-  if (d.ok) { fecharSheets(); toast('Pagamento salvo ✓'); setTimeout(()=>location.reload(),900); }
-  else toast('Erro: '+d.error);
+  const d = await irisPost('/api/mobile/pagamentos/save', fd);
+  if (d && d.ok) { fecharSheets(); toast('Pagamento salvo ✓'); setTimeout(()=>location.reload(),900); }
 }
 
 // ── Salvar Combustível ──
@@ -1015,10 +1056,8 @@ async function salvarCombustivel() {
   fd.append('km', document.getElementById('comb-km').value);
   fd.append('custo', document.getElementById('comb-custo').value);
   fd.append('observacoes', document.getElementById('comb-obs').value);
-  const r = await fetch('/api/mobile/combustivel/save',{method:'POST',body:fd});
-  const d = await r.json();
-  if (d.ok) { fecharSheets(); toast('Abastecimento salvo ✓'); setTimeout(()=>location.reload(),900); }
-  else toast('Erro: '+d.error);
+  const d = await irisPost('/api/mobile/combustivel/save', fd);
+  if (d && d.ok) { fecharSheets(); toast('Abastecimento salvo ✓'); setTimeout(()=>location.reload(),900); }
 }
 
 // ── Salvar Bomba ──
@@ -1029,10 +1068,8 @@ async function salvarBomba() {
   fd.append('localizacao', document.getElementById('bom-loc').value);
   fd.append('fornecedor', document.getElementById('bom-forn').value);
   fd.append('obs', document.getElementById('bom-obs').value);
-  const r = await fetch('/api/mobile/bomba/save',{method:'POST',body:fd});
-  const d = await r.json();
-  if (d.ok) { fecharSheets(); toast('Bomba registrada ✓'); setTimeout(()=>location.reload(),900); }
-  else toast('Erro: '+d.error);
+  const d = await irisPost('/api/mobile/bomba/save', fd);
+  if (d && d.ok) { fecharSheets(); toast('Bomba registrada ✓'); setTimeout(()=>location.reload(),900); }
 }
 
 
@@ -1050,7 +1087,8 @@ async function salvarCusto() {
   fd.append('nr_os', document.getElementById('cus-os').value);
   fd.append('descricao_os', document.getElementById('cus-desc').value);
   fd.append('mes', document.getElementById('cus-mes').value);
-  const r = await fetch('/custos/save',{method:'POST',body:fd});
+  const d = await irisPost('/custos/save', fd);
+  if (!d) return;
   fecharSheets(); toast('Custo salvo ✓'); setTimeout(()=>location.reload(),900);
 }
 
@@ -1072,7 +1110,8 @@ async function salvarSaida() {
   fd.append('quantidade', qtd);
   fd.append('destino', document.getElementById('inv-dest-saida').value);
   fd.append('motivo', document.getElementById('inv-mot-saida').value);
-  await fetch('/inventario/retirada',{method:'POST',body:fd});
+  const d = await irisPost('/inventario/retirada', fd);
+  if (!d) return;
   fecharSheets(); toast('Saída registrada ✓'); setTimeout(()=>location.reload(),900);
 }
 
@@ -1085,7 +1124,8 @@ async function salvarEntrada() {
   fd.append('quantidade', qtd);
   fd.append('motivo', document.getElementById('inv-mot-entrada').value);
   fd.append('tipo', 'entrada');
-  await fetch('/inventario/movimento',{method:'POST',body:fd});
+  const d = await irisPost('/inventario/movimento', fd);
+  if (!d) return;
   fecharSheets(); toast('Entrada registrada ✓'); setTimeout(()=>location.reload(),900);
 }
 
@@ -1098,14 +1138,16 @@ async function salvarPedidoInv() {
   fd.append('quantidade', qtd);
   fd.append('fornecedor', document.getElementById('inv-forn-pedido').value);
   fd.append('observacoes', document.getElementById('inv-obs-pedido').value);
-  await fetch('/inventario/pedido/save',{method:'POST',body:fd});
+  const d = await irisPost('/inventario/pedido/save', fd);
+  if (!d) return;
   fecharSheets(); toast('Pedido registrado ✓'); setTimeout(()=>location.reload(),900);
 }
 
 async function receberPedido(pid) {
   if (!confirm('Confirmar recebimento?')) return;
   const fd = new FormData();
-  await fetch(`/inventario/pedido/receber/${pid}`,{method:'POST',body:fd});
+  const d = await irisPost(`/inventario/pedido/receber/${pid}`, fd);
+  if (!d) return;
   toast('Recebimento confirmado ✓'); setTimeout(()=>location.reload(),900);
 }
 

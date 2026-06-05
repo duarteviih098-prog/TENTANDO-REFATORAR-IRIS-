@@ -235,7 +235,7 @@ html[data-theme="dark"] .apr-modal input{background:#0f172a;border-color:#7f1d1d
   {% if can('edit_pagamentos') %}
   <div class="apr-card-actions">
     <form method="post" action="{{ url_for('pagamentos_aprovar', rid=r.id) }}" style="display:inline">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="acao" value="aprovar">
       <button type="submit" class="apr-btn apr-btn-aprovar"><i class="bi bi-check-circle-fill"></i> Aprovar</button>
     </form>
@@ -244,7 +244,7 @@ html[data-theme="dark"] .apr-modal input{background:#0f172a;border-color:#7f1d1d
   </div>
   <form method="post" action="{{ url_for('pagamentos_aprovar', rid=r.id) }}" id="form-reprovar-{{ r.id }}"
         class="apr-form-reprovar">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="acao" value="reprovar">
     <input type="text" name="motivo" placeholder="Motivo da reprovação…">
     <div class="apr-form-reprovar-btns">
