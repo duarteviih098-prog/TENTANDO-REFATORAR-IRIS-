@@ -90,6 +90,10 @@ def _iris_month_ref(text):
         if nome in t:
             yr = re.search(r'(20\d{2})', t)
             return f"{num}/{yr.group(1) if yr else now.year}"
+    m = re.search(r'(?:mes|mes de|do mes|m[êe]s|m[êe]s de|do m[êe]s)\s*(\d{1,2})\b', t)
+    if m:
+        yr = re.search(r'(20\d{2})', t)
+        return f"{int(m.group(1)):02d}/{yr.group(1) if yr else now.year}"
     if 'mes passado' in t:
         y, mth = now.year, now.month-1
         if mth == 0:
@@ -250,7 +254,9 @@ def _iris_fallback_plan(message):
         sistema = sistema_match.group(1).strip().title() if sistema_match else ''
         return {'intent': 'system_report', 'sistema': sistema, 'month_ref': month_ref, 'format': 'pdf'}
 
-    # Relatório mensal
+    # Relatório financeiro / mensal
+    if 'financeiro' in t and any(w in t for w in ['relatorio', 'pdf', 'gerar', 'gere', 'gera', 'fazer', 'faz', 'quero', 'me da', 'me manda']):
+        return {'intent': 'monthly_report', 'month_ref': month_ref or datetime.now().strftime('%m/%Y'), 'format': 'pdf'}
     if ('relatorio' in t or 'pdf' in t) and any(w in t for w in ['gerar', 'gere', 'gera', 'relatorio', 'fazer', 'faz', 'quero', 'me da', 'me manda']):
         return {'intent':'monthly_report', 'month_ref': month_ref or datetime.now().strftime('%m/%Y'), 'format':'pdf'}
     if 'excel' in t and 'pagamento' in t:
@@ -579,9 +585,24 @@ def iris_chat():
 
     try:
         tn = _iris_normalize(effective)
-
-        # Tenta resposta direta via IA primeiro (menos engessada)
         month_ref = _iris_month_ref(effective) or _iris_month_ref(message)
+
+        # Relatórios e comandos estruturados — não dependem da API externa
+        plan_quick = _iris_fallback_plan(effective)
+        quick_intent = (plan_quick or {}).get('intent') or ''
+        structured_intents = {
+            'monthly_report', 'annual_report', 'system_report', 'executive_report',
+            'payments_report', 'payments_total', 'payments_open', 'payment_lookup',
+            'top_os_system', 'os_late', 'open_os', 'create_os_draft', 'fuel_costs',
+            'cost_subject', 'costs_summary',
+        }
+        if quick_intent in structured_intents:
+            ans = _iris_answer(plan_quick, effective)
+            history.append({'user': message, 'reply': ans.get('reply', ''), 'intent': quick_intent})
+            session['iris_history'] = history[-8:]
+            return jsonify(ans)
+
+        # Tenta resposta direta via IA (perguntas abertas)
         ctx = _iris_context_summary(month_ref)
         hist_ctx = ''
         if history:

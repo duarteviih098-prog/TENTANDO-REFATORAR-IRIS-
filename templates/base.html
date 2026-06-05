@@ -627,6 +627,18 @@ window.openEditModal=openEditModal;
   }
   if(greeting){ greeting.textContent=irisGreeting(); }
   function open(){panel.classList.add('open'); setTimeout(()=>input.focus(),80);}
+  function formatIrisReply(data){
+    const r=data && data.reply;
+    if(!r) return 'Pronto.';
+    if(typeof r==='string') return r;
+    if(r && typeof r==='object'){
+      const title=(r.title||'').trim();
+      const body=(r.summary||r.direct||'').trim();
+      if(title && body) return title+'\n\n'+body;
+      return title || body || 'Pronto.';
+    }
+    return String(r);
+  }
   function add(text, who, extra){
     const div=document.createElement('div'); div.className='iris-msg '+(who==='user'?'iris-user':'iris-bot'); div.textContent=text||'';
     if(extra && (extra.action_url || extra.download_url)){
@@ -645,13 +657,26 @@ window.openEditModal=openEditModal;
     open(); add(msg,'user'); input.value='';
     const thinking=add('Consultando os dados e preparando uma resposta...', 'bot'); thinking.classList.add('iris-thinking');
     try{
-      const r=await fetch('/iris/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
-      const data=await r.json();
+      const csrf=(typeof window.IRIS_CSRF_TOKEN==='string'&&window.IRIS_CSRF_TOKEN)||'{{ csrf_token() }}';
+      const r=await fetch('/iris/chat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},
+        body:JSON.stringify({message:msg})
+      });
+      let data={};
+      try{ data=await r.json(); }catch(_e){
+        throw new Error('Resposta inválida do servidor ('+r.status+')');
+      }
       thinking.remove();
-      add(data.reply || 'Pronto.', 'bot', data);
+      if(!r.ok){
+        add((data.error||data.reply||'Não foi possível concluir agora. Recarregue a página e tente de novo.'), 'bot');
+        return;
+      }
+      add(formatIrisReply(data), 'bot', data);
       if(data.auto_open && data.action_url){ setTimeout(()=>{ window.location.href=data.action_url; }, 450); }
     }catch(err){
-      thinking.remove(); add('Não consegui concluir essa solicitação agora. Verifique o servidor e a configuração da API no .env.', 'bot');
+      thinking.remove();
+      add('Não consegui concluir agora. Recarregue a página (F5) e tente outra vez.', 'bot');
     }
   });
 })();
