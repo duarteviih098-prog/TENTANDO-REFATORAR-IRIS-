@@ -225,7 +225,11 @@ html[data-theme="dark"] .inv-pedido-item{border-color:#2e2e2e}
       <td style="font-size:.76rem;color:#9ca3af">{{ r.localizacao or '—' }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="10" class="inv-empty">Nenhum item cadastrado.</td></tr>
+    <tr><td colspan="10">
+      {% with icon='box-seam', title='Nenhum item no inventário.', hint='Cadastre o primeiro item ou ajuste os filtros.' %}
+        {% include 'partials/empty_state.html' %}
+      {% endwith %}
+    </td></tr>
     {% endfor %}
     </tbody>
   </table>

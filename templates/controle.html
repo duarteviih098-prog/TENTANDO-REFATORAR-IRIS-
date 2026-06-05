@@ -178,7 +178,11 @@ html[data-theme="dark"] .eb-loc-retirada{background:rgba(239,68,68,.12);color:#f
       <td style="font-size:.78rem;color:#6b7280;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.observacoes or r.obs or '—' }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="11" class="eb-empty">Nenhum registro encontrado.</td></tr>
+    <tr><td colspan="11">
+      {% with icon='gear-wide-connected', title='Nenhuma bomba ou equipamento cadastrado.', hint='Use o botão Novo para adicionar o primeiro registro.' %}
+        {% include 'partials/empty_state.html' %}
+      {% endwith %}
+    </td></tr>
     {% endfor %}
     </tbody>
   </table>

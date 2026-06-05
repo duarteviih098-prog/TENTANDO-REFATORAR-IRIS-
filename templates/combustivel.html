@@ -282,7 +282,11 @@ html[data-theme="dark"] .cb-icon-btn:hover{background:#273549;color:#f0f0f0}
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="10" class="cb-empty">Nenhum lançamento encontrado.</td></tr>
+    <tr><td colspan="10">
+      {% with icon='fuel-pump', title='Nenhum abastecimento neste período.', hint='Altere o filtro de mês ou cadastre um novo lançamento.' %}
+        {% include 'partials/empty_state.html' %}
+      {% endwith %}
+    </td></tr>
     {% endfor %}
     </tbody>
   </table>

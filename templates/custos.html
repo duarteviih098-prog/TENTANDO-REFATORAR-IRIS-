@@ -55,7 +55,11 @@
             <td>{{ r.mes }}</td>
           </tr>
           {% else %}
-          <tr><td colspan="8" class="empty">Sem dados neste mês.</td></tr>
+          <tr><td colspan="8">
+            {% with icon='cash-stack', title='Nenhum custo neste mês.', hint='Troque o período ou importe/cadastre novos lançamentos.' %}
+              {% include 'partials/empty_state.html' %}
+            {% endwith %}
+          </td></tr>
           {% endfor %}
         </tbody>
       </table>

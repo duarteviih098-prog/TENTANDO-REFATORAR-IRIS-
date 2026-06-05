@@ -182,7 +182,11 @@ html[data-theme="dark"] .eb-tl-det{background:#0f172a;border-color:#334155;color
       <td style="font-size:.76rem;color:#6b7280">{{ r.garantia_ate or '—' }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="8" class="eb-empty">Nenhuma bomba cadastrada.</td></tr>
+    <tr><td colspan="8">
+      {% with icon='gear-wide-connected', title='Nenhuma bomba ou equipamento cadastrado.', hint='Use o botão Novo para adicionar o primeiro registro.' %}
+        {% include 'partials/empty_state.html' %}
+      {% endwith %}
+    </td></tr>
     {% endfor %}
     </tbody>
   </table>

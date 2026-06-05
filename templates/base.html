@@ -234,6 +234,7 @@ html[data-theme="dark"] .os-overdue-row td{background:rgba(220,38,38,.14)!import
     <small id="loading-overlay-msg" style="color:#6b7a90;letter-spacing:.12em;font-size:.8rem">CARREGANDO</small>
   </div>
 </div>
+<div id="iris-toast" class="gg-toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <div class="app-shell">
   <aside class="sidebar">
     <div class="brand"><img src="{{ url_for('static', filename='logo_sidebar.png') }}" class="brand-logo brand-logo-lg" alt="Logo IRIS"></div>
@@ -377,6 +378,15 @@ const showLoading=(delay=150, message='CARREGANDO', failSafeMs=8000)=>{
   },delay);
 };
 window.irisShowBusy = (message, failSafeMs)=>showLoading(80, message, failSafeMs || 12000);
+let irisToastTimer=null;
+window.irisToast=(message, kind='success')=>{
+  const el=document.getElementById('iris-toast');
+  if(!el||!message) return;
+  clearTimeout(irisToastTimer);
+  el.textContent=String(message);
+  el.className='gg-toast show '+(kind==='error'?'error':(kind==='warning'?'warning':'success'));
+  irisToastTimer=setTimeout(()=>{ el.className='gg-toast'; }, kind==='error'?4200:2600);
+};
 const hideLoading=()=>{
   clearTimeout(loadingTimer);
   clearTimeout(loadingFailSafe);
@@ -409,6 +419,13 @@ document.addEventListener('click', (e)=>{
   showLoading();
 });
 document.querySelectorAll('form').forEach((form)=>{
+  const action=(form.getAttribute('action')||'').toLowerCase();
+  if(action.includes('/save') && !form.hasAttribute('data-iris-busy-form')){
+    form.setAttribute('data-iris-busy-form', 'Salvando…');
+  }
+  if(action.includes('import') && !form.hasAttribute('data-iris-busy-form')){
+    form.setAttribute('data-iris-busy-form', 'Importando planilha…');
+  }
   form.addEventListener('submit', ()=>{
     const hasExcel=form.querySelector('input[type=file][name*="excel"], input[type=file][accept*=".xlsx"], input[type=file"][accept*=".xls"]');
     if(hasExcel && hasExcel.files && hasExcel.files.length){
@@ -420,6 +437,16 @@ document.querySelectorAll('form').forEach((form)=>{
     }
   });
 });
+(function(){
+  const _open=window.open;
+  window.open=function(url, target, features){
+    const u=String(url||'').toLowerCase();
+    if(u.includes('/pdf')||u.includes('/excel')||u.includes('.xlsx')){
+      showLoading(80, u.includes('pdf')?'Gerando PDF…':'Gerando arquivo…', u.includes('pdf')?45000:20000);
+    }
+    return _open.call(window, url, target, features);
+  };
+})();
 const savedTheme = localStorage.getItem('iris-theme') || 'light'; document.documentElement.setAttribute('data-theme', savedTheme);
 document.getElementById('themeToggle')?.addEventListener('click', ()=>{const next=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('iris-theme',next);window.dispatchEvent(new CustomEvent('iris-theme-change',{detail:{theme:next}}));fixUnitSelect(next);});
 function fixUnitSelect(theme){document.querySelectorAll('.unit-switcher select,.unit-name-pill').forEach(function(el){el.style.colorScheme=theme==='dark'?'dark':'light';el.style.background=theme==='dark'?'var(--surface)':'';el.style.color=theme==='dark'?'var(--text)':'';})}
@@ -549,8 +576,14 @@ function setupSelectableTable(selector, moduleName){
       if(typeof showLoading === 'function') showLoading();
       try {
         const r = await fetch(`/api/${moduleName}/delete`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:selected.map(Number)})});
-        if(!r.ok){ alert('Não foi possível excluir. Recarregue a página e tente novamente.'); return; }
-        location.reload();
+        if(!r.ok){
+          let msg='Não foi possível excluir. Tente novamente.';
+          try{ const j=await r.json(); if(j&&j.error) msg=j.error; }catch(_e){}
+          if(window.irisToast) window.irisToast(msg,'error'); else alert(msg);
+          return;
+        }
+        if(window.irisToast) window.irisToast(`${n} registro${n>1?'s':''} excluído${n>1?'s':''}.`,'success');
+        setTimeout(()=>location.reload(), 500);
       } finally {
         if(typeof hideLoading === 'function') hideLoading();
       }
@@ -1412,7 +1445,17 @@ window.IRIS_CSRF_TOKEN = '{{ csrf_token() }}';
       if (!headers.has('X-CSRF-Token')) headers.set('X-CSRF-Token', window.IRIS_CSRF_TOKEN);
       init.headers = headers;
     }
-    return _fetch(input, init);
+    return _fetch(input, init).then(async (res)=>{
+      if(!res.ok && url.indexOf('/api/')===0 && window.irisToast){
+        try{
+          const clone=res.clone();
+          const data=await clone.json();
+          const msg=(data&&(data.error||data.message))||'Não foi possível concluir a ação.';
+          if(res.status>=400) window.irisToast(msg,'error');
+        }catch(_e){}
+      }
+      return res;
+    });
   };
 })();
 
