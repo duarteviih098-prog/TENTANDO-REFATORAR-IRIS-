@@ -12,7 +12,7 @@ from app.shared.payments import compute_payments_totals, payment_status_is_paid
 from app.shared.queries import fetch_sistemas_map
 from app.shared.rows import row_get_value, row_to_dict
 
-from flask import redirect, render_template, request, send_from_directory, session, url_for
+from flask import jsonify, redirect, render_template, request, send_from_directory, session, url_for
 
 from app.auth.decorators import require_permission
 from app.config import PROJECT_ROOT
@@ -40,7 +40,18 @@ def company_where(table, prefix=' WHERE '):
     return fn(table, prefix)
 
 def health():
-    return 'ok'
+    from app.db import query_one
+
+    payload = {'status': 'ok', 'db': 'unknown'}
+    try:
+        row = query_one('SELECT 1 AS ok', ())
+        payload['db'] = 'ok' if row else 'fail'
+    except Exception as exc:
+        payload['status'] = 'degraded'
+        payload['db'] = 'fail'
+        payload['error'] = str(exc)[:200]
+    code = 200 if payload['status'] == 'ok' and payload['db'] == 'ok' else 503
+    return jsonify(payload), code
 
 def favicon_root():
     from flask import current_app
