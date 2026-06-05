@@ -1,0 +1,7 @@
+<div class="iris-empty-state">
+  <i class="bi bi-{{ icon|default('inbox') }}"></i>
+  <div class="iris-empty-title">{{ title|default('Nenhum registro encontrado.') }}</div>
+  {% if hint %}
+  <div class="iris-empty-hint">{{ hint }}</div>
+  {% endif %}
+</div>
