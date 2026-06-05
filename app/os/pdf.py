@@ -322,23 +322,54 @@ def _pdf_collect_os_image_paths(row):
     return out
 
 
-def _pdf_datetime_label(raw, os_date=''):
-    """Data+hora para eventos do histórico (pausa/retomada/finalização)."""
+def _pdf_parse_when(raw, os_date=''):
+    """Converte timestamp de evento em datetime; usa os_date se vier só HH:MM."""
     text = str(raw or '').strip()
     if not text:
-        return '-'
+        return None
     for fmt in ('%d/%m/%Y %H:%M:%S', '%d/%m/%Y %H:%M', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M'):
         try:
-            return datetime.strptime(text, fmt).strftime('%d/%m/%Y %H:%M')
+            return datetime.strptime(text, fmt)
         except Exception:
             pass
     hora = only_time_str(text)
-    if hora:
-        base = str(os_date or '').strip()
-        if base:
-            return f'{base} {hora}'
-        return hora
-    return _pdf_safe_text(text, max_len=32)
+    if not hora:
+        return None
+    base = str(os_date or '').strip()
+    for fmt in ('%d/%m/%Y', '%Y-%m-%d'):
+        if not base:
+            break
+        try:
+            day = datetime.strptime(base, fmt).date()
+            return datetime.combine(day, datetime.strptime(hora, '%H:%M').time())
+        except Exception:
+            pass
+    return None
+
+
+def _pdf_collect_hist_dates(hist, data_inicio='', data_fim='', os_date=''):
+    """Datas distintas do histórico + início/fim — detecta O.S. que atravessa dias."""
+    dates = set()
+    for raw in (data_inicio, data_fim):
+        dt = _pdf_parse_when(raw, os_date)
+        if dt:
+            dates.add(dt.date())
+    for ev in hist or []:
+        dt = _pdf_parse_when(ev.get('quando'), os_date)
+        if dt:
+            dates.add(dt.date())
+    return dates
+
+
+def _pdf_datetime_label(raw, os_date='', multiday=False):
+    """Hora do evento; data só quando a O.S. atravessa mais de um dia."""
+    dt = _pdf_parse_when(raw, os_date)
+    if not dt:
+        hora = only_time_str(raw)
+        return hora or '-'
+    if multiday:
+        return dt.strftime('%d/%m/%Y %H:%M')
+    return dt.strftime('%H:%M')
 
 
 def _pdf_time_label(raw, hist=None):
@@ -367,6 +398,46 @@ def _pdf_fim_label(raw, hist=None, finalizada=False):
                 if hora:
                     return hora
     return '-'
+
+
+def _pdf_historico_for_display(hist):
+    """Remove eventos repetidos no histórico antes de montar o PDF."""
+    cleaned = []
+    seen = set()
+    for ev in hist or []:
+        if not isinstance(ev, dict):
+            continue
+        acao = str(ev.get('acao') or '').strip().lower()
+        quando = str(ev.get('quando') or '').strip()
+        motivo = str(ev.get('motivo') or '').strip()
+        if not acao:
+            continue
+        key = (acao, quando, motivo)
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append({**ev, 'acao': acao, 'quando': quando, 'motivo': motivo})
+
+    last_finalizado_idx = max(
+        (i for i, ev in enumerate(cleaned) if ev.get('acao') == 'finalizado'),
+        default=-1,
+    )
+    out = []
+    iniciado_ok = False
+    for i, ev in enumerate(cleaned):
+        acao = ev.get('acao')
+        if acao == 'iniciado':
+            if iniciado_ok:
+                continue
+            iniciado_ok = True
+            out.append(ev)
+        elif acao == 'finalizado':
+            if i != last_finalizado_idx:
+                continue
+            out.append(ev)
+        else:
+            out.append(ev)
+    return out
 
 
 def _pdf_logo_candidates(side='left', empresa_id=None):
@@ -659,11 +730,14 @@ def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
         finalizada_pdf = (r.get('finalizada') or ('Sim' if str(r.get('status') or '').strip().lower() == 'finalizada' else 'Não')).strip().title()
 
         try:
-            _hist = json.loads(r.get('historico_pausas') or '[]')
+            _hist = _pdf_historico_for_display(json.loads(r.get('historico_pausas') or '[]'))
         except Exception:
             _hist = []
 
         os_data = _pdf_safe_text(row_get_value(r, 'data', '') or '')
+        _hist_multiday = len(_pdf_collect_hist_dates(
+            _hist, r.get('data_inicio'), r.get('data_fim'), os_data,
+        )) > 1
         _di_label = _pdf_time_label(r.get('data_inicio'), _hist)
         _df_label = _pdf_fim_label(
             r.get('data_fim'),
@@ -681,7 +755,7 @@ def _build_os_pdf(ordens, titulo='RDO - RELATÓRIO DIÁRIO', subtitulo=''):
 
         for _ev in _hist:
             _acao = str(_ev.get('acao') or '').strip().lower()
-            _quando = _pdf_datetime_label(_ev.get('quando'), os_date=os_data)
+            _quando = _pdf_datetime_label(_ev.get('quando'), os_date=os_data, multiday=_hist_multiday)
             _motivo_ev = _pdf_safe_text(_ev.get('motivo') or '')
             if _acao == 'iniciado':
                 info.append(['Iniciado em', _quando, '', ''])
